@@ -1,0 +1,31 @@
+# 系統配置
+system:
+  max_concurrent_tasks: 3
+  task_timeout_hours: 24
+  cleanup_completed_tasks_days: 7
+# 資源配置
+resources:
+  gpu_memory_fraction: 0.8
+  max_workers: 4
+  batch_size: 64
+# 儲存配置
+storage:
+  temp_dir: "/tmp/auto_training"
+  results_retention_days: 30
+  auto_cleanup: true
+# 日誌配置
+logging:
+  level: "INFO"
+  file: "logs/auto_training.log"
+  max_size_mb: 100
+  backup_count: 5
+ 
+# 模型預設參數
+model_defaults:
+  image_size: 224
+  embedding_size: 128
+  backbone: "efficientnetv2_rw_s"
+  max_epochs: 40
+  learning_rate: 3e-4
+# 資料庫配置檔案路徑
+database_config_path: "config/configs.json"

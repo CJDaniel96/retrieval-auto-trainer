@@ -1,0 +1,70 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+ 
+# C extensions
+*.so
+ 
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+ 
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+ 
+# IDEs and editors
+.vscode/
+.idea/
+*.sw?
+*.swo
+*.iml
+ 
+# macOS
+.DS_Store
+ 
+# Logs and databases
+logs/
+*.log
+*.sqlite3
+ 
+# Checkpoints and outputs
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+ 
+# Hydra output
+.hydra/
+ 
+# Data caches
+mean_std.json
+dataset.pkl
+ 
+# Coverage reports
+htmlcov/
+.coverage
+ 
+# Python test results
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+ 
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+ 
+# Others
+*.zip
+*.tar.gz
+
+# Image datasets
+datasets/
+*.jpg
+*.jpeg

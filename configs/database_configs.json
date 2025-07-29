@@ -1,0 +1,235 @@
+{
+    "HPH": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "10.52.1.26",
+            "ssh_username": "Administrator",
+            "ssh_password": "Pb08!@)(UsiVN"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "10.5.1.154",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "V31": {
+                "ip": "10.5.15.14",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V28": {
+                "ip": "10.5.24.82",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V27": {
+                "ip": "10.5.25.115",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V22": {
+                "ip": "10.5.25.95",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V20": {
+                "ip": "10.5.24.37",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    },
+    "JQ": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "192.168.150.192",
+            "ssh_username": "Administrator",
+            "ssh_password": "SMDi4.0AP"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr_info",
+            "USER": "amr",
+            "PASSWORD": "smdamr",
+            "HOST": "10.5.1.150",
+            "PORT": 9999
+        },
+        "image_pool": {
+            "J12": {
+                "ip": "10.5.30.128",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "J13": {
+                "ip": "10.5.31.12",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "J15": {
+                "ip": "10.5.30.186",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    },
+    "ZJ": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "192.168.53.207",
+            "ssh_username": "Administrator",
+            "ssh_password": "SMDi4.0AP"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr",
+            "USER": "amr",
+            "PASSWORD": "smdamr",
+            "HOST": "10.5.5.247",
+            "PORT": 9999
+        },
+        "image_pool": {
+            "Z39": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z38": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z37": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z43": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z35": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z36": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z30": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z34": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z42": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z32": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "Z33": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "S77": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "S75": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "S73": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "S43": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "S19": {
+                "ip": "10.243.211.35",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    },
+    "NK": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "",
+            "ssh_username": "",
+            "ssh_password": ""
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr_nifi_test",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "10.0.4.188",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "Dline": {
+                "ip": "172.20.20.10",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip",
+                "line_ip": "172.20.106.131"
+            },
+            "Eline": {
+                "ip": "172.20.20.10",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip",
+                "line_ip": "172.20.106.132"
+            },
+            "Hline": {
+                "ip": "172.20.20.10",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip",
+                "line_ip": "172.20.106.133"
+            }
+        }
+    },
+    "HZ": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "10.56.6.201",
+            "ssh_username": "USISZ",
+            "ssh_password": "sfis@2010"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr_info",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "10.5.36.228",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "S3": {
+                "ip": "10.5.38.138",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "P10": {
+                "ip": "10.5.38.140",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    }
+}
