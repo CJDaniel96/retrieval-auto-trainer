@@ -28,8 +28,8 @@ loss:
 training:
   min_epochs: 0
   max_epochs: 40
-  lr: 3e-4
-  weight_decay: 1e-4
+  lr: 0.0003
+  weight_decay: 0.0001
   batch_size: 64
   freeze_backbone_epochs: 10
   patience: 3

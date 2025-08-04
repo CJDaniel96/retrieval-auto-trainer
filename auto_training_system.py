@@ -290,7 +290,7 @@ class AutoTrainingSystem:
         )
         
         swa = StochasticWeightAveraging(
-        swa_lrs=[float(self.train_config['training']['lr']) * 0.01, float(self.train_config['training']['lr']) * 0.1],
+        swa_lrs=[self.train_config['training']['lr'] * 0.01, self.train_config['training']['lr'] * 0.1],
         swa_epoch_start=0.75,
         annealing_strategy='cos'
     )
