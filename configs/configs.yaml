@@ -26,4 +26,4 @@ logging:
 train_config_path: "configs/train_configs.yaml"
 
 # 資料庫配置檔案路徑
-database_config_path: "configs/configs.json"
+database_config_path: "configs/database_configs.json"
