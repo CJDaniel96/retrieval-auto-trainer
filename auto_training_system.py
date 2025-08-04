@@ -164,14 +164,16 @@ class AutoTrainingSystem:
         # comp_name: COMP1
         # light: R
         
-        pattern = r'^(\d{14}).*@(.+?)_\d+_([A-Z])\.jp'
+        pattern = r'(\d{14})_([^@]+)@([^_]+(?:_[^_]+)*)_(\d+)_(\w+)\.(?:jpg|jpeg|png)'
         match = re.match(pattern, filename, re.IGNORECASE)
         
         if match:
             return {
                 'timestamp': match.group(1),
-                'comp_name': match.group(2),
-                'light': match.group(3)
+                'board_sn': match.group(2),
+                'comp_name': match.group(3),
+                'comp_id': match.group(4),
+                'light': match.group(5)
             }
         return None
         
