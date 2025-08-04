@@ -114,11 +114,13 @@ class AutoTrainingSystem:
                 
                 start_date = datetime.strptime(img_info['timestamp'], '%Y%m%d%H%M%S')
                 end_date = start_date + timedelta(days=1)
+                start_str = start_date.strftime('%Y-%m-%d')
+                end_str = end_date.strftime('%Y-%m-%d')
                 
                 # 查詢資料庫取得product_name
                 record = session.query(AmrRawData).filter(
                     AmrRawData.site == site,
-                    AmrRawData.create_time.between(start_date, end_date),
+                    AmrRawData.create_time.between(start_str, end_str),
                     AmrRawData.carrier_sn == img_info['sn'],
                     AmrRawData.comp_name == f"{img_info['comp_name']}_{img_info['comp_id']}",
                     AmrRawData.image_path == db_image_path
