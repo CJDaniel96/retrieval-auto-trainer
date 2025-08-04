@@ -68,15 +68,15 @@ class AutoTrainingSystem:
             self.db_configs = json.load(f)
         
     def process_raw_images(self, input_dir: str, output_dir: str, 
-                          project: str = 'HPH', site: str = 'V31') -> Dict[str, int]:
+                          site: str = 'HPH', line_id: str = 'HPH') -> Dict[str, int]:
         """
         處理原始影像資料，分類並查詢資料庫
         
         Args:
             input_dir: 輸入資料夾路徑（包含OK和NG子資料夾）
             output_dir: 輸出分類後的資料夾路徑
-            project: 專案名稱（HPH, JQ, ZJ等）
-            site: 產線ID
+            site: 地區名稱（HPH, JQ, ZJ等）
+            line_id: 產線ID
             
         Returns:
             Dict[str, int]: 各類別的影像數量統計
@@ -84,7 +84,7 @@ class AutoTrainingSystem:
         logger.info(f"開始處理原始影像資料: {input_dir}")
         
         # 建立資料庫連線
-        proj_config = self.db_configs[project]
+        proj_config = self.db_configs[site]
         session = create_session(proj_config['SSHTUNNEL'], proj_config['database'])
         
         # 處理OK資料夾中的影像
@@ -120,6 +120,7 @@ class AutoTrainingSystem:
                 # 查詢資料庫取得product_name
                 record = session.query(AmrRawData).filter(
                     AmrRawData.site == site,
+                    AmrRawData.line_id == line_id,
                     AmrRawData.create_time.between(start_str, end_str),
                     AmrRawData.image_path == db_image_path
                 ).first()
@@ -521,15 +522,15 @@ class AutoTrainingSystem:
         plt.close()
         
     def run_full_pipeline(self, input_dir: str, output_base_dir: str, 
-                         project: str = 'HPH', site: str = 'V31') -> None:
+                         site: str = 'HPH', line_id: str = 'V31') -> None:
         """
         執行完整的自動訓練流程
         
         Args:
             input_dir: 輸入資料夾路徑（包含OK和NG子資料夾）
             output_base_dir: 輸出基礎目錄
-            project: 專案名稱
-            site: 產線ID
+            site: 地區名稱（HPH, JQ, ZJ等）
+            line_id: 產線ID
         """
         logger.info("=" * 50)
         logger.info("開始執行自動訓練系統")
@@ -550,7 +551,7 @@ class AutoTrainingSystem:
         try:
             # 1. 處理原始影像
             logger.info("\n[步驟 1/5] 處理原始影像資料")
-            class_stats = self.process_raw_images(input_dir, str(raw_data_dir), project, site)
+            class_stats = self.process_raw_images(input_dir, str(raw_data_dir), site, line_id)
             
             # 2. 準備資料集
             logger.info("\n[步驟 2/5] 準備訓練資料集")
@@ -603,8 +604,8 @@ def main():
     parser = argparse.ArgumentParser(description='自動化訓練系統')
     parser.add_argument('--input-dir', required=True, help='輸入資料夾路徑')
     parser.add_argument('--output-dir', required=True, help='輸出資料夾路徑')
-    parser.add_argument('--project', default='HPH', help='專案名稱')
-    parser.add_argument('--site', default='V31', help='產線ID')
+    parser.add_argument('--site', default='HPH', help='專案名稱')
+    parser.add_argument('--line-id', default='V31', help='產線ID')
     parser.add_argument('--config', default='configs/configs.yaml', help='系統配置檔')
     
     args = parser.parse_args()
@@ -614,8 +615,8 @@ def main():
     system.run_full_pipeline(
         input_dir=args.input_dir,
         output_base_dir=args.output_dir,
-        project=args.project,
-        site=args.site
+        site=args.site,
+        line_id=args.line_id
     )
 
 

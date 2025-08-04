@@ -28,8 +28,8 @@ class TrainingRequest(BaseModel):
     """訓練請求模型"""
     input_dir: str = Field(..., description="輸入資料夾路徑")
     output_dir: str = Field(..., description="輸出資料夾路徑")
-    project: str = Field(default="HPH", description="專案名稱")
-    site: str = Field(default="V31", description="產線ID")
+    site: str = Field(default="HPH", description="地區名稱")
+    line_id: str = Field(default="V31", description="產線ID")
     
     # 可選的訓練配置覆蓋
     max_epochs: Optional[int] = Field(None, description="最大訓練輪數")
@@ -359,8 +359,8 @@ def run_training_task(task_id: str, request: TrainingRequest):
         system.run_full_pipeline(
             input_dir=request.input_dir,
             output_base_dir=request.output_dir,
-            project=request.project,
-            site=request.site
+            site=request.site,
+            line_id=request.line_id
         )
         
         # 更新狀態為完成
