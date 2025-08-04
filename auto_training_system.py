@@ -11,10 +11,11 @@ import shutil
 import random
 import logging
 import argparse
+import pandas as pd
+from datetime import datetime, timedelta
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional
-import pandas as pd
 from tqdm import tqdm
 
 import torch
@@ -111,9 +112,15 @@ class AutoTrainingSystem:
                 # 構建查詢用的image_path
                 db_image_path = self._build_db_image_path(img_info['timestamp'], img_path.name)
                 
+                start_date = datetime.strptime(img_info['timestamp'], '%Y%m%d%H%M%S')
+                end_date = start_date + timedelta(days=1)
+                
                 # 查詢資料庫取得product_name
                 record = session.query(AmrRawData).filter(
                     AmrRawData.site == site,
+                    AmrRawData.create_time.between(start_date, end_date),
+                    AmrRawData.carrier_sn == img_info['sn'],
+                    AmrRawData.comp_name == f"{img_info['comp_name']}_{img_info['comp_id']}",
                     AmrRawData.image_path == db_image_path
                 ).first()
                 
@@ -170,7 +177,7 @@ class AutoTrainingSystem:
         if match:
             return {
                 'timestamp': match.group(1),
-                'board_sn': match.group(2),
+                'sn': match.group(2),
                 'comp_name': match.group(3),
                 'comp_id': match.group(4),
                 'light': match.group(5)
