@@ -151,7 +151,7 @@ pip install -r requirements.txt
 python main.py --input-dir /path/to/input --output-dir /path/to/output
 
 # 指定專案和產線
-python main.py --input-dir /path/to/input --output-dir /path/to/output --project HPH --site V31
+python main.py --input-dir /path/to/input --output-dir /path/to/output --site HPH --site V31
 
 # 使用自訂配置
 python main.py --input-dir /path/to/input --output-dir /path/to/output --config custom_config.json
@@ -186,8 +186,8 @@ response = requests.post(
     json={
         "input_dir": "/path/to/input",
         "output_dir": "/path/to/output",
-        "project": "HPH",
-        "site": "V31",
+        "site": "HPH",
+        "line_id": "V31",
         "max_epochs": 30
     }
 )
@@ -215,8 +215,8 @@ system = AutoTrainingSystem(config_path='configs/database_configs.json')
 system.run_full_pipeline(
     input_dir='/path/to/input',
     output_base_dir='/path/to/output',
-    project='HPH',
-    site='V31'
+    site='HPH',
+    line_id='V31'
 )
 ```
 

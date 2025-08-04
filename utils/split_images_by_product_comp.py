@@ -9,7 +9,7 @@
 4. 將影像搬移或複製至 dest_root/[product_name]_[component] 下
  
 使用方式:
-    python classify_images.py --config configs.json --project HPH <source_dir> <dest_root> [-c]
+    python classify_images.py --config configs.json --site HPH <source_dir> <dest_root> [-c]
  
 依賴: sessions.py, amr_info.py 同目錄下
 """
@@ -34,9 +34,9 @@ def parse_args():
         help='Config 檔案路徑 (預設: configs.json)'
     )
     parser.add_argument(
-        '--project',
+        '--site',
         default='HPH',
-        help='Config 中的專案 key (如 HPH, JQ, ZJ 等)'
+        help='Config 中的地區 key (如 HPH, JQ, ZJ 等)'
     )
     parser.add_argument(
         'source_dir',
@@ -72,11 +72,11 @@ def main():
     with open(args.config, 'r', encoding='utf-8') as f:
         config = json.load(f)
  
-    if args.project not in config:
-        print(f"Error: 找不到專案設定 '{args.project}'")
+    if args.site not in config:
+        print(f"Error: 找不到專案設定 '{args.site}'")
         return
  
-    proj_conf = config[args.project]
+    proj_conf = config[args.site]
     session = create_session(proj_conf['SSHTUNNEL'], proj_conf['database'])
  
     # 元件名稱正則
