@@ -550,24 +550,24 @@ class AutoTrainingSystem:
             
         try:
             # 1. 處理原始影像
-            logger.info("\n[步驟 1/5] 處理原始影像資料")
+            logger.info("[步驟 1/5] 處理原始影像資料")
             class_stats = self.process_raw_images(input_dir, str(raw_data_dir), site, line_id)
             
             # 2. 準備資料集
-            logger.info("\n[步驟 2/5] 準備訓練資料集")
+            logger.info("[步驟 2/5] 準備訓練資料集")
             self.prepare_dataset(str(raw_data_dir), str(dataset_dir), 
                                self.train_config['data']['test_split'])
             
             # 3. 訓練模型
-            logger.info("\n[步驟 3/5] 訓練模型")
+            logger.info("[步驟 3/5] 訓練模型")
             model_path = self.train_model(str(dataset_dir), str(model_dir))
             
             # 4. 生成Golden Samples
-            logger.info("\n[步驟 4/5] 生成Golden Samples")
+            logger.info("[步驟 4/5] 生成Golden Samples")
             golden_samples = self.generate_golden_samples(str(dataset_dir), str(results_dir))
             
             # 5. 評估模型
-            logger.info("\n[步驟 5/5] 評估模型效能")
+            logger.info("[步驟 5/5] 評估模型效能")
             eval_results = self.evaluate_model(model_path, str(dataset_dir), 
                                              golden_samples, str(results_dir))
             
