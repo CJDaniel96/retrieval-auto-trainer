@@ -265,7 +265,7 @@ class AutoTrainingSystem:
             data_dir=dataset_dir,
             image_size=self.train_config['data']['image_size'],
             batch_size=self.train_config['training']['batch_size'],
-            num_workers=self.train_config['training']['num_workers']
+            num_workers=self.train_config['data']['num_workers']
         )
         
         # 建立模型
