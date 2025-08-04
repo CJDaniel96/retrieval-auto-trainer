@@ -121,8 +121,6 @@ class AutoTrainingSystem:
                 record = session.query(AmrRawData).filter(
                     AmrRawData.site == site,
                     AmrRawData.create_time.between(start_str, end_str),
-                    AmrRawData.carrier_sn == img_info['sn'],
-                    AmrRawData.comp_name == f"{img_info['comp_name']}_{img_info['comp_id']}",
                     AmrRawData.image_path == db_image_path
                 ).first()
                 
