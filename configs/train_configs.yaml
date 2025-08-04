@@ -12,10 +12,10 @@ data:
   test_split: 0.2
 
 model:
-  structure: "HOAM"
-  backbone: "efficientnetv2_s"
-  pretrained: false
-  embedding_size: 128
+  structure: "HOAMV2"
+  backbone: "efficientnetv2_rw_s"
+  pretrained: true
+  embedding_size: 512
 
 loss:
   type: HybridMarginLoss
