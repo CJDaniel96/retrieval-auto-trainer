@@ -148,10 +148,6 @@ class AutoTrainingSystem:
                 shutil.copytree(str(ng_dir), str(ng_target), dirs_exist_ok=True)
             stats['NG'] = len(list(ng_target.glob('*.jp*')))
             
-        # 刪除原始OK資料夾
-        if ok_dir.exists():
-            shutil.rmtree(str(ok_dir))
-            
         session.close()
         
         logger.info(f"影像處理完成: 成功 {processed_count}, 錯誤 {error_count}")
