@@ -138,7 +138,7 @@ class AutoTrainingSystem:
                 target_dir.mkdir(parents=True, exist_ok=True)
                 
                 target_path = target_dir / img_path.name
-                shutil.move(str(img_path), str(target_path))
+                shutil.copy2(str(img_path), str(target_path))
                 
                 # 更新統計
                 stats[class_name] = stats.get(class_name, 0) + 1
