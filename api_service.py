@@ -6,13 +6,17 @@ FastAPI服務 - 自動化訓練系統API介面
 import os
 import json
 import asyncio
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
+from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
@@ -56,33 +60,44 @@ class TrainingResult(BaseModel):
     confusion_matrix: str
     
 
-# 建立FastAPI應用
-app = FastAPI(
-    title="自動化訓練系統API",
-    description="用於影像檢索模型的自動化訓練服務",
-    version="1.0.0"
-)
-
 # 全域變數
 training_tasks: Dict[str, TrainingStatus] = {}
 executor = ThreadPoolExecutor(max_workers=2)  # 限制同時訓練的任務數
 
-
-@app.on_event("startup")
-async def startup_event():
-    """應用啟動事件"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """應用生命週期管理"""
+    # 應用啟動時執行的程式碼
     # 確保必要的目錄存在
     Path("temp_uploads").mkdir(exist_ok=True)
     Path("logs").mkdir(exist_ok=True)
-    
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """應用關閉事件"""
+    yield
+    # 應用關閉時執行的程式碼
     executor.shutdown(wait=True)
-    
 
-@app.get("/", tags=["Health"])
+# 建立FastAPI應用
+app = FastAPI(
+    title="自動化訓練系統API",
+    description="用於影像檢索模型的自動化訓練服務",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# 添加CORS中間件（允許瀏覽器跨域請求）
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/", response_class=FileResponse, tags=["UI"])
+async def web_ui():
+    return FileResponse("static/index.html")
+
+
+@app.get("/health", tags=["Health"])
 async def health_check():
     """健康檢查端點"""
     return {

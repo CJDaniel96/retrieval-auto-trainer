@@ -6,6 +6,7 @@ Auto Training System for Image Retrieval Models
 
 import os
 import json
+import yaml
 import shutil
 import random
 import logging
@@ -45,50 +46,25 @@ class AutoTrainingSystem:
     5. 結果輸出
     """
     
-    def __init__(self, config_path: str = 'database_configs.json'):
+    def __init__(self, config_path: str = 'configs/configs.yaml'):
         """
         初始化自動訓練系統
         
         Args:
-            config_path: 資料庫配置檔路徑
+            config_path: 系統配置檔路徑
         """
         self.config_path = config_path
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         # 載入資料庫配置
         with open(config_path, 'r', encoding='utf-8') as f:
-            self.db_configs = json.load(f)
+            self.config = yaml.safe_load(f)
             
-        # 訓練配置
-        self.train_config = {
-            'model': {
-                'structure': 'HOAMV2',
-                'backbone': 'efficientnetv2_rw_s',
-                'pretrained': True,
-                'embedding_size': 128
-            },
-            'loss': {
-                'type': 'HybridMarginLoss',
-                'subcenter_margin': 0.4,
-                'subcenter_scale': 30.0,
-                'sub_centers': 3,
-                'triplet_margin': 0.3,
-                'center_loss_weight': 0.01
-            },
-            'training': {
-                'max_epochs': 40,
-                'batch_size': 64,
-                'lr': 3e-4,
-                'weight_decay': 1e-4,
-                'num_workers': 4,
-                'freeze_backbone_epochs': 10,
-                'patience': 5
-            },
-            'data': {
-                'image_size': 224,
-                'test_split': 0.1
-            }
-        }
+        with open(self.config['train_config_path'], 'r', encoding='utf-8') as f:
+            self.train_config = yaml.safe_load(f)
+            
+        with open(self.config['database_config_path'], 'r', encoding='utf-8') as f:
+            self.db_configs = json.load(f)
         
     def process_raw_images(self, input_dir: str, output_dir: str, 
                           project: str = 'HPH', site: str = 'V31') -> Dict[str, int]:
@@ -617,7 +593,7 @@ def main():
     parser.add_argument('--output-dir', required=True, help='輸出資料夾路徑')
     parser.add_argument('--project', default='HPH', help='專案名稱')
     parser.add_argument('--site', default='V31', help='產線ID')
-    parser.add_argument('--config', default='database_configs.json', help='資料庫配置檔')
+    parser.add_argument('--config', default='configs/configs.yaml', help='系統配置檔')
     
     args = parser.parse_args()
     
