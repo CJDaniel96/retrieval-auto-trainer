@@ -9,6 +9,7 @@ data:
   data_dir: "/path/to/dataset"
   image_size: 224
   num_workers: 4
+  test_split: 0.2
 
 model:
   structure: "HOAM"

@@ -245,7 +245,7 @@ class AutoTrainingSystem:
         
         # 導入訓練相關模組
         import lightning.pytorch as pl
-        from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
+        from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, StochasticWeightAveraging
         from lightning.pytorch.loggers import TensorBoardLogger
         
         # 準備資料模組
@@ -283,10 +283,17 @@ class AutoTrainingSystem:
             mode='min'
         )
         
+        swa = StochasticWeightAveraging(
+        swa_lrs=[self.train_config['training']['lr'] * 0.01, self.train_config['training']['lr'] * 0.1],
+        swa_epoch_start=0.75,
+        annealing_strategy='cos'
+    )
+        
         # 建立trainer
         trainer = pl.Trainer(
+            min_epochs=self.train_config['training']['min_epochs'],
             max_epochs=self.train_config['training']['max_epochs'],
-            callbacks=[checkpoint_callback, early_stop_callback],
+            callbacks=[checkpoint_callback, early_stop_callback, swa],
             logger=TensorBoardLogger(save_dir=output_dir, name='logs'),
             accelerator='gpu' if torch.cuda.is_available() else 'cpu',
             devices=1,
