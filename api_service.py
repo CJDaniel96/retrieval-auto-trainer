@@ -339,11 +339,11 @@ def run_training_task(task_id: str, request: TrainingRequest):
         
         # 覆蓋配置（如果有提供）
         if request.max_epochs:
-            system.train_config['training']['max_epochs'] = request.max_epochs
+            system.train_config['training']['max_epochs'] = int(request.max_epochs)
         if request.batch_size:
-            system.train_config['training']['batch_size'] = request.batch_size
+            system.train_config['training']['batch_size'] = int(request.batch_size)
         if request.learning_rate:
-            system.train_config['training']['lr'] = request.learning_rate
+            system.train_config['training']['lr'] = float(request.learning_rate)
             
         # 建立輸出目錄
         output_dir = Path(request.output_dir) / f"training_{task_id}"
