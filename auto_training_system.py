@@ -388,7 +388,7 @@ class AutoTrainingSystem:
         )
         
         # 載入資料轉換
-        with open(os.path.join(output_dir, 'mean_std.json'), 'r') as f:
+        with open(os.path.join(dataset_dir, 'mean_std.json'), 'r') as f:
             stats = json.load(f)
         
         transform = build_transforms(
