@@ -276,7 +276,7 @@ class AutoTrainingSystem:
                 
             def on_train_epoch_end(self, trainer, pl_module):
                 current_epoch = trainer.current_epoch + 1
-                progress = 0.35 * (current_epoch / self.total_epochs) * 0.45
+                progress = 0.35 + (current_epoch / self.total_epochs) * 0.45
                 step_msg = f"訓練中 - Epoch {current_epoch}/{self.total_epochs}"
                 parent_self._update_progress(step_msg, progress)
         
