@@ -332,18 +332,18 @@ def run_training_task(task_id: str, request: TrainingRequest):
         # 更新狀態為執行中
         task.status = "running"
         task.current_step = "初始化訓練系統"
-        task.progress = 0.1
+        task.progress = 0.05
         
         # 建立訓練系統實例
         system = AutoTrainingSystem()
         
         # 覆蓋配置（如果有提供）
         if request.max_epochs:
-            system.train_config['training']['max_epochs'] = int(request.max_epochs)
+            system.train_config['training']['max_epochs'] = request.max_epochs
         if request.batch_size:
-            system.train_config['training']['batch_size'] = int(request.batch_size)
+            system.train_config['training']['batch_size'] = request.batch_size
         if request.learning_rate:
-            system.train_config['training']['lr'] = float(request.learning_rate)
+            system.train_config['training']['lr'] = request.learning_rate
             
         # 建立輸出目錄
         output_dir = Path(request.output_dir) / f"training_{task_id}"
@@ -352,10 +352,12 @@ def run_training_task(task_id: str, request: TrainingRequest):
         # 更新進度的回調函數
         def update_progress(step: str, progress: float):
             task.current_step = step
-            task.progress = progress
+            task.progress = min(progress, 1.0)
+            logging.info(f"任務 {task_id} 進度更新: {step} ({progress * 100:.1f}%)")
+            
+        system.set_progress_callback(update_progress)
             
         # 執行訓練流程
-        # 注意：這裡需要修改AutoTrainingSystem以支援進度回調
         system.run_full_pipeline(
             input_dir=request.input_dir,
             output_base_dir=request.output_dir,
@@ -375,6 +377,7 @@ def run_training_task(task_id: str, request: TrainingRequest):
         task.end_time = datetime.now()
         task.error_message = str(e)
         task.current_step = "訓練失敗"
+        logging.error(f"訓練任務 {task_id} 失敗: {str(e)}", exc_info=True)
         
 
 @app.post("/config/update", tags=["Configuration"])

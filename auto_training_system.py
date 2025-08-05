@@ -56,6 +56,7 @@ class AutoTrainingSystem:
         """
         self.config_path = config_path
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.progress_callback = None
         
         # 載入資料庫配置
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -66,6 +67,15 @@ class AutoTrainingSystem:
             
         with open(self.config['database_config_path'], 'r', encoding='utf-8') as f:
             self.db_configs = json.load(f)
+            
+    def set_progress_callback(self, callback):
+        """設置進度回調函數"""
+        self.progress_callback = callback
+        
+    def _update_progress(self, step: str, progress: float):
+        """更新進度"""
+        if self.progress_callback:
+            self.progress_callback(step, progress)
         
     def process_raw_images(self, input_dir: str, output_dir: str, 
                           site: str = 'HPH', line_id: str = 'HPH') -> Dict[str, int]:
@@ -251,11 +261,24 @@ class AutoTrainingSystem:
         
         # 導入訓練相關模組
         import lightning.pytorch as pl
-        from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, StochasticWeightAveraging
+        from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, StochasticWeightAveraging, Callback
         from lightning.pytorch.loggers import TensorBoardLogger
         
         # 準備資料模組
         from train import HOAMDataModule, LightningModel
+        
+        parent_self = self
+        
+        class ProgressCallback(Callback):
+            def __init__(self, total_epochs: int):
+                super().__init__()
+                self.total_epochs = total_epochs
+                
+            def on_train_epoch_end(self, trainer, pl_module):
+                current_epoch = trainer.current_epoch + 1
+                progress = 0.35 * (current_epoch / self.total_epochs) * 0.45
+                step_msg = f"訓練中 - Epoch {current_epoch}/{self.total_epochs}"
+                parent_self._update_progress(step_msg, progress)
         
         # 更新配置
         self.train_config['data']['data_dir'] = dataset_dir
@@ -289,33 +312,70 @@ class AutoTrainingSystem:
             mode='min'
         )
         
-        swa = StochasticWeightAveraging(
-        swa_lrs=[self.train_config['training']['lr'] * 0.01, self.train_config['training']['lr'] * 0.1],
-        swa_epoch_start=0.75,
-        annealing_strategy='cos'
-    )
+        callbacks = [checkpoint_callback, early_stop_callback]
         
-        # 建立trainer
-        trainer = pl.Trainer(
-            min_epochs=self.train_config['training']['min_epochs'],
-            max_epochs=self.train_config['training']['max_epochs'],
-            callbacks=[checkpoint_callback, early_stop_callback, swa],
-            logger=TensorBoardLogger(save_dir=output_dir, name='logs'),
-            accelerator='gpu' if torch.cuda.is_available() else 'cpu',
-            devices=1,
-            precision=16 if torch.cuda.is_available() else 32
-        )
+        if self.progress_callback:
+            callbacks.append(ProgressCallback(self.train_config['training']['max_epochs']))
+        
+        max_epochs = self.train_config['training']['max_epochs']
+        if max_epochs > 10:
+            swa_epoch_start = int(max_epochs * 0.75)
+            swa = StochasticWeightAveraging(
+                swa_lrs=self.train_config['training']['lr'] * 0.05,
+                swa_epoch_start=swa_epoch_start,
+                annealing_epochs=min(5, max_epochs - swa_epoch_start),
+                annealing_strategy='cos',
+                device=None
+            )
+            callbacks.append(swa)
+            
+        trainer_kwargs = {
+            'min_epochs': self.train_config['training'].get('min_epochs', 0),
+            'max_epochs': max_epochs,
+            'callbacks': callbacks,
+            'logger': TensorBoardLogger(save_dir=output_dir, name='logs'),
+            'accelerator': 'gpu' if torch.cuda.is_available() else 'cpu',
+            'devices': 1,
+            'gradient_clip_val': 1.0,
+            'accumulate_grad_batches': 1,
+            'enable_model_summary': True,
+            'enable_progress_bar': True,
+            'detect_anomaly': True,
+            'log_every_n_steps': 50
+        }
+        
+        if torch.cuda.is_available():
+            trainer_kwargs['precision'] = '16-mixed'
+        else:
+            trainer_kwargs['precision'] = 32
+            
+        trainer = pl.Trainer(**trainer_kwargs)
         
         # 開始訓練
-        trainer.fit(model, datamodule=data_module)
+        try:
+            trainer.fit(model, datamodule=data_module)
+        except Exception as e:
+            logger.error(f"訓練過程中發生錯誤: {str(e)}")
+            if "inf checks" in str(e):
+                logger.info("偵測到 inf checks 錯誤，嘗試使用替代配置...")
+                
+                trainer_kwargs['callbacks'] = [checkpoint_callback, early_stop_callback]
+                trainer_kwargs['precision'] = 32
+                
+                trainer = pl.Trainer(**trainer_kwargs)
+                trainer.fit(model, datamodule=data_module)
         
         # 儲存最終模型
         best_model_path = checkpoint_callback.best_model_path
         final_model_path = os.path.join(output_dir, 'best_model.pt')
         
         # 載入最佳檢查點並儲存模型權重
-        best_model = LightningModel.load_from_checkpoint(best_model_path)
-        torch.save(best_model.model.state_dict(), final_model_path)
+        if best_model_path and os.path.exists(best_model_path):
+            best_model = LightningModel.load_from_checkpoint(best_model_path)
+            torch.save(best_model.model.state_dict(), final_model_path)
+        else:
+            logger.warning("找不到最佳模型檢查點，儲存當前模型權重")
+            torch.save(model.model.state_dict(), final_model_path)
         
         # 儲存配置
         with open(os.path.join(output_dir, 'train_config.json'), 'w') as f:
@@ -551,28 +611,40 @@ class AutoTrainingSystem:
         try:
             # 1. 處理原始影像
             logger.info("[步驟 1/5] 處理原始影像資料")
+            self._update_progress("處理原始影像資料", 0.1)
             class_stats = self.process_raw_images(input_dir, str(raw_data_dir), site, line_id)
+            self._update_progress("處理原始影像完成", 0.2)
             
             # 2. 準備資料集
             logger.info("[步驟 2/5] 準備訓練資料集")
+            self._update_progress("準備訓練資料集", 0.25)
             self.prepare_dataset(str(raw_data_dir), str(dataset_dir), 
                                self.train_config['data']['test_split'])
+            self._update_progress("資料集準備完成", 0.3)
             
             # 3. 訓練模型
             logger.info("[步驟 3/5] 訓練模型")
+            self._update_progress("開始訓練模型", 0.35)
             model_path = self.train_model(str(dataset_dir), str(model_dir))
+            self._update_progress("模型訓練完成", 0.8)
             
             # 4. 生成Golden Samples
             logger.info("[步驟 4/5] 生成Golden Samples")
+            self._update_progress("生成Golden Samples", 0.82)
             golden_samples = self.generate_golden_samples(str(dataset_dir), str(results_dir))
+            self._update_progress("Golden Samples生成完成", 0.85)
             
             # 5. 評估模型
             logger.info("[步驟 5/5] 評估模型效能")
+            self._update_progress("評估模型效能", 0.9)
             eval_results = self.evaluate_model(model_path, str(dataset_dir), 
                                              golden_samples, str(results_dir))
+            self._update_progress("評估完成", 0.95)
             
             # 生成總結報告
+            self._update_progress("生成總結報告", 0.98)
             self._generate_summary_report(output_dir, class_stats, eval_results)
+            self._update_progress("訓練完成", 1.0)
             
             logger.info("\n" + "=" * 50)
             logger.info("自動訓練完成！")
