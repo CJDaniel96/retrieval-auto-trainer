@@ -8,6 +8,9 @@
     <!-- Local Font Awesome -->
     <link rel="stylesheet" href="/static/css/all.min.css">
     
+    <!-- i18n JavaScript -->
+    <script src="/static/js/i18n.js"></script>
+    
     <style>
         :root {
             --primary: #667eea;
@@ -273,18 +276,18 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-compass"></i> 影像方向確認</h1>
-            <p>請為每個類別選擇正確的影像方向，這將用於後續的資料增強</p>
+            <h1><i class="fas fa-compass"></i> <span data-i18n="orientation.title">影像方向確認</span></h1>
+            <p data-i18n="orientation.description">請為每個類別選擇正確的影像方向，這將用於後續的資料增強</p>
         </div>
 
         <div class="task-info">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong>任務ID:</strong> <span id="task-id"></span>
+                    <strong data-i18n="orientation.task_id">任務ID:</strong> <span id="task-id"></span>
                 </div>
                 <div>
                     <button onclick="window.location.href='/'" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> 返回主頁
+                        <i class="fas fa-arrow-left"></i> <span data-i18n="orientation.return_home">返回主頁</span>
                     </button>
                 </div>
             </div>

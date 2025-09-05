@@ -7,6 +7,9 @@
 
     <!-- Local Font Awesome -->
     <link rel="stylesheet" href="/static/css/all.min.css" />
+    
+    <!-- i18n JavaScript -->
+    <script src="/static/js/i18n.js"></script>
 
     <!-- Local Google Fonts -->
     <style>
@@ -1007,28 +1010,209 @@
         background: rgba(245, 101, 101, 0.2);
         border-color: rgba(245, 101, 101, 0.5);
       }
+
+      /* Dark Mode Text Color Overrides */
+      body.dark-mode,
+      body.dark-mode * {
+        color: var(--light) !important;
+      }
+
+      body.dark-mode .card h2,
+      body.dark-mode .form-label,
+      body.dark-mode .task-id,
+      body.dark-mode .stat-value,
+      body.dark-mode .stat-label,
+      body.dark-mode .progress-step,
+      body.dark-mode .progress-percent,
+      body.dark-mode .class-name,
+      body.dark-mode .sample-count,
+      body.dark-mode .progress-text {
+        color: var(--light) !important;
+      }
+
+      body.dark-mode .logo,
+      body.dark-mode .card-header h2 {
+        color: var(--primary) !important;
+      }
+
+      body.dark-mode input,
+      body.dark-mode select,
+      body.dark-mode textarea {
+        color: var(--light) !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+      }
+
+      body.dark-mode input::placeholder,
+      body.dark-mode select::placeholder,
+      body.dark-mode textarea::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+      }
+
+      body.dark-mode .btn-secondary {
+        color: var(--light) !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+      }
+
+      body.dark-mode .empty-state p {
+        color: rgba(255, 255, 255, 0.7) !important;
+      }
+
+      /* Language Selector */
+      .language-selector {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        z-index: 1001;
+      }
+
+      .language-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .language-btn {
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid var(--gray-light);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 2px 10px var(--shadow);
+      }
+
+      .language-btn:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px var(--shadow);
+      }
+
+      .language-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid var(--gray-light);
+        border-radius: 12px;
+        margin-top: 0.5rem;
+        min-width: 150px;
+        box-shadow: 0 5px 20px var(--shadow);
+        backdrop-filter: blur(10px);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+      }
+
+      .language-dropdown.active .language-dropdown-menu {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .language-option {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+      }
+
+      .language-option:hover {
+        background: rgba(102, 126, 234, 0.1);
+        color: var(--primary);
+      }
+
+      .language-option.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      .language-option:first-child {
+        border-radius: 10px 10px 0 0;
+      }
+
+      .language-option:last-child {
+        border-radius: 0 0 10px 10px;
+      }
+
+      /* Dark mode language selector */
+      body.dark-mode .language-btn {
+        background: rgba(42, 42, 62, 0.95) !important;
+        color: var(--light) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+      }
+
+      body.dark-mode .language-dropdown-menu {
+        background: rgba(42, 42, 62, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+      }
+
+      body.dark-mode .language-option {
+        color: var(--light) !important;
+      }
+
+      body.dark-mode .language-option:hover {
+        background: rgba(102, 126, 234, 0.2) !important;
+      }
     </style>
   </head>
   <body>
+    <!-- Language Selector -->
+    <div class="language-selector">
+      <div class="language-dropdown" id="language-dropdown">
+        <button class="language-btn" onclick="toggleLanguageDropdown()">
+          <i class="fas fa-globe"></i>
+          <span id="current-language-display">繁體中文</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="language-dropdown-menu">
+          <button class="language-option" onclick="changeLanguage('zh-TW')">
+            🇹🇼 繁體中文
+          </button>
+          <button class="language-option" onclick="changeLanguage('zh-CN')">
+            🇨🇳 简体中文
+          </button>
+          <button class="language-option" onclick="changeLanguage('en')">
+            🇺🇸 English
+          </button>
+          <button class="language-option" onclick="changeLanguage('vi')">
+            🇻🇳 Tiếng Việt
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <header>
       <div class="header-content">
         <div class="logo">
           <i class="fas fa-robot"></i>
-          <span>AI Training System</span>
+          <span data-i18n="app.title">AI Training System</span>
         </div>
 
         <div class="header-stats">
           <div class="stat-item">
             <div class="stat-value" id="total-tasks">0</div>
-            <div class="stat-label">總任務數</div>
+            <div class="stat-label" data-i18n="header.total_tasks">總任務數</div>
           </div>
           <div class="stat-item">
             <div class="stat-value" id="active-tasks">0</div>
-            <div class="stat-label">執行中</div>
+            <div class="stat-label" data-i18n="header.active_tasks">執行中</div>
           </div>
           <div class="stat-item">
             <div class="stat-value" id="success-rate">0%</div>
-            <div class="stat-label">成功率</div>
+            <div class="stat-label" data-i18n="header.success_rate">成功率</div>
           </div>
         </div>
       </div>
@@ -1038,15 +1222,15 @@
       <div class="tabs-container">
         <button class="tab active" onclick="showTab('new-training')">
           <i class="fas fa-plus-circle"></i>
-          新增訓練
+          <span data-i18n="tab.new_training">新增訓練</span>
         </button>
         <button class="tab" onclick="showTab('task-list')">
           <i class="fas fa-list"></i>
-          任務列表
+          <span data-i18n="tab.task_list">任務列表</span>
         </button>
         <button class="tab" onclick="showTab('settings')">
           <i class="fas fa-cog"></i>
-          系統設定
+          <span data-i18n="tab.settings">系統設定</span>
         </button>
       </div>
 
@@ -1057,7 +1241,7 @@
             <div class="card-icon">
               <i class="fas fa-rocket"></i>
             </div>
-            <h2>啟動新的訓練任務</h2>
+            <h2 data-i18n="form.start_new_training">啟動新的訓練任務</h2>
           </div>
 
           <div id="alert-container"></div>
@@ -1067,13 +1251,14 @@
               <div class="form-group">
                 <label class="form-label" for="input-dir">
                   <i class="fas fa-folder-open"></i>
-                  輸入資料夾路徑
+                  <span data-i18n="form.input_dir">輸入資料夾路徑</span>
                 </label>
                 <input
                   type="text"
                   id="input-dir"
                   name="input_dir"
                   class="form-control"
+                  data-i18n="form.input_dir_placeholder"
                   placeholder="/path/to/input/folder"
                   required
                 />
@@ -1082,13 +1267,14 @@
               <div class="form-group">
                 <label class="form-label" for="output-dir">
                   <i class="fas fa-save"></i>
-                  輸出資料夾路徑
+                  <span data-i18n="form.output_dir">輸出資料夾路徑</span>
                 </label>
                 <input
                   type="text"
                   id="output-dir"
                   name="output_dir"
                   class="form-control"
+                  data-i18n="form.output_dir_placeholder"
                   placeholder="/path/to/output/folder"
                   required
                 />
@@ -1097,7 +1283,7 @@
               <div class="form-group">
                 <label class="form-label" for="site">
                   <i class="fas fa-map-marker-alt"></i>
-                  地區名稱
+                  <span data-i18n="form.site">地區名稱</span>
                 </label>
                 <select id="site" name="site" class="form-control">
                   <option value="HPH">HPH</option>
@@ -1111,7 +1297,7 @@
               <div class="form-group">
                 <label class="form-label" for="line_id">
                   <i class="fas fa-industry"></i>
-                  產線ID
+                  <span data-i18n="form.line_id">產線ID</span>
                 </label>
                 <input
                   type="text"
@@ -1558,14 +1744,7 @@
 
       // 獲取狀態文字
       function getStatusText(status) {
-        const texts = {
-          pending: "等待中",
-          pending_orientation: "等待方向確認",
-          running: "執行中",
-          completed: "已完成",
-          failed: "失敗",
-        };
-        return texts[status] || status;
+        return window.i18n.t(`status.${status}`, status);
       }
 
       // 更新統計數據
@@ -1746,8 +1925,54 @@
         }
       }
 
+      // Language functions
+      function toggleLanguageDropdown() {
+        const dropdown = document.getElementById('language-dropdown');
+        dropdown.classList.toggle('active');
+      }
+
+      function changeLanguage(langCode) {
+        window.i18n.setLanguage(langCode);
+        updateLanguageDisplay();
+        toggleLanguageDropdown();
+        
+        // Update dynamic content that uses getStatusText
+        if (document.getElementById("task-list").classList.contains("active")) {
+          refreshTaskList();
+        }
+      }
+
+      function updateLanguageDisplay() {
+        const languages = {
+          'zh-TW': '繁體中文',
+          'zh-CN': '简体中文', 
+          'en': 'English',
+          'vi': 'Tiếng Việt'
+        };
+        document.getElementById('current-language-display').textContent = 
+          languages[window.i18n.getCurrentLanguage()];
+        
+        // Update active language option
+        document.querySelectorAll('.language-option').forEach(option => {
+          option.classList.remove('active');
+        });
+        document.querySelector(`[onclick="changeLanguage('${window.i18n.getCurrentLanguage()}')"]`)
+          ?.classList.add('active');
+      }
+
+      // Close language dropdown when clicking outside
+      document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('language-dropdown');
+        if (dropdown && !dropdown.contains(event.target)) {
+          dropdown.classList.remove('active');
+        }
+      });
+
       // 初始化
       document.addEventListener("DOMContentLoaded", () => {
+        // Initialize language display
+        updateLanguageDisplay();
+        
         // 載入主題設定
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme === "dark") {
@@ -1769,7 +1994,7 @@
             console.log("API連線正常:", data);
           })
           .catch((error) => {
-            showAlert(`無法連線到API伺服器: ${error.message}`);
+            showAlert(window.i18n.t('msg.api_connection_failed', '無法連線到API伺服器') + ': ' + error.message);
           });
 
         // 初始載入任務列表
