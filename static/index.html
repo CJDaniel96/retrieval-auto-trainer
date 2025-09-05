@@ -6,37 +6,37 @@
     <title>AI 自動化訓練系統</title>
 
     <!-- Local Font Awesome -->
-    <link rel="stylesheet" href="css/all.min.css" />
+    <link rel="stylesheet" href="/static/css/all.min.css" />
 
     <!-- Local Google Fonts -->
     <style>
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter_24pt-Light.ttf") format("truetype");
+        src: url("/static/fonts/Inter_24pt-Light.ttf") format("truetype");
         font-weight: 300;
         font-style: normal;
       }
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter_24pt-Regular.ttf") format("truetype");
+        src: url("/static/fonts/Inter_24pt-Regular.ttf") format("truetype");
         font-weight: 400;
         font-style: normal;
       }
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter_24pt-Medium.ttf") format("truetype");
+        src: url("/static/fonts/Inter_24pt-Medium.ttf") format("truetype");
         font-weight: 500;
         font-style: normal;
       }
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter_24pt-SemiBold.ttf") format("truetype");
+        src: url("/static/fonts/Inter_24pt-SemiBold.ttf") format("truetype");
         font-weight: 600;
         font-style: normal;
       }
       @font-face {
         font-family: "Inter";
-        src: url("fonts/Inter_24pt-Bold.ttf") format("truetype");
+        src: url("/static/fonts/Inter_24pt-Bold.ttf") format("truetype");
         font-weight: 700;
         font-style: normal;
       }
@@ -925,6 +925,87 @@
 
       .task-item.new {
         animation: newTask 0.5s ease;
+      }
+
+      /* Dark Mode Styles */
+      body.dark-mode {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: var(--light);
+      }
+
+      body.dark-mode header {
+        background: rgba(42, 42, 62, 0.95);
+      }
+
+      body.dark-mode .card {
+        background: rgba(42, 42, 62, 0.95);
+        color: var(--light);
+      }
+
+      body.dark-mode .tabs-container {
+        background: rgba(42, 42, 62, 0.9);
+      }
+
+      body.dark-mode .tab {
+        color: var(--gray);
+      }
+
+      body.dark-mode .tab.active {
+        color: white;
+      }
+
+      body.dark-mode .form-control {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: var(--light);
+      }
+
+      body.dark-mode .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      body.dark-mode .form-control:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: var(--primary);
+      }
+
+      body.dark-mode .task-item {
+        background: rgba(42, 42, 62, 0.8);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: var(--light);
+      }
+
+      body.dark-mode .task-item:hover {
+        background: rgba(42, 42, 62, 0.9);
+        border-color: var(--primary);
+      }
+
+      body.dark-mode .advanced-settings {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      body.dark-mode .advanced-toggle:hover {
+        background: rgba(102, 126, 234, 0.2);
+      }
+
+      body.dark-mode .config-display {
+        background: #1e1e1e;
+        color: #d4d4d4;
+      }
+
+      body.dark-mode .task-info {
+        background: rgba(42, 42, 62, 0.95);
+        color: var(--light);
+      }
+
+      body.dark-mode .alert.success {
+        background: rgba(72, 187, 120, 0.2);
+        border-color: rgba(72, 187, 120, 0.5);
+      }
+
+      body.dark-mode .alert.error {
+        background: rgba(245, 101, 101, 0.2);
+        border-color: rgba(245, 101, 101, 0.5);
       }
     </style>
   </head>

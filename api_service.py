@@ -106,17 +106,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 掛載靜態檔案
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 @app.get("/", response_class=FileResponse, tags=["UI"])
 async def web_ui():
     return FileResponse("static/index.html")
 
 
-@app.get("/static/orientation.html", response_class=FileResponse, tags=["UI"])
-async def orientation_ui():
-    return FileResponse("static/orientation.html")
+@app.get("/favicon.ico", response_class=FileResponse, tags=["UI"])
+async def favicon():
+    # Return a simple response for favicon to avoid 404 errors
+    return FileResponse("static/favicon.ico", status_code=200) if Path("static/favicon.ico").exists() else JSONResponse({"status": "no favicon"}, status_code=404)
+
+
+# 掛載靜態檔案 - 這必須在所有具體路由之後
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 
 @app.get("/health", tags=["Health"])
