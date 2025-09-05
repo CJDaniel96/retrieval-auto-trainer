@@ -20,8 +20,8 @@ import shutil
 import argparse
 from tqdm import tqdm
 from pathlib import Path
-from database.sessions import create_session
-from database.amr_info import AmrRawData
+from ..database.sessions import create_session
+from ..database.amr_info import AmrRawData
  
  
 def parse_args():

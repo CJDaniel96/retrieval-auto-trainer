@@ -24,10 +24,10 @@ import torch
 import torch.nn as nn
 
 # 導入現有模組
-from database.sessions import create_session
-from database.amr_info import AmrRawData
-from data.transforms import build_transforms
-from utils import load_model
+from ..services.database.sessions import create_session
+from ..services.database.amr_info import AmrRawData
+from ..services.data.transforms import build_transforms
+from ..services.utils import load_model
 
 # 設定日誌
 logging.basicConfig(

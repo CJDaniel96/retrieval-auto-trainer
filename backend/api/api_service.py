@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
-from auto_training_system import AutoTrainingSystem
+from ..core.auto_training_system import AutoTrainingSystem
 
 
 # Pydantic模型定義
@@ -636,7 +636,7 @@ async def general_exception_handler(request, exc):
 if __name__ == "__main__":
     # 啟動服務
     uvicorn.run(
-        "api_service:app",
+        "backend.api.api_service:app",
         host="0.0.0.0",
         port=8000,
         reload=True,

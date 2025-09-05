@@ -23,14 +23,14 @@ pip install -r requirements.txt
 ### Running the System
 ```bash
 # CLI interface (main entry point)
-python main.py --input-dir /path/to/input --output-dir /path/to/output --site HPH --line-id V31
+python -m backend.main --input-dir /path/to/input --output-dir /path/to/output --site HPH --line-id V31
 
 # API service
-python api_service.py
+python -m backend.api_service
 # API runs on http://localhost:8000 with web UI
 
 # Direct training module (with Hydra config)
-python train.py
+python -m backend.train
 ```
 
 ### Testing
@@ -43,25 +43,25 @@ python -m pytest  # if pytest is available
 
 ### Core Components
 
-1. **AutoTrainingSystem** (`auto_training_system.py`): Main orchestrator class that runs the full pipeline:
+1. **AutoTrainingSystem** (`backend/core/auto_training_system.py`): Main orchestrator class that runs the full pipeline:
    - Image processing with database queries
    - Dataset preparation 
    - Model training coordination
    - Evaluation and golden sample generation
 
-2. **API Service** (`api_service.py`): FastAPI-based REST API with:
+2. **API Service** (`backend/api/api_service.py`): FastAPI-based REST API with:
    - Asynchronous training task management
    - Web UI for monitoring progress
    - File download endpoints
 
-3. **Training Module** (`train.py`): PyTorch Lightning implementation with:
+3. **Training Module** (`backend/train.py`): PyTorch Lightning implementation with:
    - `HOAMDataModule`: Data loading with automatic mean/std calculation
    - `LightningModel`: Training logic with multiple loss functions
    - Hydra configuration management
 
 ### Model Architecture
 
-- **HOAM/HOAMV2** models (`models/hoam.py`) using EfficientNetV2 backbones
+- **HOAM/HOAMV2** models (`backend/services/models/hoam.py`) using EfficientNetV2 backbones
 - **Orthogonal fusion** of local and global features
 - **Multiple loss functions** including HybridMarginLoss, ArcFaceLoss
 - **Metric learning** approach for image retrieval

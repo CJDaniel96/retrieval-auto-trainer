@@ -17,11 +17,11 @@ import lightning.pytorch as pl
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping, StochasticWeightAveraging
  
-from models.hoam import HOAM, HOAMV2
-from losses.hybrid_margin import HybridMarginLoss
+from .services.models.hoam import HOAM, HOAMV2
+from .services.losses.hybrid_margin import HybridMarginLoss
 from pytorch_metric_learning.losses import SubCenterArcFaceLoss, ArcFaceLoss
-from data.transforms import build_transforms
-from data.statistics import DataStatistics
+from .services.data.transforms import build_transforms
+from .services.data.statistics import DataStatistics
  
 # Dynamically set float32 matmul precision to leverage Tensor Cores when available
 if torch.cuda.is_available():

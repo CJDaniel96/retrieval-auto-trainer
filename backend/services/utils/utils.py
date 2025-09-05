@@ -1,6 +1,6 @@
 import torch
 from typing import List, Type
-from models import HOAM, HOAMV2
+from ..models import HOAM, HOAMV2
  
  
 def load_model(
