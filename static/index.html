@@ -1206,8 +1206,15 @@
         // 顯示選中的tab
         document.getElementById(tabName).classList.add("active");
 
-        // 設置active tab
-        event.target.classList.add("active");
+        // 設置active tab - 根據tabName找到對應的tab按鈕
+        const tabButtons = document.querySelectorAll(".tab");
+        if (tabName === "new-training") {
+          tabButtons[0].classList.add("active");
+        } else if (tabName === "task-list") {
+          tabButtons[1].classList.add("active");
+        } else if (tabName === "settings") {
+          tabButtons[2].classList.add("active");
+        }
 
         // 根據tab執行相應動作
         if (tabName === "task-list") {
@@ -1362,6 +1369,16 @@
                                     <i class="fas fa-info-circle"></i>
                                 </button>
                                 ${
+                                  task.status === "pending_orientation"
+                                    ? `
+                                    <button onclick="window.open('/static/orientation.html?task_id=${task.task_id}', '_blank')" 
+                                            class="btn btn-warning" style="padding: 0.5rem 1rem; background: var(--warning); color: white;">
+                                        <i class="fas fa-compass"></i>
+                                    </button>
+                                `
+                                    : ""
+                                }
+                                ${
                                   task.status === "completed"
                                     ? `
                                     <button onclick="downloadResult('${task.task_id}', 'model')" 
@@ -1450,6 +1467,7 @@
       function getStatusIcon(status) {
         const icons = {
           pending: "hourglass-half",
+          pending_orientation: "compass",
           running: "spinner fa-spin",
           completed: "check-circle",
           failed: "times-circle",
@@ -1461,6 +1479,7 @@
       function getStatusText(status) {
         const texts = {
           pending: "等待中",
+          pending_orientation: "等待方向確認",
           running: "執行中",
           completed: "已完成",
           failed: "失敗",
@@ -1471,7 +1490,7 @@
       // 更新統計數據
       function updateStats(tasks) {
         stats.total = tasks.length;
-        stats.active = tasks.filter((t) => t.status === "running").length;
+        stats.active = tasks.filter((t) => t.status === "running" || t.status === "pending_orientation").length;
         stats.completed = tasks.filter((t) => t.status === "completed").length;
         stats.failed = tasks.filter((t) => t.status === "failed").length;
 
@@ -1653,6 +1672,13 @@
         if (savedTheme === "dark") {
           document.body.classList.add("dark-mode");
           document.getElementById("theme-icon").className = "fas fa-sun";
+        }
+
+        // 檢查URL參數是否指定了tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialTab = urlParams.get('tab');
+        if (initialTab) {
+          showTab(initialTab);
         }
 
         // 檢查API連線

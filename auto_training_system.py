@@ -12,6 +12,8 @@ import random
 import logging
 import argparse
 import pandas as pd
+import cv2
+import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from datetime import datetime
@@ -203,14 +205,14 @@ class AutoTrainingSystem:
         
     def prepare_dataset(self, raw_data_dir: str, dataset_dir: str, test_split: float = 0.1) -> None:
         """
-        準備訓練資料集（分割train/val）
+        準備訓練資料集（分割train/val） - 舊版本，保留向後相容性
         
         Args:
             raw_data_dir: 分類好的原始資料目錄
             dataset_dir: 輸出的資料集目錄
             test_split: 驗證集比例
         """
-        logger.info("開始準備訓練資料集")
+        logger.warning("使用舊版本的 prepare_dataset，建議使用新的 prepare_final_dataset")
         
         train_dir = Path(dataset_dir) / 'train'
         val_dir = Path(dataset_dir) / 'val'
@@ -525,6 +527,220 @@ class AutoTrainingSystem:
             features = model(img_tensor)
             
         return features.squeeze(0).cpu()
+        
+    def process_orientations(self, raw_data_dir: str, output_dir: str, 
+                           orientations: Dict[str, str]) -> None:
+        """
+        根據用戶確認的方向，將影像移動到對應的方向資料夾
+        
+        Args:
+            raw_data_dir: 原始分類資料目錄（按product_comp分類）
+            output_dir: 輸出目錄（按方向分類）
+            orientations: 類別名稱到方向的映射
+        """
+        logger.info("開始處理方向分類")
+        
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # 建立方向資料夾
+        orientation_dirs = {}
+        for orientation in ['Up', 'Down', 'Left', 'Right']:
+            orientation_dir = output_path / orientation
+            orientation_dir.mkdir(exist_ok=True)
+            orientation_dirs[orientation] = orientation_dir
+        
+        # 處理NG資料夾（直接複製）
+        ng_source = Path(raw_data_dir) / 'NG'
+        if ng_source.exists():
+            ng_target = output_path / 'NG'
+            if ng_source != ng_target:
+                shutil.copytree(str(ng_source), str(ng_target), dirs_exist_ok=True)
+        
+        # 處理各個product_comp類別
+        for class_dir in Path(raw_data_dir).iterdir():
+            if not class_dir.is_dir() or class_dir.name == 'NG':
+                continue
+                
+            class_name = class_dir.name
+            if class_name not in orientations:
+                logger.warning(f"類別 {class_name} 沒有方向確認，跳過")
+                continue
+                
+            orientation = orientations[class_name]
+            if orientation not in orientation_dirs:
+                logger.warning(f"無效的方向 {orientation}，跳過類別 {class_name}")
+                continue
+                
+            # 移動所有影像到對應方向資料夾
+            target_dir = orientation_dirs[orientation]
+            images = list(class_dir.glob('*.jp*'))
+            
+            logger.info(f"移動 {len(images)} 張影像從 {class_name} 到 {orientation}")
+            
+            for img in images:
+                # 保留原始檔名，避免衝突可以加上類別前綴
+                target_name = f"{class_name}_{img.name}"
+                target_path = target_dir / target_name
+                shutil.copy2(str(img), str(target_path))
+        
+        logger.info("方向分類完成")
+        
+    def apply_rotation_augmentation(self, oriented_data_dir: str) -> None:
+        """
+        對方向資料夾中的影像進行旋轉增強
+        
+        Args:
+            oriented_data_dir: 按方向分類的資料目錄
+        """
+        logger.info("開始執行旋轉增強")
+        
+        # 定義旋轉映射關係（順時針旋轉）
+        rotation_mapping = {
+            # 原始方向 -> {旋轉角度: 目標方向}
+            'Up': {90: 'Right', 180: 'Down', 270: 'Left'},
+            'Right': {90: 'Down', 180: 'Left', 270: 'Up'},
+            'Down': {90: 'Left', 180: 'Up', 270: 'Right'},
+            'Left': {90: 'Up', 180: 'Right', 270: 'Down'}
+        }
+        
+        data_path = Path(oriented_data_dir)
+        
+        # 遍歷每個方向資料夾
+        for orientation in ['Up', 'Down', 'Left', 'Right']:
+            source_dir = data_path / orientation
+            if not source_dir.exists():
+                continue
+                
+            images = list(source_dir.glob('*.jp*'))
+            logger.info(f"對 {orientation} 資料夾中的 {len(images)} 張影像進行旋轉增強")
+            
+            for img_path in tqdm(images, desc=f"旋轉 {orientation} 影像"):
+                try:
+                    # 載入影像
+                    image = cv2.imread(str(img_path))
+                    if image is None:
+                        logger.warning(f"無法讀取影像: {img_path}")
+                        continue
+                    
+                    # 對每個旋轉角度生成新影像
+                    for angle, target_orientation in rotation_mapping[orientation].items():
+                        # 執行旋轉
+                        rotated_image = self._rotate_image(image, angle)
+                        
+                        # 確保目標資料夾存在
+                        target_dir = data_path / target_orientation
+                        target_dir.mkdir(exist_ok=True)
+                        
+                        # 生成新檔名（避免重複）
+                        base_name = img_path.stem
+                        ext = img_path.suffix
+                        new_name = f"{base_name}_rot{angle}{ext}"
+                        target_path = target_dir / new_name
+                        
+                        # 儲存旋轉後的影像
+                        cv2.imwrite(str(target_path), rotated_image)
+                        
+                except Exception as e:
+                    logger.error(f"旋轉影像時發生錯誤 {img_path}: {str(e)}")
+        
+        logger.info("旋轉增強完成")
+        
+    def _rotate_image(self, image: np.ndarray, angle: int) -> np.ndarray:
+        """
+        旋轉影像
+        
+        Args:
+            image: 輸入影像
+            angle: 旋轉角度（順時針，90的倍數）
+            
+        Returns:
+            旋轉後的影像
+        """
+        if angle == 90:
+            return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+        elif angle == 180:
+            return cv2.rotate(image, cv2.ROTATE_180)
+        elif angle == 270:
+            return cv2.rotate(image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        else:
+            return image
+    
+    def prepare_final_dataset(self, oriented_data_dir: str, dataset_dir: str, 
+                            test_split: float = 0.1) -> None:
+        """
+        準備最終訓練資料集（針對方向資料夾：Up, Down, Left, Right, NG）
+        
+        Args:
+            oriented_data_dir: 按方向分類並增強後的資料目錄
+            dataset_dir: 輸出的資料集目錄
+            test_split: 驗證集比例
+        """
+        logger.info("開始準備最終訓練資料集")
+        
+        dataset_path = Path(dataset_dir)
+        train_dir = dataset_path / 'train'
+        val_dir = dataset_path / 'val'
+        
+        # 建立train/val目錄
+        train_dir.mkdir(parents=True, exist_ok=True)
+        val_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 處理五個資料夾：Up, Down, Left, Right, NG
+        orientations = ['Up', 'Down', 'Left', 'Right', 'NG']
+        
+        for orientation in orientations:
+            source_dir = Path(oriented_data_dir) / orientation
+            if not source_dir.exists():
+                logger.warning(f"方向資料夾不存在: {orientation}")
+                continue
+                
+            # 取得該方向的所有影像
+            images = list(source_dir.glob('*.jp*'))
+            if len(images) == 0:
+                logger.warning(f"方向資料夾 {orientation} 沒有影像，跳過")
+                continue
+                
+            logger.info(f"處理方向 {orientation}: {len(images)} 張影像")
+            
+            # 隨機分割train/val
+            random.shuffle(images)
+            if len(images) >= 2:
+                split_idx = max(1, int(len(images) * (1 - test_split)))
+                train_images = images[:split_idx]
+                val_images = images[split_idx:]
+            else:
+                # 如果影像數量少於2張，全部放入train
+                train_images = images
+                val_images = []
+            
+            # 建立目標資料夾
+            train_orientation_dir = train_dir / orientation
+            val_orientation_dir = val_dir / orientation
+            train_orientation_dir.mkdir(exist_ok=True)
+            val_orientation_dir.mkdir(exist_ok=True)
+            
+            # 複製影像
+            for img in train_images:
+                shutil.copy2(str(img), str(train_orientation_dir / img.name))
+            for img in val_images:
+                shutil.copy2(str(img), str(val_orientation_dir / img.name))
+                
+            logger.info(f"方向 {orientation}: Train {len(train_images)}, Val {len(val_images)}")
+        
+        # 計算並儲存資料集統計資訊
+        from data.statistics import DataStatistics
+        try:
+            mean, std = DataStatistics.get_mean_std(
+                dataset_path,
+                self.train_config['data']['image_size'],
+                cache_file="mean_std.json"
+            )
+            logger.info(f"資料集統計完成 - Mean: {mean}, Std: {std}")
+        except Exception as e:
+            logger.error(f"計算資料集統計時發生錯誤: {str(e)}")
+        
+        logger.info(f"最終資料集準備完成: {dataset_dir}")
         
     def _generate_evaluation_plots(self, df_results: pd.DataFrame, output_dir: str) -> None:
         """生成評估結果的視覺化圖表"""

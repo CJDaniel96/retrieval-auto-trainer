@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方向確認 - AI 自動化訓練系統</title>
+    
+    <!-- Local Font Awesome -->
+    <link rel="stylesheet" href="css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary: #48bb78;
+            --danger: #f56565;
+            --warning: #ed8936;
+            --info: #4299e1;
+            --dark: #2d3748;
+            --light: #f7fafc;
+            --gray: #718096;
+            --gray-light: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--gray);
+            font-size: 1.125rem;
+        }
+
+        .task-info {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px var(--shadow);
+        }
+
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .class-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px var(--shadow);
+        }
+
+        .class-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .class-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .sample-count {
+            color: var(--gray);
+            font-size: 0.875rem;
+        }
+
+        .image-samples {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sample-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid var(--gray-light);
+            transition: all 0.3s ease;
+        }
+
+        .sample-image:hover {
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .orientation-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .orientation-btn {
+            padding: 1rem;
+            border: 2px solid var(--gray-light);
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .orientation-btn:hover {
+            border-color: var(--primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .orientation-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .orientation-btn i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .submit-section {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 20px var(--shadow);
+            text-align: center;
+        }
+
+        .progress-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-text {
+            color: var(--gray);
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-light);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--gray-light);
+            color: var(--dark);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert.success {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        .alert.error {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 4rem;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-compass"></i> 影像方向確認</h1>
+            <p>請為每個類別選擇正確的影像方向，這將用於後續的資料增強</p>
+        </div>
+
+        <div class="task-info">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>任務ID:</strong> <span id="task-id"></span>
+                </div>
+                <div>
+                    <button onclick="window.location.href='/'" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回主頁
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="alert-container"></div>
+        
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner"></i>
+            <p>載入樣本影像中...</p>
+        </div>
+
+        <div id="orientation-container" style="display: none;">
+            <div id="class-grid" class="class-grid"></div>
+
+            <div class="submit-section">
+                <div class="progress-info">
+                    <div class="progress-text">
+                        已確認 <span id="confirmed-count">0</span> / <span id="total-count">0</span> 個類別
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <button id="submit-btn" class="btn btn-primary" onclick="submitOrientations()" disabled>
+                    <i class="fas fa-check"></i> 確認所有方向並開始訓練
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let API_URL = localStorage.getItem("api_url") || "http://localhost:8000";
+        let taskId = new URLSearchParams(window.location.search).get('task_id');
+        let samples = [];
+        let orientations = {};
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!taskId) {
+                showAlert('錯誤：未提供任務ID', 'error');
+                return;
+            }
+
+            document.getElementById('task-id').textContent = taskId;
+            loadSamples();
+        });
+
+        // 載入樣本影像
+        async function loadSamples() {
+            try {
+                const response = await fetch(`${API_URL}/orientation/samples/${taskId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                samples = await response.json();
+                renderSamples();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('orientation-container').style.display = 'block';
+                
+            } catch (error) {
+                showAlert(`載入樣本失敗: ${error.message}`, 'error');
+                document.getElementById('loading').innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i>
+                    <p style="color: var(--danger);">載入失敗: ${error.message}</p>
+                    <button onclick="loadSamples()" class="btn btn-primary">重試</button>
+                `;
+            }
+        }
+
+        // 渲染樣本
+        function renderSamples() {
+            const container = document.getElementById('class-grid');
+            document.getElementById('total-count').textContent = samples.length;
+
+            container.innerHTML = samples.map((sample, index) => `
+                <div class="class-card" data-class="${sample.class_name}">
+                    <div class="class-header">
+                        <div class="class-name">${sample.class_name}</div>
+                        <div class="sample-count">${sample.sample_images.length} 個樣本</div>
+                    </div>
+
+                    <div class="image-samples">
+                        ${sample.sample_images.map(img => `
+                            <img src="${API_URL}${img}" alt="樣本" class="sample-image" 
+                                 onerror="this.style.display='none'">
+                        `).join('')}
+                    </div>
+
+                    <div class="orientation-options">
+                        <button class="orientation-btn" onclick="selectOrientation('${sample.class_name}', 'Up')" 
+                                data-orientation="Up">
+                            <i class="fas fa-arrow-up"></i>
+                            上方
+                        </button>
+                        <button class="orientation-btn" onclick="selectOrientation('${sample.class_name}', 'Down')" 
+                                data-orientation="Down">
+                            <i class="fas fa-arrow-down"></i>
+                            下方
+                        </button>
+                        <button class="orientation-btn" onclick="selectOrientation('${sample.class_name}', 'Left')" 
+                                data-orientation="Left">
+                            <i class="fas fa-arrow-left"></i>
+                            左方
+                        </button>
+                        <button class="orientation-btn" onclick="selectOrientation('${sample.class_name}', 'Right')" 
+                                data-orientation="Right">
+                            <i class="fas fa-arrow-right"></i>
+                            右方
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 選擇方向
+        function selectOrientation(className, orientation) {
+            orientations[className] = orientation;
+
+            // 更新UI
+            const card = document.querySelector(`[data-class="${className}"]`);
+            const buttons = card.querySelectorAll('.orientation-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            card.querySelector(`[data-orientation="${orientation}"]`).classList.add('selected');
+
+            updateProgress();
+        }
+
+        // 更新進度
+        function updateProgress() {
+            const confirmedCount = Object.keys(orientations).length;
+            const totalCount = samples.length;
+            
+            document.getElementById('confirmed-count').textContent = confirmedCount;
+            
+            const progress = (confirmedCount / totalCount) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            // 啟用/禁用提交按鈕
+            document.getElementById('submit-btn').disabled = confirmedCount < totalCount;
+        }
+
+        // 提交方向確認
+        async function submitOrientations() {
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+
+            try {
+                const response = await fetch(`${API_URL}/orientation/confirm/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        orientations: orientations
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert('方向確認成功！正在開始訓練...', 'success');
+                    
+                    // 3秒後重定向到主頁的任務列表
+                    setTimeout(() => {
+                        window.location.href = '/?tab=task-list';
+                    }, 3000);
+                    
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.detail || '提交失敗');
+                }
+                
+            } catch (error) {
+                showAlert(`提交失敗: ${error.message}`, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> 確認所有方向並開始訓練';
+            }
+        }
+
+        // 顯示提示訊息
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+
+            // 5秒後自動消失
+            setTimeout(() => {
+                alert.style.animation = 'slideUp 0.3s ease forwards';
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        }
+
+        // 鍵盤快捷鍵
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

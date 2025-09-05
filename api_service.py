@@ -7,6 +7,8 @@ import os
 import json
 import asyncio
 import logging
+import random
+import shutil
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional
@@ -40,13 +42,25 @@ class TrainingRequest(BaseModel):
 class TrainingStatus(BaseModel):
     """訓練狀態模型"""
     task_id: str
-    status: str  # pending, running, completed, failed
+    status: str  # pending, pending_orientation, running, completed, failed
     start_time: Optional[datetime]
     end_time: Optional[datetime]
     current_step: Optional[str]
     progress: Optional[float]
     error_message: Optional[str]
     output_dir: Optional[str]
+    
+    
+class OrientationSample(BaseModel):
+    """方向確認樣本模型"""
+    class_name: str
+    sample_images: List[str]  # 3張樣本影像的路徑
+
+
+class OrientationConfirmation(BaseModel):
+    """方向確認請求模型"""
+    task_id: str
+    orientations: Dict[str, str]  # class_name -> orientation (Up, Down, Left, Right)
     
 
 class TrainingResult(BaseModel):
@@ -92,9 +106,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 掛載靜態檔案
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/", response_class=FileResponse, tags=["UI"])
 async def web_ui():
     return FileResponse("static/index.html")
+
+
+@app.get("/static/orientation.html", response_class=FileResponse, tags=["UI"])
+async def orientation_ui():
+    return FileResponse("static/orientation.html")
 
 
 @app.get("/health", tags=["Health"])
@@ -137,9 +159,9 @@ async def start_training(
         output_dir=None
     )
     
-    # 在背景執行訓練
+    # 在背景執行前處理（影像分類）
     background_tasks.add_task(
-        run_training_task,
+        run_preprocessing_task,
         task_id=task_id,
         request=request
     )
@@ -317,10 +339,115 @@ async def delete_training_task(task_id: str, delete_files: bool = False):
     return {"message": f"任務 {task_id} 已刪除"}
 
 
-# 輔助函數
-def run_training_task(task_id: str, request: TrainingRequest):
+@app.get("/orientation/samples/{task_id}", response_model=List[OrientationSample], tags=["Orientation"])
+async def get_orientation_samples(task_id: str):
     """
-    在背景執行訓練任務
+    取得方向確認的樣本影像
+    
+    Args:
+        task_id: 任務ID
+        
+    Returns:
+        List[OrientationSample]: 各類別的樣本影像
+    """
+    if task_id not in training_tasks:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
+        
+    task = training_tasks[task_id]
+    if task.status != "pending_orientation":
+        raise HTTPException(status_code=400, detail=f"任務狀態錯誤，期望 pending_orientation，實際: {task.status}")
+    
+    # 讀取已分類的影像資料
+    raw_data_dir = Path(task.output_dir) / 'raw_data'
+    if not raw_data_dir.exists():
+        raise HTTPException(status_code=500, detail="找不到已分類的影像資料")
+    
+    samples = []
+    for class_dir in raw_data_dir.iterdir():
+        if not class_dir.is_dir() or class_dir.name == 'NG':
+            continue
+            
+        # 隨機選取3張影像作為樣本
+        images = list(class_dir.glob('*.jp*'))
+        if len(images) >= 3:
+            sample_images = random.sample(images, 3)
+        else:
+            sample_images = images
+            
+        # 將影像複製到臨時資料夾供web顯示
+        temp_dir = Path("temp_uploads") / task_id / class_dir.name
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        sample_paths = []
+        for i, img in enumerate(sample_images):
+            temp_path = temp_dir / f"sample_{i}_{img.name}"
+            shutil.copy2(str(img), str(temp_path))
+            # 返回相對路徑用於web顯示
+            sample_paths.append(f"/temp/{task_id}/{class_dir.name}/sample_{i}_{img.name}")
+            
+        samples.append(OrientationSample(
+            class_name=class_dir.name,
+            sample_images=sample_paths
+        ))
+    
+    return samples
+
+
+@app.post("/orientation/confirm/{task_id}", tags=["Orientation"])
+async def confirm_orientations(
+    task_id: str, 
+    confirmation: OrientationConfirmation,
+    background_tasks: BackgroundTasks
+):
+    """
+    確認方向並繼續訓練流程
+    
+    Args:
+        task_id: 任務ID
+        confirmation: 方向確認資料
+        
+    Returns:
+        訊息
+    """
+    if task_id not in training_tasks:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
+        
+    task = training_tasks[task_id]
+    if task.status != "pending_orientation":
+        raise HTTPException(status_code=400, detail=f"任務狀態錯誤，期望 pending_orientation，實際: {task.status}")
+    
+    # 儲存方向確認資料
+    orientation_file = Path("temp_uploads") / task_id / "orientations.json"
+    with open(orientation_file, 'w', encoding='utf-8') as f:
+        json.dump(confirmation.orientations, f, ensure_ascii=False, indent=2)
+    
+    # 繼續執行訓練流程
+    background_tasks.add_task(
+        run_orientation_and_training_task,
+        task_id=task_id
+    )
+    
+    # 更新任務狀態
+    task.status = "running"
+    task.current_step = "處理方向確認並開始訓練"
+    task.progress = 0.3
+    
+    return {"message": "方向確認已收到，繼續訓練流程"}
+
+
+@app.get("/temp/{task_id}/{class_name}/{filename}", tags=["Static"])
+async def serve_temp_file(task_id: str, class_name: str, filename: str):
+    """提供臨時影像檔案"""
+    file_path = Path("temp_uploads") / task_id / class_name / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="檔案不存在")
+    return FileResponse(str(file_path))
+
+
+# 輔助函數
+def run_preprocessing_task(task_id: str, request: TrainingRequest):
+    """
+    在背景執行前處理任務（影像分類）
     
     Args:
         task_id: 任務ID
@@ -356,14 +483,97 @@ def run_training_task(task_id: str, request: TrainingRequest):
             logging.info(f"任務 {task_id} 進度更新: {step} ({progress * 100:.1f}%)")
             
         system.set_progress_callback(update_progress)
+        
+        # 建立輸出目錄結構
+        output_dir.mkdir(parents=True, exist_ok=True)
+        raw_data_dir = output_dir / 'raw_data'
+        raw_data_dir.mkdir(exist_ok=True)
+        
+        # 執行前處理（影像分類）
+        task.current_step = "處理原始影像資料"
+        task.progress = 0.1
+        system.process_raw_images(request.input_dir, str(raw_data_dir), request.site, request.line_id)
+        
+        # 更新狀態等待方向確認
+        task.status = "pending_orientation"
+        task.current_step = "等待方向確認"
+        task.progress = 0.2
+        
+    except Exception as e:
+        # 更新狀態為失敗
+        task.status = "failed"
+        task.end_time = datetime.now()
+        task.error_message = str(e)
+        task.current_step = "前處理失敗"
+        logging.error(f"前處理任務 {task_id} 失敗: {str(e)}", exc_info=True)
+
+
+def run_orientation_and_training_task(task_id: str):
+    """
+    執行方向處理和訓練任務
+    
+    Args:
+        task_id: 任務ID
+    """
+    task = training_tasks[task_id]
+    
+    try:
+        # 讀取方向確認資料
+        orientation_file = Path("temp_uploads") / task_id / "orientations.json"
+        with open(orientation_file, 'r', encoding='utf-8') as f:
+            orientations = json.load(f)
+        
+        # 建立訓練系統實例
+        system = AutoTrainingSystem()
+        
+        # 更新進度的回調函數
+        def update_progress(step: str, progress: float):
+            task.current_step = step
+            task.progress = min(progress, 1.0)
+            logging.info(f"任務 {task_id} 進度更新: {step} ({progress * 100:.1f}%)")
             
-        # 執行訓練流程
-        system.run_full_pipeline(
-            input_dir=request.input_dir,
-            output_base_dir=request.output_dir,
-            site=request.site,
-            line_id=request.line_id
-        )
+        system.set_progress_callback(update_progress)
+        
+        # 執行方向處理和旋轉增強
+        raw_data_dir = Path(task.output_dir) / 'raw_data'
+        oriented_data_dir = Path(task.output_dir) / 'oriented_data'
+        
+        update_progress("處理方向分類", 0.35)
+        system.process_orientations(str(raw_data_dir), str(oriented_data_dir), orientations)
+        
+        update_progress("執行旋轉增強", 0.45)
+        system.apply_rotation_augmentation(str(oriented_data_dir))
+        
+        # 準備最終資料集
+        dataset_dir = Path(task.output_dir) / 'dataset'
+        update_progress("準備訓練資料集", 0.55)
+        system.prepare_final_dataset(str(oriented_data_dir), str(dataset_dir))
+        
+        # 執行訓練
+        model_dir = Path(task.output_dir) / 'model'
+        model_dir.mkdir(exist_ok=True)
+        
+        update_progress("開始訓練模型", 0.6)
+        model_path = system.train_model(str(dataset_dir), str(model_dir))
+        
+        # 生成結果
+        results_dir = Path(task.output_dir) / 'results'
+        results_dir.mkdir(exist_ok=True)
+        
+        update_progress("生成Golden Samples", 0.85)
+        golden_samples = system.generate_golden_samples(str(dataset_dir), str(results_dir))
+        
+        update_progress("評估模型效能", 0.9)
+        eval_results = system.evaluate_model(model_path, str(dataset_dir), golden_samples, str(results_dir))
+        
+        # 生成總結報告
+        update_progress("生成總結報告", 0.95)
+        system._generate_summary_report(Path(task.output_dir), {}, eval_results)
+        
+        # 清理臨時檔案
+        temp_dir = Path("temp_uploads") / task_id
+        if temp_dir.exists():
+            shutil.rmtree(str(temp_dir))
         
         # 更新狀態為完成
         task.status = "completed"
