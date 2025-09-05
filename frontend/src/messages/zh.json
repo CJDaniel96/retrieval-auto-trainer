@@ -1,0 +1,71 @@
+{
+  "common": {
+    "title": "AI 自動化訓練系統",
+    "start": "開始",
+    "cancel": "取消",
+    "confirm": "確認",
+    "loading": "載入中...",
+    "success": "成功",
+    "error": "錯誤",
+    "warning": "警告",
+    "info": "資訊",
+    "download": "下載",
+    "delete": "刪除",
+    "upload": "上傳",
+    "browse": "瀏覽",
+    "save": "儲存",
+    "reset": "重設",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "close": "關閉"
+  },
+  "navigation": {
+    "home": "首頁",
+    "training": "訓練管理",
+    "history": "歷史記錄",
+    "settings": "設定"
+  },
+  "training": {
+    "title": "訓練管理",
+    "start_new": "開始新訓練",
+    "input_directory": "輸入資料夾",
+    "output_directory": "輸出資料夾",
+    "site": "地區",
+    "line_id": "產線ID",
+    "status": "狀態",
+    "progress": "進度",
+    "created_at": "建立時間",
+    "completed_at": "完成時間",
+    "actions": "操作",
+    "pending": "待處理",
+    "pending_orientation": "等待方向確認",
+    "running": "執行中",
+    "completed": "已完成",
+    "failed": "失敗",
+    "cancelled": "已取消"
+  },
+  "orientation": {
+    "title": "方向確認",
+    "description": "請確認以下樣本影像的方向",
+    "sample_images": "樣本影像",
+    "select_orientation": "選擇方向",
+    "up": "上",
+    "down": "下",
+    "left": "左",
+    "right": "右",
+    "confirm_all": "確認所有方向",
+    "class_name": "類別：{name}"
+  },
+  "results": {
+    "title": "訓練結果",
+    "accuracy": "準確率",
+    "total_classes": "總類別數",
+    "total_images": "總影像數",
+    "model_path": "模型路徑",
+    "download_model": "下載模型",
+    "download_results": "下載結果",
+    "confusion_matrix": "混淆矩陣",
+    "evaluation_report": "評估報告"
+  }
+}

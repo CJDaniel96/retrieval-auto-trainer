@@ -1,0 +1,71 @@
+{
+  "common": {
+    "title": "AI Automated Training System",
+    "start": "Start",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "download": "Download",
+    "delete": "Delete",
+    "upload": "Upload",
+    "browse": "Browse",
+    "save": "Save",
+    "reset": "Reset",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "navigation": {
+    "home": "Home",
+    "training": "Training",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "training": {
+    "title": "Training Management",
+    "start_new": "Start New Training",
+    "input_directory": "Input Directory",
+    "output_directory": "Output Directory",
+    "site": "Site",
+    "line_id": "Line ID",
+    "status": "Status",
+    "progress": "Progress",
+    "created_at": "Created At",
+    "completed_at": "Completed At",
+    "actions": "Actions",
+    "pending": "Pending",
+    "pending_orientation": "Awaiting Orientation",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "orientation": {
+    "title": "Orientation Confirmation",
+    "description": "Please confirm the orientation of the sample images below",
+    "sample_images": "Sample Images",
+    "select_orientation": "Select Orientation",
+    "up": "Up",
+    "down": "Down",
+    "left": "Left",
+    "right": "Right",
+    "confirm_all": "Confirm All Orientations",
+    "class_name": "Class: {name}"
+  },
+  "results": {
+    "title": "Training Results",
+    "accuracy": "Accuracy",
+    "total_classes": "Total Classes",
+    "total_images": "Total Images",
+    "model_path": "Model Path",
+    "download_model": "Download Model",
+    "download_results": "Download Results",
+    "confusion_matrix": "Confusion Matrix",
+    "evaluation_report": "Evaluation Report"
+  }
+}
