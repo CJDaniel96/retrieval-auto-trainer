@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { 
   Play, 
   Square, 
@@ -95,25 +97,25 @@ export default function HomePage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-gray-500';
+        return 'bg-muted text-muted-foreground';
       case 'pending_orientation':
-        return 'bg-yellow-500';
+        return 'bg-yellow-500 text-yellow-50';
       case 'running':
-        return 'bg-blue-500';
+        return 'bg-blue-500 text-blue-50';
       case 'completed':
-        return 'bg-green-500';
+        return 'bg-green-500 text-green-50';
       case 'failed':
-        return 'bg-red-500';
+        return 'bg-destructive text-destructive-foreground';
       default:
-        return 'bg-gray-500';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">{t('common.title')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('common.title')}</h1>
           <LanguageSwitcher />
         </div>
         
@@ -147,19 +149,32 @@ export default function HomePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="site">{t('training.site')}</Label>
-                <Input
-                  id="site"
-                  value={formData.site}
-                  onChange={(e) => setFormData({ ...formData, site: e.target.value })}
-                />
+                <Select value={formData.site} onValueChange={(value) => setFormData({ ...formData, site: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a site" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="HPH">HPH</SelectItem>
+                    <SelectItem value="HPI">HPI</SelectItem>
+                    <SelectItem value="HPM">HPM</SelectItem>
+                    <SelectItem value="HPC">HPC</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="line_id">{t('training.line_id')}</Label>
-                <Input
-                  id="line_id"
-                  value={formData.line_id}
-                  onChange={(e) => setFormData({ ...formData, line_id: e.target.value })}
-                />
+                <Select value={formData.line_id} onValueChange={(value) => setFormData({ ...formData, line_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a line" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="V31">V31</SelectItem>
+                    <SelectItem value="V32">V32</SelectItem>
+                    <SelectItem value="V33">V33</SelectItem>
+                    <SelectItem value="V34">V34</SelectItem>
+                    <SelectItem value="V35">V35</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <Button
@@ -181,6 +196,10 @@ export default function HomePage() {
             </Button>
           </CardContent>
         </Card>
+
+        <div className="my-8">
+          <Separator />
+        </div>
 
         {/* Training Tasks List */}
         <Card>
@@ -212,10 +231,8 @@ export default function HomePage() {
             ) : (
               <div className="space-y-4">
                 {tasks.map((task) => (
-                  <div
-                    key={task.task_id}
-                    className="border rounded-lg p-4 space-y-3"
-                  >
+                  <Card key={task.task_id}>
+                    <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(task.status)}
@@ -259,7 +276,7 @@ export default function HomePage() {
                     </div>
                     
                     {task.current_step && (
-                      <p className="text-sm text-gray-600">{task.current_step}</p>
+                      <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">{task.current_step}</p>
                     )}
                     
                     {task.progress !== undefined && (
@@ -280,13 +297,14 @@ export default function HomePage() {
                       </Alert>
                     )}
                     
-                    <div className="flex justify-between text-sm text-gray-500">
-                      <span>{t('training.created_at')}: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">{t('training.created_at')}: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'}</span>
                       {task.end_time && (
-                        <span>{t('training.completed_at')}: {new Date(task.end_time).toLocaleString()}</span>
+                        <span className="text-muted-foreground">{t('training.completed_at')}: {new Date(task.end_time).toLocaleString()}</span>
                       )}
                     </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}

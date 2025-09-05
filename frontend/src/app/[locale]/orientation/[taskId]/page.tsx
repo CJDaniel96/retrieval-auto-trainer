@@ -103,7 +103,7 @@ export default function OrientationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <Loader2 className="w-8 h-8 animate-spin" />
           <span className="text-lg">{t('common.loading')}</span>
@@ -113,11 +113,11 @@ export default function OrientationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('orientation.title')}</h1>
-          <p className="text-gray-600">{t('orientation.description')}</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{t('orientation.title')}</h1>
+          <p className="text-muted-foreground">{t('orientation.description')}</p>
         </div>
 
         {error && (
@@ -153,7 +153,7 @@ export default function OrientationPage() {
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {sample.sample_images.map((imagePath, index) => (
-                      <div key={index} className="border rounded-lg overflow-hidden">
+                      <div key={index} className="border rounded-lg overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow">
                         <Image
                           src={`http://localhost:8000${imagePath}`}
                           alt={`Sample ${index + 1} for ${sample.class_name}`}
