@@ -49,19 +49,23 @@ class AutoTrainingSystem:
     5. 結果輸出
     """
     
-    def __init__(self, config_path: str = 'configs/configs.yaml'):
+    def __init__(self, config_path: str = None):
         """
         初始化自動訓練系統
         
         Args:
             config_path: 系統配置檔路徑
         """
-        self.config_path = config_path
+        # 自動決定配置檔路徑
+        if config_path is None:
+            config_path = Path(__file__).parent.parent / 'configs' / 'configs.yaml'
+        
+        self.config_path = str(config_path)
         self.timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         self.progress_callback = None
         
         # 載入資料庫配置
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(self.config_path, 'r', encoding='utf-8') as f:
             self.config = yaml.safe_load(f)
             
         with open(self.config['train_config_path'], 'r', encoding='utf-8') as f:
@@ -894,7 +898,7 @@ def main():
     parser.add_argument('--output-dir', required=True, help='輸出資料夾路徑')
     parser.add_argument('--site', default='HPH', help='專案名稱')
     parser.add_argument('--line-id', default='V31', help='產線ID')
-    parser.add_argument('--config', default='configs/configs.yaml', help='系統配置檔')
+    parser.add_argument('--config', default=None, help='系統配置檔')
     
     args = parser.parse_args()
     

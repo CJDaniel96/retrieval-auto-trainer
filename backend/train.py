@@ -219,7 +219,7 @@ class LightningModel(pl.LightningModule):
  
 @main(
     version_base="1.3",
-    config_path=str(Path(__file__).parents[2] / "configs"),
+    config_path=str(Path(__file__).parent / "configs"),
     config_name="config"
 )
 def run(cfg: DictConfig) -> None:

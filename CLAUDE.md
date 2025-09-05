@@ -100,14 +100,14 @@ training_{timestamp}/
 
 - Uses PostgreSQL with SSH tunnel support
 - Queries `AmrRawData` table to map images to product names
-- Configuration in `configs/database_configs.json`
-- Database sessions managed in `database/sessions.py`
+- Configuration in `backend/configs/database_configs.json`
+- Database sessions managed in `backend/services/database/sessions.py`
 
 ## Configuration Files
 
-- `configs/configs.yaml`: System-level configuration
-- `configs/train_configs.yaml`: Training hyperparameters and model settings
-- `configs/database_configs.json`: Database connection details
+- `backend/configs/configs.yaml`: System-level configuration
+- `backend/configs/train_configs.yaml`: Training hyperparameters and model settings
+- `backend/configs/database_configs.json`: Database connection details
 
 ## API Endpoints
 
