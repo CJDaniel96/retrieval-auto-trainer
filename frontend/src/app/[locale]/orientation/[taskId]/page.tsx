@@ -64,7 +64,7 @@ export default function OrientationPage() {
     // Check if all orientations are selected
     const missingOrientations = samples.filter(sample => !orientations[sample.class_name]);
     if (missingOrientations.length > 0) {
-      setError('Please select orientation for all classes');
+      setError(t('form.missing_orientation'));
       return;
     }
 
@@ -123,7 +123,7 @@ export default function OrientationPage() {
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>{t('form.error_title')}</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}

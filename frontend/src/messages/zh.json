@@ -57,6 +57,20 @@
     "confirm_all": "確認所有方向",
     "class_name": "類別：{name}"
   },
+  "form": {
+    "configure_task": "設定並啟動新的訓練任務",
+    "input_placeholder": "/輸入/資料夾/路徑",
+    "output_placeholder": "/輸出/資料夾/路徑",
+    "select_site": "選擇地區",
+    "select_line": "選擇產線",
+    "refresh": "重新整理",
+    "confirm_orientation": "確認方向",
+    "no_training_tasks": "無訓練任務",
+    "no_tasks_description": "找不到訓練任務。請啟動新的訓練任務開始。",
+    "monitor_tasks": "監控和管理訓練任務",
+    "error_title": "錯誤",
+    "missing_orientation": "請為所有類別選擇方向"
+  },
   "results": {
     "title": "訓練結果",
     "accuracy": "準確率",

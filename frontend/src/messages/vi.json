@@ -57,6 +57,20 @@
     "confirm_all": "Xác nhận Tất cả Hướng",
     "class_name": "Lớp: {name}"
   },
+  "form": {
+    "configure_task": "Cấu hình và bắt đầu tác vụ huấn luyện mới",
+    "input_placeholder": "/đường/dẫn/thư/mục/đầu/vào",
+    "output_placeholder": "/đường/dẫn/thư/mục/đầu/ra",
+    "select_site": "Chọn địa điểm",
+    "select_line": "Chọn dây chuyền",
+    "refresh": "Làm mới",
+    "confirm_orientation": "Xác nhận Hướng",
+    "no_training_tasks": "Không có Tác vụ Huấn luyện",
+    "no_tasks_description": "Không tìm thấy tác vụ huấn luyện nào. Bắt đầu tác vụ huấn luyện mới để bắt đầu.",
+    "monitor_tasks": "Giám sát và quản lý tác vụ huấn luyện",
+    "error_title": "Lỗi",
+    "missing_orientation": "Vui lòng chọn hướng cho tất cả các lớp"
+  },
   "results": {
     "title": "Kết quả Huấn luyện",
     "accuracy": "Độ chính xác",

@@ -57,6 +57,20 @@
     "confirm_all": "Confirm All Orientations",
     "class_name": "Class: {name}"
   },
+  "form": {
+    "configure_task": "Configure and start a new training task",
+    "input_placeholder": "/path/to/input/directory",
+    "output_placeholder": "/path/to/output/directory",
+    "select_site": "Select a site",
+    "select_line": "Select a line",
+    "refresh": "Refresh",
+    "confirm_orientation": "Confirm Orientation",
+    "no_training_tasks": "No Training Tasks",
+    "no_tasks_description": "No training tasks found. Start a new training task to get started.",
+    "monitor_tasks": "Monitor and manage training tasks",
+    "error_title": "Error",
+    "missing_orientation": "Please select orientation for all classes"
+  },
   "results": {
     "title": "Training Results",
     "accuracy": "Accuracy",

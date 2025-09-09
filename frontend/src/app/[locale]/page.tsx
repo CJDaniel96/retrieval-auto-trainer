@@ -124,7 +124,7 @@ export default function HomePage() {
           <CardHeader>
             <CardTitle>{t('training.start_new')}</CardTitle>
             <CardDescription>
-              Configure and start a new training task
+              {t('form.configure_task')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -135,7 +135,7 @@ export default function HomePage() {
                   id="input_dir"
                   value={formData.input_dir}
                   onChange={(e) => setFormData({ ...formData, input_dir: e.target.value })}
-                  placeholder="/path/to/input/directory"
+                  placeholder={t('form.input_placeholder')}
                 />
               </div>
               <div className="space-y-2">
@@ -144,14 +144,14 @@ export default function HomePage() {
                   id="output_dir"
                   value={formData.output_dir}
                   onChange={(e) => setFormData({ ...formData, output_dir: e.target.value })}
-                  placeholder="/path/to/output/directory"
+                  placeholder={t('form.output_placeholder')}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="site">{t('training.site')}</Label>
                 <Select value={formData.site} onValueChange={(value) => setFormData({ ...formData, site: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a site" />
+                    <SelectValue placeholder={t('form.select_site')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="HPH">HPH</SelectItem>
@@ -165,7 +165,7 @@ export default function HomePage() {
                 <Label htmlFor="line_id">{t('training.line_id')}</Label>
                 <Select value={formData.line_id} onValueChange={(value) => setFormData({ ...formData, line_id: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a line" />
+                    <SelectValue placeholder={t('form.select_line')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="V31">V31</SelectItem>
@@ -207,12 +207,12 @@ export default function HomePage() {
             <div>
               <CardTitle>{t('training.title')}</CardTitle>
               <CardDescription>
-                Monitor and manage training tasks
+                {t('form.monitor_tasks')}
               </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={fetchTasks} disabled={loading}>
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('form.refresh')}
             </Button>
           </CardHeader>
           <CardContent>
@@ -223,9 +223,9 @@ export default function HomePage() {
             ) : tasks.length === 0 ? (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Training Tasks</AlertTitle>
+                <AlertTitle>{t('form.no_training_tasks')}</AlertTitle>
                 <AlertDescription>
-                  No training tasks found. Start a new training task to get started.
+                  {t('form.no_tasks_description')}
                 </AlertDescription>
               </Alert>
             ) : (
@@ -245,7 +245,7 @@ export default function HomePage() {
                         {task.status === 'pending_orientation' && (
                           <Button size="sm" variant="outline">
                             <AlertCircle className="w-4 h-4 mr-2" />
-                            Confirm Orientation
+                            {t('form.confirm_orientation')}
                           </Button>
                         )}
                         {task.status === 'completed' && (
@@ -292,7 +292,7 @@ export default function HomePage() {
                     {task.error_message && (
                       <Alert variant="destructive">
                         <XCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
+                        <AlertTitle>{t('form.error_title')}</AlertTitle>
                         <AlertDescription>{task.error_message}</AlertDescription>
                       </Alert>
                     )}

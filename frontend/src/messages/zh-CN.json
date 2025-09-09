@@ -57,6 +57,20 @@
     "confirm_all": "确认所有方向",
     "class_name": "类别：{name}"
   },
+  "form": {
+    "configure_task": "配置并开始新的训练任务",
+    "input_placeholder": "/输入/文件夹/路径",
+    "output_placeholder": "/输出/文件夹/路径",
+    "select_site": "选择地区",
+    "select_line": "选择产线",
+    "refresh": "刷新",
+    "confirm_orientation": "确认方向",
+    "no_training_tasks": "无训练任务",
+    "no_tasks_description": "未找到训练任务。开始新的训练任务以开始。",
+    "monitor_tasks": "监控和管理训练任务",
+    "error_title": "错误",
+    "missing_orientation": "请为所有类别选择方向"
+  },
   "results": {
     "title": "训练结果",
     "accuracy": "准确率",
