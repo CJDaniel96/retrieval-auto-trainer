@@ -69,7 +69,8 @@
     "no_tasks_description": "No training tasks found. Start a new training task to get started.",
     "monitor_tasks": "Monitor and manage training tasks",
     "error_title": "Error",
-    "missing_orientation": "Please select orientation for all classes"
+    "missing_orientation": "Please select orientation for all classes",
+    "folder_management_info": "Input folder will be copied to datasets/ directory. Output will be automatically saved to outputs/site/line/folder_name/"
   },
   "results": {
     "title": "Training Results",

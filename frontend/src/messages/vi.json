@@ -69,7 +69,8 @@
     "no_tasks_description": "Không tìm thấy tác vụ huấn luyện nào. Bắt đầu tác vụ huấn luyện mới để bắt đầu.",
     "monitor_tasks": "Giám sát và quản lý tác vụ huấn luyện",
     "error_title": "Lỗi",
-    "missing_orientation": "Vui lòng chọn hướng cho tất cả các lớp"
+    "missing_orientation": "Vui lòng chọn hướng cho tất cả các lớp",
+    "folder_management_info": "Thư mục đầu vào sẽ được sao chép vào thư mục datasets/. Đầu ra sẽ tự động lưu vào outputs/địa_điểm/dây_chuyền/tên_thư_mục/"
   },
   "results": {
     "title": "Kết quả Huấn luyện",

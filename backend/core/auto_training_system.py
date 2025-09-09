@@ -113,7 +113,7 @@ class AutoTrainingSystem:
         error_count = 0
         
         # 遍歷OK資料夾中的所有影像
-        image_files = list(ok_dir.glob('*.jp*')) + list(ok_dir.glob('*.JP*'))
+        image_files = list(ok_dir.rglob('*.jp*')) + list(ok_dir.rglob('*.JP*'))
         logger.info(f"找到 {len(image_files)} 張OK影像")
         
         for img_path in tqdm(image_files, desc="處理影像"):
@@ -170,7 +170,7 @@ class AutoTrainingSystem:
             ng_target = Path(output_dir) / 'NG'
             if ng_dir != ng_target:
                 shutil.copytree(str(ng_dir), str(ng_target), dirs_exist_ok=True)
-            stats['NG'] = len(list(ng_target.glob('*.jp*')))
+            stats['NG'] = len(list(ng_target.rglob('*.jp*')))
             
         session.close()
         
@@ -227,7 +227,7 @@ class AutoTrainingSystem:
                 continue
                 
             # 取得該類別的所有影像
-            images = list(class_dir.glob('*.jp*'))
+            images = list(class_dir.rglob('*.jp*'))
             if len(images) < 2:
                 logger.warning(f"類別 {class_dir.name} 影像數量不足，跳過")
                 continue
@@ -271,7 +271,7 @@ class AutoTrainingSystem:
         from lightning.pytorch.loggers import TensorBoardLogger
         
         # 準備資料模組
-        from train import HOAMDataModule, LightningModel
+        from ..train import HOAMDataModule, LightningModel
         
         parent_self = self
         
@@ -420,7 +420,7 @@ class AutoTrainingSystem:
                 continue
                 
             # 隨機選取一張影像
-            images = list(class_dir.glob('*.jp*'))
+            images = list(class_dir.rglob('*.jp*'))
             if images:
                 selected = random.choice(images)
                 target_path = golden_dir / f"{class_dir.name}_{selected.name}"
@@ -479,7 +479,7 @@ class AutoTrainingSystem:
                 continue
                 
             class_name = class_dir.name
-            images = list(class_dir.glob('*.jp*'))
+            images = list(class_dir.rglob('*.jp*'))
             
             for img_path in images:
                 # 提取特徵
@@ -578,7 +578,7 @@ class AutoTrainingSystem:
                 
             # 移動所有影像到對應方向資料夾
             target_dir = orientation_dirs[orientation]
-            images = list(class_dir.glob('*.jp*'))
+            images = list(class_dir.rglob('*.jp*'))
             
             logger.info(f"移動 {len(images)} 張影像從 {class_name} 到 {orientation}")
             
@@ -616,7 +616,7 @@ class AutoTrainingSystem:
             if not source_dir.exists():
                 continue
                 
-            images = list(source_dir.glob('*.jp*'))
+            images = list(source_dir.rglob('*.jp*'))
             logger.info(f"對 {orientation} 資料夾中的 {len(images)} 張影像進行旋轉增強")
             
             for img_path in tqdm(images, desc=f"旋轉 {orientation} 影像"):
@@ -700,7 +700,7 @@ class AutoTrainingSystem:
                 continue
                 
             # 取得該方向的所有影像
-            images = list(source_dir.glob('*.jp*'))
+            images = list(source_dir.rglob('*.jp*'))
             if len(images) == 0:
                 logger.warning(f"方向資料夾 {orientation} 沒有影像，跳過")
                 continue
@@ -733,7 +733,7 @@ class AutoTrainingSystem:
             logger.info(f"方向 {orientation}: Train {len(train_images)}, Val {len(val_images)}")
         
         # 計算並儲存資料集統計資訊
-        from data.statistics import DataStatistics
+        from ..services.data.statistics import DataStatistics
         try:
             mean, std = DataStatistics.get_mean_std(
                 dataset_path,

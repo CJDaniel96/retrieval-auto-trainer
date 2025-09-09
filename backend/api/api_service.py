@@ -29,7 +29,6 @@ from ..core.auto_training_system import AutoTrainingSystem
 class TrainingRequest(BaseModel):
     """訓練請求模型"""
     input_dir: str = Field(..., description="輸入資料夾路徑")
-    output_dir: str = Field(..., description="輸出資料夾路徑")
     site: str = Field(default="HPH", description="地區名稱")
     line_id: str = Field(default="V31", description="產線ID")
     
@@ -474,8 +473,26 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         if request.learning_rate:
             system.train_config['training']['lr'] = request.learning_rate
             
-        # 建立輸出目錄
-        output_dir = Path(request.output_dir) / f"training_{task_id}"
+        # 複製輸入資料夾到 datasets/ 目錄下
+        import shutil
+        input_path = Path(request.input_dir)
+        folder_name = input_path.name
+        datasets_dir = Path("datasets")
+        datasets_dir.mkdir(exist_ok=True)
+        
+        # 複製輸入資料夾到 datasets/
+        copied_input_dir = datasets_dir / folder_name
+        if copied_input_dir.exists():
+            shutil.rmtree(copied_input_dir)
+        
+        task.current_step = "複製輸入資料到datasets目錄"
+        task.progress = 0.05
+        shutil.copytree(input_path, copied_input_dir)
+        logging.info(f"已複製輸入資料夾到: {copied_input_dir}")
+        
+        # 建立輸出目錄結構: outputs/site/line/folder_name
+        output_base = Path("outputs")
+        output_dir = output_base / request.site / request.line_id / folder_name
         task.output_dir = str(output_dir)
         
         # 更新進度的回調函數
@@ -491,10 +508,10 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         raw_data_dir = output_dir / 'raw_data'
         raw_data_dir.mkdir(exist_ok=True)
         
-        # 執行前處理（影像分類）
+        # 執行前處理（使用複製後的資料夾）
         task.current_step = "處理原始影像資料"
         task.progress = 0.1
-        system.process_raw_images(request.input_dir, str(raw_data_dir), request.site, request.line_id)
+        system.process_raw_images(str(copied_input_dir), str(raw_data_dir), request.site, request.line_id)
         
         # 更新狀態等待方向確認
         task.status = "pending_orientation"

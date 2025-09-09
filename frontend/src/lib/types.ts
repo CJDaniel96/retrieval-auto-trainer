@@ -1,6 +1,5 @@
 export interface TrainingRequest {
   input_dir: string;
-  output_dir: string;
   site?: string;
   line_id?: string;
   max_epochs?: number;

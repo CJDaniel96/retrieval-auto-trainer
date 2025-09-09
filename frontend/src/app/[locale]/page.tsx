@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
+import { useRouter } from '@/i18n/routing';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,12 +30,12 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 
 export default function HomePage() {
   const t = useTranslations();
+  const router = useRouter();
   const [tasks, setTasks] = useState<TrainingStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingTask, setStartingTask] = useState(false);
   const [formData, setFormData] = useState<TrainingRequest>({
     input_dir: '',
-    output_dir: '',
     site: 'HPH',
     line_id: 'V31'
   });
@@ -54,7 +55,7 @@ export default function HomePage() {
   };
 
   const handleStartTraining = async () => {
-    if (!formData.input_dir || !formData.output_dir) {
+    if (!formData.input_dir) {
       return;
     }
 
@@ -62,7 +63,7 @@ export default function HomePage() {
     const response = await ApiClient.startTraining(formData);
     if (response.data) {
       await fetchTasks();
-      setFormData({ ...formData, input_dir: '', output_dir: '' });
+      setFormData({ ...formData, input_dir: '' });
     }
     setStartingTask(false);
   };
@@ -75,6 +76,10 @@ export default function HomePage() {
   const handleDeleteTask = async (taskId: string) => {
     await ApiClient.deleteTraining(taskId);
     await fetchTasks();
+  };
+
+  const handleOrientationConfirm = (taskId: string) => {
+    router.push(`/orientation/${taskId}`);
   };
 
   const getStatusIcon = (status: string) => {
@@ -128,7 +133,13 @@ export default function HomePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {t('form.folder_management_info')}
+              </AlertDescription>
+            </Alert>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="input_dir">{t('training.input_directory')}</Label>
                 <Input
@@ -136,15 +147,6 @@ export default function HomePage() {
                   value={formData.input_dir}
                   onChange={(e) => setFormData({ ...formData, input_dir: e.target.value })}
                   placeholder={t('form.input_placeholder')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="output_dir">{t('training.output_directory')}</Label>
-                <Input
-                  id="output_dir"
-                  value={formData.output_dir}
-                  onChange={(e) => setFormData({ ...formData, output_dir: e.target.value })}
-                  placeholder={t('form.output_placeholder')}
                 />
               </div>
               <div className="space-y-2">
@@ -179,7 +181,7 @@ export default function HomePage() {
             </div>
             <Button
               onClick={handleStartTraining}
-              disabled={!formData.input_dir || !formData.output_dir || startingTask}
+              disabled={!formData.input_dir || startingTask}
               className="w-full md:w-auto"
             >
               {startingTask ? (
@@ -243,7 +245,11 @@ export default function HomePage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         {task.status === 'pending_orientation' && (
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleOrientationConfirm(task.task_id)}
+                          >
                             <AlertCircle className="w-4 h-4 mr-2" />
                             {t('form.confirm_orientation')}
                           </Button>

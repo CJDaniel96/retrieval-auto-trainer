@@ -69,7 +69,8 @@
     "no_tasks_description": "未找到训练任务。开始新的训练任务以开始。",
     "monitor_tasks": "监控和管理训练任务",
     "error_title": "错误",
-    "missing_orientation": "请为所有类别选择方向"
+    "missing_orientation": "请为所有类别选择方向",
+    "folder_management_info": "输入文件夹将复制到 datasets/ 目录。输出将自动保存到 outputs/地区/产线/文件夹名称/"
   },
   "results": {
     "title": "训练结果",
