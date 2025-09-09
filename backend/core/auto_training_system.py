@@ -592,7 +592,7 @@ class AutoTrainingSystem:
         
     def apply_rotation_augmentation(self, oriented_data_dir: str) -> None:
         """
-        對方向資料夾中的影像進行旋轉增強
+        對方向資料夾中的**原始影像**進行旋轉增強（避免對旋轉後的影像重複旋轉）
         
         Args:
             oriented_data_dir: 按方向分類的資料目錄
@@ -610,16 +610,29 @@ class AutoTrainingSystem:
         
         data_path = Path(oriented_data_dir)
         
-        # 遍歷每個方向資料夾
+        # 第一步：收集所有原始影像（不包含已經旋轉過的影像）
+        original_images = {}
+        
         for orientation in ['Up', 'Down', 'Left', 'Right']:
             source_dir = data_path / orientation
             if not source_dir.exists():
                 continue
                 
-            images = list(source_dir.rglob('*.jp*'))
-            logger.info(f"對 {orientation} 資料夾中的 {len(images)} 張影像進行旋轉增強")
+            # 只處理原始影像（檔名不包含 _rot 的影像）
+            images = [img for img in source_dir.rglob('*.jp*') 
+                     if '_rot' not in img.stem]
+            original_images[orientation] = images
             
-            for img_path in tqdm(images, desc=f"旋轉 {orientation} 影像"):
+            logger.info(f"在 {orientation} 資料夾中找到 {len(images)} 張原始影像")
+        
+        # 第二步：對每個原始影像進行旋轉增強
+        for source_orientation, images in original_images.items():
+            if not images:
+                continue
+                
+            logger.info(f"對 {source_orientation} 資料夾中的 {len(images)} 張原始影像進行旋轉增強")
+            
+            for img_path in tqdm(images, desc=f"旋轉 {source_orientation} 原始影像"):
                 try:
                     # 載入影像
                     image = cv2.imread(str(img_path))
@@ -628,7 +641,7 @@ class AutoTrainingSystem:
                         continue
                     
                     # 對每個旋轉角度生成新影像
-                    for angle, target_orientation in rotation_mapping[orientation].items():
+                    for angle, target_orientation in rotation_mapping[source_orientation].items():
                         # 執行旋轉
                         rotated_image = self._rotate_image(image, angle)
                         
@@ -636,7 +649,7 @@ class AutoTrainingSystem:
                         target_dir = data_path / target_orientation
                         target_dir.mkdir(exist_ok=True)
                         
-                        # 生成新檔名（避免重複）
+                        # 生成新檔名（標記為旋轉影像）
                         base_name = img_path.stem
                         ext = img_path.suffix
                         new_name = f"{base_name}_rot{angle}{ext}"
