@@ -1,0 +1,71 @@
+{
+  "common": {
+    "title": "Hệ thống Huấn luyện Tự động AI",
+    "start": "Bắt đầu",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "loading": "Đang tải...",
+    "success": "Thành công",
+    "error": "Lỗi",
+    "warning": "Cảnh báo",
+    "info": "Thông tin",
+    "download": "Tải xuống",
+    "delete": "Xóa",
+    "upload": "Tải lên",
+    "browse": "Duyệt",
+    "save": "Lưu",
+    "reset": "Đặt lại",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước",
+    "close": "Đóng"
+  },
+  "navigation": {
+    "home": "Trang chủ",
+    "training": "Quản lý Huấn luyện",
+    "history": "Lịch sử",
+    "settings": "Cài đặt"
+  },
+  "training": {
+    "title": "Quản lý Huấn luyện",
+    "start_new": "Bắt đầu Huấn luyện Mới",
+    "input_directory": "Thư mục Đầu vào",
+    "output_directory": "Thư mục Đầu ra",
+    "site": "Địa điểm",
+    "line_id": "ID Dây chuyền",
+    "status": "Trạng thái",
+    "progress": "Tiến độ",
+    "created_at": "Tạo lúc",
+    "completed_at": "Hoàn thành lúc",
+    "actions": "Hành động",
+    "pending": "Đang chờ",
+    "pending_orientation": "Chờ Xác nhận Hướng",
+    "running": "Đang chạy",
+    "completed": "Đã hoàn thành",
+    "failed": "Thất bại",
+    "cancelled": "Đã hủy"
+  },
+  "orientation": {
+    "title": "Xác nhận Hướng",
+    "description": "Vui lòng xác nhận hướng của hình ảnh mẫu bên dưới",
+    "sample_images": "Hình ảnh Mẫu",
+    "select_orientation": "Chọn Hướng",
+    "up": "Trên",
+    "down": "Dưới",
+    "left": "Trái",
+    "right": "Phải",
+    "confirm_all": "Xác nhận Tất cả Hướng",
+    "class_name": "Lớp: {name}"
+  },
+  "results": {
+    "title": "Kết quả Huấn luyện",
+    "accuracy": "Độ chính xác",
+    "total_classes": "Tổng số Lớp",
+    "total_images": "Tổng số Hình ảnh",
+    "model_path": "Đường dẫn Mô hình",
+    "download_model": "Tải xuống Mô hình",
+    "download_results": "Tải xuống Kết quả",
+    "confusion_matrix": "Ma trận Nhầm lẫn",
+    "evaluation_report": "Báo cáo Đánh giá"
+  }
+}
