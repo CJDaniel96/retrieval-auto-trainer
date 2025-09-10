@@ -1,43 +1,34 @@
-# configs/config.yaml
-
-# Default configs for HOAM
-
-experiment:
-  name: hoam_experiment
-
 data:
-  data_dir: "/path/to/dataset"
+  data_dir: /path/to/dataset
   image_size: 224
   num_workers: 4
   test_split: 0.2
-
-model:
-  structure: "HOAMV2"
-  backbone: "efficientnetv2_rw_s"
-  pretrained: false
-  embedding_size: 512
-
+experiment:
+  name: hoam_experiment
+knn:
+  dataset_pkl: dataset.pkl
+  enable: false
+  index_path: knn.index
+  threshold: 0.5
 loss:
-  type: HybridMarginLoss
+  center_loss_weight: 0.01
+  sub_centers: 3
   subcenter_margin: 0.4
   subcenter_scale: 30.0
-  sub_centers: 3
   triplet_margin: 0.3
-  center_loss_weight: 0.01
-
+  type: HybridMarginLoss
+model:
+  backbone: efficientnetv2_rw_s
+  embedding_size: 512
+  pretrained: false
+  structure: HOAMV2
 training:
-  min_epochs: 0
-  max_epochs: 40
-  lr: 0.0003
-  weight_decay: 0.0001
   batch_size: 8
-  freeze_backbone_epochs: 10
-  patience: 10
+  checkpoint_dir: checkpoints
   enable_early_stopping: true
-  checkpoint_dir: "checkpoints"
-
-knn:
-  enable: false
-  threshold: 0.5
-  index_path: "knn.index"
-  dataset_pkl: "dataset.pkl"
+  freeze_backbone_epochs: 10
+  lr: 0.0003
+  max_epochs: 50
+  min_epochs: 0
+  patience: 10
+  weight_decay: 0.0001

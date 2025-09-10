@@ -5,7 +5,9 @@ import {
   OrientationSample,
   OrientationConfirmation,
   TrainingResult,
-  ApiResponse
+  ApiResponse,
+  FullConfig,
+  ConfigUpdateRequest
 } from './types';
 
 export class ApiClient {
@@ -89,6 +91,25 @@ export class ApiClient {
   static async confirmOrientations(confirmation: OrientationConfirmation): Promise<ApiResponse<{ message: string }>> {
     try {
       const response = await api.post(`/orientation/confirm/${confirmation.task_id}`, confirmation);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  // Configuration endpoints
+  static async getCurrentConfig(): Promise<ApiResponse<FullConfig>> {
+    try {
+      const response = await api.get('/config/current');
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async updateConfig(configUpdate: ConfigUpdateRequest): Promise<ApiResponse<{ message: string; updated: boolean; config: FullConfig }>> {
+    try {
+      const response = await api.post('/config/update', configUpdate);
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };

@@ -43,3 +43,62 @@ export interface ApiResponse<T> {
   message?: string;
   error?: string;
 }
+
+// Configuration interfaces
+export interface TrainingConfig {
+  min_epochs: number;
+  max_epochs: number;
+  lr: number;
+  weight_decay: number;
+  batch_size: number;
+  freeze_backbone_epochs: number;
+  patience: number;
+  enable_early_stopping: boolean;
+  checkpoint_dir: string;
+}
+
+export interface ModelConfig {
+  structure: 'HOAM' | 'HOAMV2';
+  backbone: string;
+  pretrained: boolean;
+  embedding_size: number;
+}
+
+export interface DataConfig {
+  data_dir: string;
+  image_size: number;
+  num_workers: number;
+  test_split: number;
+}
+
+export interface LossConfig {
+  type: 'HybridMarginLoss' | 'ArcFaceLoss' | 'SubCenterArcFaceLoss';
+  subcenter_margin: number;
+  subcenter_scale: number;
+  sub_centers: number;
+  triplet_margin: number;
+  center_loss_weight: number;
+}
+
+export interface FullConfig {
+  experiment: {
+    name: string;
+  };
+  training: TrainingConfig;
+  model: ModelConfig;
+  data: DataConfig;
+  loss: LossConfig;
+  knn?: {
+    enable: boolean;
+    threshold: number;
+    index_path: string;
+    dataset_pkl: string;
+  };
+}
+
+export interface ConfigUpdateRequest {
+  training?: Partial<TrainingConfig>;
+  model?: Partial<ModelConfig>;
+  data?: Partial<DataConfig>;
+  loss?: Partial<LossConfig>;
+}

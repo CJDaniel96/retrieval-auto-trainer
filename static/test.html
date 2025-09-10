@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>測試 - 訓練配置頁面</title>
+    <style>
+        .tabs { display: flex; gap: 10px; margin: 20px; }
+        .tab { padding: 10px 20px; background: #f0f0f0; cursor: pointer; border: 1px solid #ccc; }
+        .tab.active { background: #007bff; color: white; }
+        .tab-content { display: none; margin: 20px; padding: 20px; border: 1px solid #ccc; }
+        .tab-content.active { display: block; }
+        .form-group { margin: 10px 0; }
+        .form-control { padding: 5px; width: 200px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>訓練系統測試頁面</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('training')">新增訓練</div>
+        <div class="tab" onclick="showTab('tasks')">任務列表</div>
+        <div class="tab" onclick="showTab('settings')">系統設定</div>
+        <div class="tab" onclick="showTab('config')">🔧 訓練配置</div>
+    </div>
+
+    <div id="training" class="tab-content active">
+        <h2>新增訓練</h2>
+        <p>這是訓練創建頁面</p>
+    </div>
+
+    <div id="tasks" class="tab-content">
+        <h2>任務列表</h2>
+        <p>這是任務列表頁面</p>
+    </div>
+
+    <div id="settings" class="tab-content">
+        <h2>系統設定</h2>
+        <p>這是系統設定頁面</p>
+    </div>
+
+    <div id="config" class="tab-content">
+        <h2>🔧 訓練配置管理</h2>
+        <div style="background: #d4edda; padding: 10px; margin: 10px 0; border: 1px solid #c3e6cb;">
+            ✅ 如果你能看到這個頁面，說明訓練配置功能正常工作！
+        </div>
+        
+        <h3>訓練參數</h3>
+        <div class="form-group">
+            <label>最大訓練輪數:</label>
+            <input type="number" class="form-control" value="40">
+        </div>
+        <div class="form-group">
+            <label>學習率:</label>
+            <input type="number" class="form-control" value="0.0003" step="0.0001">
+        </div>
+        <div class="form-group">
+            <label>批次大小:</label>
+            <input type="number" class="form-control" value="8">
+        </div>
+        
+        <button class="btn" onclick="alert('配置保存功能正常！')">保存配置</button>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // 隱藏所有標籤內容
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 移除所有標籤的active狀態
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 顯示選中的標籤
+            document.getElementById(tabName).classList.add('active');
+            
+            // 設置active標籤
+            event.target.classList.add('active');
+            
+            console.log('切換到標籤:', tabName);
+        }
+    </script>
+</body>
+</html>

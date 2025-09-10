@@ -399,7 +399,7 @@
       }
 
       .advanced-settings.active .advanced-content {
-        max-height: 500px;
+        max-height: 2000px;
         padding: 1.5rem;
       }
 
@@ -1232,6 +1232,10 @@
           <i class="fas fa-cog"></i>
           <span data-i18n="tab.settings">系統設定</span>
         </button>
+        <button class="tab" onclick="showTab('config')">
+          <i class="fas fa-sliders-h"></i>
+          <span>訓練配置</span>
+        </button>
       </div>
 
       <!-- 新增訓練 Tab -->
@@ -1365,6 +1369,35 @@
                       placeholder="0.0003"
                     />
                   </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="patience">
+                      <i class="fas fa-hourglass-half"></i>
+                      EarlyStopping耐心值
+                    </label>
+                    <input
+                      type="number"
+                      id="patience"
+                      name="patience"
+                      class="form-control"
+                      min="1"
+                      max="50"
+                      placeholder="10"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-toggle-on"></i>
+                      提前停止
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                      <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="enable-early-stopping" name="enable_early_stopping" checked>
+                        啟用提前停止
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1424,7 +1457,301 @@
             />
           </div>
 
-          <div class="form-group">
+          <!-- 訓練參數設定 -->
+          <div class="advanced-settings active" style="margin-top: 2rem;">
+            <div class="advanced-toggle" onclick="toggleAdvanced(this)">
+              <span><i class="fas fa-sliders-h"></i> 訓練參數設定</span>
+              <i class="fas fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="advanced-content">
+              <form id="config-form">
+                <!-- 訓練配置 -->
+                <h4 style="margin-bottom: 1rem; color: var(--primary);">
+                  <i class="fas fa-dumbbell"></i> 訓練配置
+                </h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="config-max-epochs">
+                      <i class="fas fa-redo"></i>
+                      最大訓練輪數
+                    </label>
+                    <input
+                      type="number"
+                      id="config-max-epochs"
+                      name="max_epochs"
+                      class="form-control"
+                      min="1"
+                      max="200"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-learning-rate">
+                      <i class="fas fa-chart-line"></i>
+                      學習率
+                    </label>
+                    <input
+                      type="number"
+                      id="config-learning-rate"
+                      name="lr"
+                      class="form-control"
+                      step="0.0001"
+                      min="0.0001"
+                      max="0.1"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-batch-size">
+                      <i class="fas fa-layer-group"></i>
+                      批次大小
+                    </label>
+                    <input
+                      type="number"
+                      id="config-batch-size"
+                      name="batch_size"
+                      class="form-control"
+                      min="1"
+                      max="256"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-weight-decay">
+                      <i class="fas fa-weight"></i>
+                      權重衰減
+                    </label>
+                    <input
+                      type="number"
+                      id="config-weight-decay"
+                      name="weight_decay"
+                      class="form-control"
+                      step="0.0001"
+                      min="0"
+                      max="0.01"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-patience">
+                      <i class="fas fa-hourglass-half"></i>
+                      EarlyStopping耐心值
+                    </label>
+                    <input
+                      type="number"
+                      id="config-patience"
+                      name="patience"
+                      class="form-control"
+                      min="1"
+                      max="50"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-freeze-epochs">
+                      <i class="fas fa-snowflake"></i>
+                      凍結骨幹網路輪數
+                    </label>
+                    <input
+                      type="number"
+                      id="config-freeze-epochs"
+                      name="freeze_backbone_epochs"
+                      class="form-control"
+                      min="0"
+                      max="20"
+                    />
+                  </div>
+                </div>
+
+                <!-- EarlyStopping 開關 -->
+                <div class="form-group" style="margin-top: 1rem;">
+                  <label class="form-label">
+                    <i class="fas fa-toggle-on"></i>
+                    提前停止設定
+                  </label>
+                  <div style="display: flex; align-items: center; gap: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem;">
+                      <input type="checkbox" id="config-enable-early-stopping" name="enable_early_stopping">
+                      啟用提前停止
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 模型配置 -->
+                <h4 style="margin: 2rem 0 1rem; color: var(--primary);">
+                  <i class="fas fa-brain"></i> 模型配置
+                </h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="config-structure">
+                      <i class="fas fa-sitemap"></i>
+                      模型結構
+                    </label>
+                    <select id="config-structure" name="structure" class="form-control">
+                      <option value="HOAM">HOAM</option>
+                      <option value="HOAMV2">HOAMV2</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-backbone">
+                      <i class="fas fa-network-wired"></i>
+                      骨幹網路
+                    </label>
+                    <select id="config-backbone" name="backbone" class="form-control">
+                      <option value="efficientnetv2_rw_s">EfficientNetV2-S</option>
+                      <option value="efficientnetv2_rw_m">EfficientNetV2-M</option>
+                      <option value="resnet50">ResNet50</option>
+                      <option value="resnet101">ResNet101</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-embedding-size">
+                      <i class="fas fa-vector-square"></i>
+                      嵌入向量維度
+                    </label>
+                    <input
+                      type="number"
+                      id="config-embedding-size"
+                      name="embedding_size"
+                      class="form-control"
+                      min="64"
+                      max="2048"
+                      step="64"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">
+                      <i class="fas fa-download"></i>
+                      預訓練模型
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                      <label style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="config-pretrained" name="pretrained">
+                        使用預訓練權重
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 數據配置 -->
+                <h4 style="margin: 2rem 0 1rem; color: var(--primary);">
+                  <i class="fas fa-database"></i> 數據配置
+                </h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="config-image-size">
+                      <i class="fas fa-expand-arrows-alt"></i>
+                      圖片大小
+                    </label>
+                    <select id="config-image-size" name="image_size" class="form-control">
+                      <option value="224">224x224</option>
+                      <option value="256">256x256</option>
+                      <option value="384">384x384</option>
+                      <option value="512">512x512</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-num-workers">
+                      <i class="fas fa-users"></i>
+                      數據加載線程數
+                    </label>
+                    <input
+                      type="number"
+                      id="config-num-workers"
+                      name="num_workers"
+                      class="form-control"
+                      min="0"
+                      max="16"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-test-split">
+                      <i class="fas fa-percentage"></i>
+                      驗證集比例
+                    </label>
+                    <input
+                      type="number"
+                      id="config-test-split"
+                      name="test_split"
+                      class="form-control"
+                      step="0.05"
+                      min="0.1"
+                      max="0.5"
+                    />
+                  </div>
+                </div>
+
+                <!-- 損失函數配置 -->
+                <h4 style="margin: 2rem 0 1rem; color: var(--primary);">
+                  <i class="fas fa-bullseye"></i> 損失函數配置
+                </h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label" for="config-loss-type">
+                      <i class="fas fa-functions"></i>
+                      損失函數類型
+                    </label>
+                    <select id="config-loss-type" name="type" class="form-control">
+                      <option value="HybridMarginLoss">HybridMarginLoss</option>
+                      <option value="ArcFaceLoss">ArcFaceLoss</option>
+                      <option value="SubCenterArcFaceLoss">SubCenterArcFaceLoss</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-subcenter-margin">
+                      <i class="fas fa-ruler"></i>
+                      子中心邊界
+                    </label>
+                    <input
+                      type="number"
+                      id="config-subcenter-margin"
+                      name="subcenter_margin"
+                      class="form-control"
+                      step="0.1"
+                      min="0.1"
+                      max="1.0"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="config-subcenter-scale">
+                      <i class="fas fa-expand"></i>
+                      子中心縮放
+                    </label>
+                    <input
+                      type="number"
+                      id="config-subcenter-scale"
+                      name="subcenter_scale"
+                      class="form-control"
+                      step="1"
+                      min="1"
+                      max="100"
+                    />
+                  </div>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    保存配置
+                  </button>
+                  <button type="button" onclick="resetConfigForm()" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i>
+                    重置
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- 當前配置顯示 -->
+          <div class="form-group" style="margin-top: 2rem;">
             <label class="form-label">
               <i class="fas fa-code"></i>
               當前配置
@@ -1436,6 +1763,250 @@
             <i class="fas fa-sync"></i>
             重新載入配置
           </button>
+        </div>
+      </div>
+
+      <!-- 訓練配置 Tab -->
+      <div id="config" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="fas fa-sliders-h"></i>
+            </div>
+            <h2>訓練配置管理</h2>
+          </div>
+
+          <div class="alert success" style="margin-bottom: 1.5rem;">
+            <i class="fas fa-info-circle"></i>
+            <span>在這裡修改的配置會影響所有新的訓練任務。修改後請記得保存配置。</span>
+          </div>
+
+          <form id="main-config-form">
+            <!-- 訓練配置 -->
+            <h4 style="margin-bottom: 1rem; color: var(--primary);">
+              <i class="fas fa-dumbbell"></i> 訓練配置
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="main-config-max-epochs">
+                  <i class="fas fa-redo"></i>
+                  最大訓練輪數
+                </label>
+                <input
+                  type="number"
+                  id="main-config-max-epochs"
+                  name="max_epochs"
+                  class="form-control"
+                  min="1"
+                  max="200"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-learning-rate">
+                  <i class="fas fa-chart-line"></i>
+                  學習率
+                </label>
+                <input
+                  type="number"
+                  id="main-config-learning-rate"
+                  name="lr"
+                  class="form-control"
+                  step="0.0001"
+                  min="0.0001"
+                  max="0.1"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-batch-size">
+                  <i class="fas fa-layer-group"></i>
+                  批次大小
+                </label>
+                <input
+                  type="number"
+                  id="main-config-batch-size"
+                  name="batch_size"
+                  class="form-control"
+                  min="1"
+                  max="256"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-patience">
+                  <i class="fas fa-hourglass-half"></i>
+                  EarlyStopping耐心值
+                </label>
+                <input
+                  type="number"
+                  id="main-config-patience"
+                  name="patience"
+                  class="form-control"
+                  min="1"
+                  max="50"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-toggle-on"></i>
+                  提前停止設定
+                </label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="main-config-enable-early-stopping" name="enable_early_stopping">
+                    啟用提前停止
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-weight-decay">
+                  <i class="fas fa-weight"></i>
+                  權重衰減
+                </label>
+                <input
+                  type="number"
+                  id="main-config-weight-decay"
+                  name="weight_decay"
+                  class="form-control"
+                  step="0.0001"
+                  min="0"
+                  max="0.01"
+                />
+              </div>
+            </div>
+
+            <!-- 模型配置 -->
+            <h4 style="margin: 2rem 0 1rem; color: var(--primary);">
+              <i class="fas fa-brain"></i> 模型配置
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="main-config-structure">
+                  <i class="fas fa-sitemap"></i>
+                  模型結構
+                </label>
+                <select id="main-config-structure" name="structure" class="form-control">
+                  <option value="HOAM">HOAM</option>
+                  <option value="HOAMV2">HOAMV2</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-backbone">
+                  <i class="fas fa-network-wired"></i>
+                  骨幹網路
+                </label>
+                <select id="main-config-backbone" name="backbone" class="form-control">
+                  <option value="efficientnetv2_rw_s">EfficientNetV2-S</option>
+                  <option value="efficientnetv2_rw_m">EfficientNetV2-M</option>
+                  <option value="resnet50">ResNet50</option>
+                  <option value="resnet101">ResNet101</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-embedding-size">
+                  <i class="fas fa-vector-square"></i>
+                  嵌入向量維度
+                </label>
+                <input
+                  type="number"
+                  id="main-config-embedding-size"
+                  name="embedding_size"
+                  class="form-control"
+                  min="64"
+                  max="2048"
+                  step="64"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-download"></i>
+                  預訓練模型
+                </label>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="main-config-pretrained" name="pretrained">
+                    使用預訓練權重
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 數據配置 -->
+            <h4 style="margin: 2rem 0 1rem; color: var(--primary);">
+              <i class="fas fa-database"></i> 數據配置
+            </h4>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="main-config-image-size">
+                  <i class="fas fa-expand-arrows-alt"></i>
+                  圖片大小
+                </label>
+                <select id="main-config-image-size" name="image_size" class="form-control">
+                  <option value="224">224x224</option>
+                  <option value="256">256x256</option>
+                  <option value="384">384x384</option>
+                  <option value="512">512x512</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-num-workers">
+                  <i class="fas fa-users"></i>
+                  數據加載線程數
+                </label>
+                <input
+                  type="number"
+                  id="main-config-num-workers"
+                  name="num_workers"
+                  class="form-control"
+                  min="0"
+                  max="16"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="main-config-test-split">
+                  <i class="fas fa-percentage"></i>
+                  驗證集比例
+                </label>
+                <input
+                  type="number"
+                  id="main-config-test-split"
+                  name="test_split"
+                  class="form-control"
+                  step="0.05"
+                  min="0.1"
+                  max="0.5"
+                />
+              </div>
+            </div>
+
+            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                保存配置
+              </button>
+              <button type="button" onclick="loadConfigIntoMainForm()" class="btn btn-secondary">
+                <i class="fas fa-sync"></i>
+                重新載入
+              </button>
+            </div>
+          </form>
+
+          <!-- 當前配置顯示 -->
+          <div class="form-group" style="margin-top: 3rem;">
+            <label class="form-label">
+              <i class="fas fa-code"></i>
+              當前完整配置
+            </label>
+            <pre id="main-current-config" class="config-display">載入中...</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -1481,6 +2052,8 @@
           tabButtons[1].classList.add("active");
         } else if (tabName === "settings") {
           tabButtons[2].classList.add("active");
+        } else if (tabName === "config") {
+          tabButtons[3].classList.add("active");
         }
 
         // 根據tab執行相應動作
@@ -1488,6 +2061,8 @@
           refreshTaskList();
         } else if (tabName === "settings") {
           loadCurrentConfig();
+        } else if (tabName === "config") {
+          loadConfigIntoMainForm();
         }
       }
 
@@ -1541,14 +2116,21 @@
           // 處理表單數據
           for (let [key, value] of formData.entries()) {
             if (value && value !== "") {
-              if (key === "max_epochs" || key === "batch_size") {
+              if (key === "max_epochs" || key === "batch_size" || key === "patience") {
                 data[key] = parseInt(value);
               } else if (key === "learning_rate") {
                 data[key] = parseFloat(value);
+              } else if (key === "enable_early_stopping") {
+                data[key] = document.getElementById("enable-early-stopping").checked;
               } else {
                 data[key] = value;
               }
             }
+          }
+          
+          // 處理checkbox（如果沒有值但需要處理）
+          if (!formData.has("enable_early_stopping")) {
+            data["enable_early_stopping"] = document.getElementById("enable-early-stopping").checked;
           }
 
           try {
@@ -1904,8 +2486,308 @@
           const response = await fetch(`${API_URL}/config/current`);
           const config = await response.json();
           configPre.textContent = JSON.stringify(config, null, 2);
+          
+          // 同時更新配置表單的值
+          updateConfigForm(config);
         } catch (error) {
           configPre.textContent = `載入失敗: ${error.message}`;
+        }
+      }
+
+      // 更新配置表單
+      function updateConfigForm(config) {
+        if (!config) return;
+        
+        // 更新訓練配置
+        if (config.training) {
+          setFormValue('config-max-epochs', config.training.max_epochs);
+          setFormValue('config-learning-rate', config.training.lr);
+          setFormValue('config-batch-size', config.training.batch_size);
+          setFormValue('config-weight-decay', config.training.weight_decay);
+          setFormValue('config-patience', config.training.patience);
+          setFormValue('config-freeze-epochs', config.training.freeze_backbone_epochs);
+          setFormValue('config-enable-early-stopping', config.training.enable_early_stopping, 'checkbox');
+        }
+        
+        // 更新模型配置
+        if (config.model) {
+          setFormValue('config-structure', config.model.structure);
+          setFormValue('config-backbone', config.model.backbone);
+          setFormValue('config-embedding-size', config.model.embedding_size);
+          setFormValue('config-pretrained', config.model.pretrained, 'checkbox');
+        }
+        
+        // 更新數據配置
+        if (config.data) {
+          setFormValue('config-image-size', config.data.image_size);
+          setFormValue('config-num-workers', config.data.num_workers);
+          setFormValue('config-test-split', config.data.test_split);
+        }
+        
+        // 更新損失函數配置
+        if (config.loss) {
+          setFormValue('config-loss-type', config.loss.type);
+          setFormValue('config-subcenter-margin', config.loss.subcenter_margin);
+          setFormValue('config-subcenter-scale', config.loss.subcenter_scale);
+        }
+      }
+
+      // 設置表單值的輔助函數
+      function setFormValue(elementId, value, type = 'input') {
+        const element = document.getElementById(elementId);
+        if (!element || value === undefined) return;
+        
+        if (type === 'checkbox') {
+          element.checked = Boolean(value);
+        } else {
+          element.value = value;
+        }
+      }
+
+      // 重置配置表單
+      function resetConfigForm() {
+        loadCurrentConfig(); // 重新載入當前配置
+      }
+
+      // 載入配置到主要表單
+      async function loadConfigIntoMainForm() {
+        try {
+          const response = await fetch(`${API_URL}/config/current`);
+          const config = await response.json();
+          
+          // 更新主要配置表單
+          updateMainConfigForm(config);
+          
+          // 更新配置顯示
+          document.getElementById('main-current-config').textContent = JSON.stringify(config, null, 2);
+        } catch (error) {
+          showAlert(`載入配置失敗: ${error.message}`, "error");
+        }
+      }
+
+      // 更新主要配置表單
+      function updateMainConfigForm(config) {
+        if (!config) return;
+        
+        // 更新訓練配置
+        if (config.training) {
+          setFormValue('main-config-max-epochs', config.training.max_epochs);
+          setFormValue('main-config-learning-rate', config.training.lr);
+          setFormValue('main-config-batch-size', config.training.batch_size);
+          setFormValue('main-config-weight-decay', config.training.weight_decay);
+          setFormValue('main-config-patience', config.training.patience);
+          setFormValue('main-config-enable-early-stopping', config.training.enable_early_stopping, 'checkbox');
+        }
+        
+        // 更新模型配置
+        if (config.model) {
+          setFormValue('main-config-structure', config.model.structure);
+          setFormValue('main-config-backbone', config.model.backbone);
+          setFormValue('main-config-embedding-size', config.model.embedding_size);
+          setFormValue('main-config-pretrained', config.model.pretrained, 'checkbox');
+        }
+        
+        // 更新數據配置
+        if (config.data) {
+          setFormValue('main-config-image-size', config.data.image_size);
+          setFormValue('main-config-num-workers', config.data.num_workers);
+          setFormValue('main-config-test-split', config.data.test_split);
+        }
+      }
+
+      // 處理主要配置表單提交
+      async function handleMainConfigFormSubmit(e) {
+        e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+
+        const formData = new FormData(e.target);
+        
+        // 組織配置數據
+        const configUpdate = {
+          training: {},
+          model: {},
+          data: {}
+        };
+
+        // 處理訓練配置
+        const trainingFields = ['max_epochs', 'lr', 'batch_size', 'weight_decay', 'patience'];
+        trainingFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (['max_epochs', 'batch_size', 'patience'].includes(field)) {
+              configUpdate.training[field] = parseInt(value);
+            } else if (['lr', 'weight_decay'].includes(field)) {
+              configUpdate.training[field] = parseFloat(value);
+            }
+          }
+        });
+        
+        // 處理 enable_early_stopping checkbox
+        configUpdate.training.enable_early_stopping = document.getElementById('main-config-enable-early-stopping').checked;
+
+        // 處理模型配置
+        const modelFields = ['structure', 'backbone', 'embedding_size'];
+        modelFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (field === 'embedding_size') {
+              configUpdate.model[field] = parseInt(value);
+            } else {
+              configUpdate.model[field] = value;
+            }
+          }
+        });
+        
+        // 處理 pretrained checkbox
+        configUpdate.model.pretrained = document.getElementById('main-config-pretrained').checked;
+
+        // 處理數據配置
+        const dataFields = ['image_size', 'num_workers', 'test_split'];
+        dataFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (['image_size', 'num_workers'].includes(field)) {
+              configUpdate.data[field] = parseInt(value);
+            } else if (field === 'test_split') {
+              configUpdate.data[field] = parseFloat(value);
+            }
+          }
+        });
+
+        try {
+          const response = await fetch(`${API_URL}/config/update`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(configUpdate),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            showAlert("配置已成功更新！", "success");
+            
+            // 重新載入配置顯示
+            loadConfigIntoMainForm();
+          } else {
+            const error = await response.json();
+            showAlert(`更新失敗: ${error.detail || "未知錯誤"}`);
+          }
+        } catch (error) {
+          showAlert(`網路錯誤: ${error.message}`);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      }
+
+      // 處理配置表單提交
+      async function handleConfigFormSubmit(e) {
+        e.preventDefault();
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+
+        const formData = new FormData(e.target);
+        
+        // 組織配置數據
+        const configUpdate = {
+          training: {},
+          model: {},
+          data: {},
+          loss: {}
+        };
+
+        // 處理訓練配置
+        const trainingFields = ['max_epochs', 'lr', 'batch_size', 'weight_decay', 'patience', 'freeze_backbone_epochs'];
+        trainingFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (['max_epochs', 'batch_size', 'patience', 'freeze_backbone_epochs'].includes(field)) {
+              configUpdate.training[field] = parseInt(value);
+            } else if (['lr', 'weight_decay'].includes(field)) {
+              configUpdate.training[field] = parseFloat(value);
+            }
+          }
+        });
+        
+        // 處理 enable_early_stopping checkbox
+        configUpdate.training.enable_early_stopping = document.getElementById('config-enable-early-stopping').checked;
+
+        // 處理模型配置
+        const modelFields = ['structure', 'backbone', 'embedding_size'];
+        modelFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (field === 'embedding_size') {
+              configUpdate.model[field] = parseInt(value);
+            } else {
+              configUpdate.model[field] = value;
+            }
+          }
+        });
+        
+        // 處理 pretrained checkbox
+        configUpdate.model.pretrained = document.getElementById('config-pretrained').checked;
+
+        // 處理數據配置
+        const dataFields = ['image_size', 'num_workers', 'test_split'];
+        dataFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (['image_size', 'num_workers'].includes(field)) {
+              configUpdate.data[field] = parseInt(value);
+            } else if (field === 'test_split') {
+              configUpdate.data[field] = parseFloat(value);
+            }
+          }
+        });
+
+        // 處理損失函數配置
+        const lossFields = ['type', 'subcenter_margin', 'subcenter_scale'];
+        lossFields.forEach(field => {
+          const value = formData.get(field);
+          if (value !== null && value !== '') {
+            if (['subcenter_margin'].includes(field)) {
+              configUpdate.loss[field] = parseFloat(value);
+            } else if (['subcenter_scale'].includes(field)) {
+              configUpdate.loss[field] = parseInt(value);
+            } else {
+              configUpdate.loss[field] = value;
+            }
+          }
+        });
+
+        try {
+          const response = await fetch(`${API_URL}/config/update`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(configUpdate),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            showAlert("配置已成功更新！", "success");
+            
+            // 重新載入配置顯示
+            loadCurrentConfig();
+          } else {
+            const error = await response.json();
+            showAlert(`更新失敗: ${error.detail || "未知錯誤"}`);
+          }
+        } catch (error) {
+          showAlert(`網路錯誤: ${error.message}`);
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
         }
       }
 
@@ -1978,6 +2860,18 @@
         if (savedTheme === "dark") {
           document.body.classList.add("dark-mode");
           document.getElementById("theme-icon").className = "fas fa-sun";
+        }
+
+        // 綁定配置表單提交事件
+        const configForm = document.getElementById("config-form");
+        if (configForm) {
+          configForm.addEventListener("submit", handleConfigFormSubmit);
+        }
+        
+        // 綁定主要配置表單提交事件
+        const mainConfigForm = document.getElementById("main-config-form");
+        if (mainConfigForm) {
+          mainConfigForm.addEventListener("submit", handleMainConfigFormSubmit);
         }
 
         // 檢查URL參數是否指定了tab

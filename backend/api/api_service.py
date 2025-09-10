@@ -40,6 +40,13 @@ class TrainingRequest(BaseModel):
     enable_early_stopping: Optional[bool] = Field(None, description="是否啟用提前停止")
     
 
+class ConfigUpdateRequest(BaseModel):
+    """配置更新請求模型"""
+    training: Optional[dict] = Field(None, description="訓練配置")
+    model: Optional[dict] = Field(None, description="模型配置")
+    data: Optional[dict] = Field(None, description="數據配置")
+    loss: Optional[dict] = Field(None, description="損失函數配置")
+
 class TrainingStatus(BaseModel):
     """訓練狀態模型"""
     task_id: str
@@ -616,18 +623,59 @@ def run_orientation_and_training_task(task_id: str):
         
 
 @app.post("/config/update", tags=["Configuration"])
-async def update_training_config(config: Dict):
+async def update_training_config(request: ConfigUpdateRequest):
     """
     更新訓練配置
     
     Args:
-        config: 新的配置字典
+        request: 配置更新請求
         
     Returns:
-        更新後的配置
+        更新結果
     """
-    # TODO: 實作配置更新邏輯
-    return {"message": "配置已更新", "config": config}
+    try:
+        import yaml
+        from pathlib import Path
+        
+        config_file = Path(__file__).parent.parent / "configs" / "train_configs.yaml"
+        
+        # 讀取當前配置
+        with open(config_file, 'r', encoding='utf-8') as f:
+            current_config = yaml.safe_load(f)
+        
+        # 更新配置
+        updated = False
+        
+        if request.training:
+            current_config['training'].update(request.training)
+            updated = True
+            
+        if request.model:
+            current_config['model'].update(request.model)
+            updated = True
+            
+        if request.data:
+            current_config['data'].update(request.data)
+            updated = True
+            
+        if request.loss:
+            current_config['loss'].update(request.loss)
+            updated = True
+        
+        # 保存更新後的配置
+        if updated:
+            with open(config_file, 'w', encoding='utf-8') as f:
+                yaml.dump(current_config, f, default_flow_style=False, allow_unicode=True)
+        
+        return {
+            "message": "配置已更新",
+            "updated": updated,
+            "config": current_config
+        }
+        
+    except Exception as e:
+        logger.error(f"更新配置失敗: {e}")
+        raise HTTPException(status_code=500, detail=f"更新配置失敗: {str(e)}")
     
 
 @app.get("/config/current", tags=["Configuration"])

@@ -322,9 +322,9 @@ class AutoTrainingSystem:
                 mode='min'
             )
             callbacks.append(early_stop_callback)
-            self.logger.info(f"啟用EarlyStopping，patience={self.train_config['training']['patience']}")
+            logger.info(f"啟用EarlyStopping，patience={self.train_config['training']['patience']}")
         else:
-            self.logger.info("已禁用EarlyStopping，訓練將進行完整的max_epochs")
+            logger.info("已禁用EarlyStopping，訓練將進行完整的max_epochs")
         
         if self.progress_callback:
             callbacks.append(ProgressCallback(self.train_config['training']['max_epochs']))
