@@ -36,6 +36,8 @@ class TrainingRequest(BaseModel):
     max_epochs: Optional[int] = Field(None, description="最大訓練輪數")
     batch_size: Optional[int] = Field(None, description="批次大小")
     learning_rate: Optional[float] = Field(None, description="學習率")
+    patience: Optional[int] = Field(None, description="EarlyStopping耐心值")
+    enable_early_stopping: Optional[bool] = Field(None, description="是否啟用提前停止")
     
 
 class TrainingStatus(BaseModel):
@@ -472,6 +474,10 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
             system.train_config['training']['batch_size'] = request.batch_size
         if request.learning_rate:
             system.train_config['training']['lr'] = request.learning_rate
+        if request.patience is not None:
+            system.train_config['training']['patience'] = request.patience
+        if request.enable_early_stopping is not None:
+            system.train_config['training']['enable_early_stopping'] = request.enable_early_stopping
             
         # 複製輸入資料夾到 datasets/ 目錄下
         import shutil

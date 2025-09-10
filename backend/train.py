@@ -281,19 +281,29 @@ def run(cfg: DictConfig) -> None:
         save_last='link',
         save_weights_only=True
     )
-    early_stop = EarlyStopping(monitor='val_loss', patience=cfg.training.patience, mode='min')
+    callbacks = [checkpoint]
+    
+    # 根據配置決定是否啟用EarlyStopping
+    if cfg.training.get('enable_early_stopping', True):
+        early_stop = EarlyStopping(monitor='val_loss', patience=cfg.training.patience, mode='min')
+        callbacks.append(early_stop)
+        print(f"啟用EarlyStopping，patience={cfg.training.patience}")
+    else:
+        print("已禁用EarlyStopping，訓練將進行完整的max_epochs")
+    
     swa = StochasticWeightAveraging(
         swa_lrs=[cfg.training.lr * 0.01, cfg.training.lr * 0.1],
         swa_epoch_start=0.75,
         annealing_epochs=10,
         annealing_strategy='cos'
     )
+    callbacks.append(swa)
  
     trainer = pl.Trainer(
         min_epochs=cfg.training.min_epochs,
         max_epochs=cfg.training.max_epochs,
         logger=logger,
-        callbacks=[checkpoint, early_stop, swa]
+        callbacks=callbacks
     )
  
     trainer.fit(model, datamodule=data_module)

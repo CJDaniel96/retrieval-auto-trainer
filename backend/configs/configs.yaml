@@ -1,6 +1,6 @@
 # 系統配置
 system:
-  max_concurrent_tasks: 3
+  max_concurrent_tasks: 1
   task_timeout_hours: 24
   cleanup_completed_tasks_days: 7
 

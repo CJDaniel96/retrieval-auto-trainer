@@ -312,13 +312,19 @@ class AutoTrainingSystem:
             save_last=True
         )
         
-        early_stop_callback = EarlyStopping(
-            monitor='val_loss',
-            patience=self.train_config['training']['patience'],
-            mode='min'
-        )
+        callbacks = [checkpoint_callback]
         
-        callbacks = [checkpoint_callback, early_stop_callback]
+        # 根據配置決定是否啟用EarlyStopping
+        if self.train_config['training'].get('enable_early_stopping', True):
+            early_stop_callback = EarlyStopping(
+                monitor='val_loss',
+                patience=self.train_config['training']['patience'],
+                mode='min'
+            )
+            callbacks.append(early_stop_callback)
+            self.logger.info(f"啟用EarlyStopping，patience={self.train_config['training']['patience']}")
+        else:
+            self.logger.info("已禁用EarlyStopping，訓練將進行完整的max_epochs")
         
         if self.progress_callback:
             callbacks.append(ProgressCallback(self.train_config['training']['max_epochs']))
@@ -496,10 +502,10 @@ class AutoTrainingSystem:
                     })
                     
                 except (OSError, IOError) as e:
-                    self.logger.warning(f"跳過損壞的圖片 {img_path}: {e}")
+                    logger.warning(f"跳過損壞的圖片 {img_path}: {e}")
                     continue
                 except Exception as e:
-                    self.logger.error(f"處理圖片時發生未知錯誤 {img_path}: {e}")
+                    logger.error(f"處理圖片時發生未知錯誤 {img_path}: {e}")
                     continue
                 
         # 轉換為DataFrame
@@ -542,7 +548,7 @@ class AutoTrainingSystem:
                 
             return True
         except (OSError, IOError, Image.UnidentifiedImageError) as e:
-            self.logger.warning(f"圖片驗證失敗 {img_path}: {e}")
+            logger.warning(f"圖片驗證失敗 {img_path}: {e}")
             return False
     
     def _extract_features(self, model: nn.Module, img_path: str, transform) -> torch.Tensor:
@@ -812,6 +818,9 @@ class AutoTrainingSystem:
         
     def _generate_evaluation_plots(self, df_results: pd.DataFrame, output_dir: str) -> None:
         """生成評估結果的視覺化圖表"""
+        import matplotlib
+        # 設置非交互式後端以支持多線程環境
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         import seaborn as sns
         from sklearn.metrics import confusion_matrix
