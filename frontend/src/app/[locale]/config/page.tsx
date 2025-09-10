@@ -274,9 +274,6 @@ export default function ConfigPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
-                    <SelectItem value="efficientnetv2_rw_m">EfficientNetV2-M</SelectItem>
-                    <SelectItem value="resnet50">ResNet50</SelectItem>
-                    <SelectItem value="resnet101">ResNet101</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

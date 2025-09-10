@@ -39,9 +39,11 @@ import { ApiClient } from '@/lib/api-client';
 import { TrainingStatus, TrainingRequest } from '@/lib/types';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { toast } from 'sonner';
+import { useRouter } from '@/i18n/routing';
 
 export function TrainingDashboard() {
   const t = useTranslations();
+  const router = useRouter();
   const [tasks, setTasks] = useState<TrainingStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingTask, setStartingTask] = useState(false);
@@ -119,6 +121,15 @@ export function TrainingDashboard() {
     await ApiClient.deleteTraining(taskId);
     await fetchTasks();
     toast.success('任務已刪除');
+  };
+
+  const handleOrientationConfirm = (taskId: string) => {
+    // Construct the URL based on the current origin and locale
+    const currentUrl = new URL(window.location.href);
+    const pathSegments = currentUrl.pathname.split('/').filter(Boolean);
+    const locale = pathSegments[0] || 'zh'; // Get locale from current path
+    const orientationUrl = `${currentUrl.origin}/${locale}/orientation/${taskId}`;
+    window.open(orientationUrl, '_blank');
   };
 
   const updateTrainingField = (field: keyof NonNullable<TrainingRequest['training_config']>, value: any) => {
@@ -548,6 +559,17 @@ export function TrainingDashboard() {
                               </Badge>
                             </div>
                             <div className="flex items-center space-x-2">
+                              {task.status === 'pending_orientation' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="default"
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                  onClick={() => handleOrientationConfirm(task.task_id)}
+                                >
+                                  <AlertCircle className="w-4 h-4 mr-2" />
+                                  確認方向
+                                </Button>
+                              )}
                               {task.status === 'completed' && (
                                 <Button size="sm" variant="outline">
                                   <Download className="w-4 h-4 mr-2" />
@@ -574,6 +596,16 @@ export function TrainingDashboard() {
                               </Button>
                             </div>
                           </div>
+                          
+                          {task.status === 'pending_orientation' && (
+                            <Alert className="border-yellow-200 bg-yellow-50/80">
+                              <AlertCircle className="h-4 w-4 text-yellow-600" />
+                              <AlertTitle className="text-yellow-800">需要確認方向</AlertTitle>
+                              <AlertDescription className="text-yellow-700">
+                                訓練任務已完成數據分類，請點擊「確認方向」按鈕來確認每個類別的圖像方向，以便進行數據增強。
+                              </AlertDescription>
+                            </Alert>
+                          )}
                           
                           {task.current_step && (
                             <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border">
