@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
 import { 
   Play, 
   Square, 
@@ -195,35 +196,76 @@ export function TrainingDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            自動化訓練系統
-          </h1>
-          <LanguageSwitcher />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-white/20 bg-white/80 backdrop-blur-xl shadow-lg">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  自動化訓練系統
+                </h1>
+                <p className="text-sm text-muted-foreground">Image Retrieval Model Training Platform</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                系統運行中
+              </div>
+              <LanguageSwitcher />
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* Main Tabs */}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Enhanced Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 h-12 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20">
-            <TabsTrigger value="new-training" className="flex items-center space-x-2">
-              <Home className="w-4 h-4" />
-              <span>新建訓練</span>
-            </TabsTrigger>
-            <TabsTrigger value="task-list" className="flex items-center space-x-2">
-              <ListTodo className="w-4 h-4" />
-              <span>任務列表</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
-              <Settings className="w-4 h-4" />
-              <span>系統設定</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center mb-8">
+            <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-white/90 to-gray-50/90 p-1.5 shadow-xl border border-white/40 backdrop-blur-lg">
+              <TabsTrigger 
+                value="new-training" 
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                新建訓練
+              </TabsTrigger>
+              <TabsTrigger 
+                value="task-list" 
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
+              >
+                <ListTodo className="w-4 h-4 mr-2" />
+                任務列表
+                {tasks.length > 0 && (
+                  <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                    {tasks.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="settings" 
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                系統設定
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* New Training Tab */}
           <TabsContent value="new-training" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-6"
+            >
             <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
               <CardHeader>
                 <div className="flex items-center space-x-2">
@@ -452,10 +494,17 @@ export function TrainingDashboard() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
           </TabsContent>
 
           {/* Task List Tab */}
           <TabsContent value="task-list" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-6"
+            >
             <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -563,10 +612,17 @@ export function TrainingDashboard() {
                 )}
               </CardContent>
             </Card>
+            </motion.div>
           </TabsContent>
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-6"
+            >
             <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
               <CardHeader>
                 <div className="flex items-center space-x-2">
@@ -586,10 +642,90 @@ export function TrainingDashboard() {
                 </Alert>
               </CardContent>
             </Card>
+            </motion.div>
           </TabsContent>
 
         </Tabs>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-white/20 bg-white/60 backdrop-blur-sm mt-16">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-semibold text-gray-800">自動化訓練系統</span>
+              </div>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                專為影像檢索模型設計的自動化訓練平台，提供完整的訓練工作流程和任務管理功能。
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-800">系統功能</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-center space-x-2">
+                  <Play className="w-3 h-3 text-blue-600" />
+                  <span>自動化訓練管理</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Database className="w-3 h-3 text-blue-600" />
+                  <span>數據處理與分類</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Target className="w-3 h-3 text-blue-600" />
+                  <span>模型評估與分析</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <Cog className="w-3 h-3 text-blue-600" />
+                  <span>彈性配置設定</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-medium text-gray-800">系統狀態</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-700">API服務</span>
+                  </div>
+                  <span className="text-xs text-green-600 font-medium">運行中</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-blue-700">前端介面</span>
+                  </div>
+                  <span className="text-xs text-blue-600 font-medium">運行中</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    <span className="text-sm text-gray-600">活動任務</span>
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium">{tasks.filter(t => t.status === 'running').length} 個</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-200 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-sm text-muted-foreground">
+              © 2024 自動化訓練系統. 專為影像檢索模型訓練設計.
+            </p>
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+              <span className="text-xs text-muted-foreground">Version 1.0.0</span>
+              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
+              <span className="text-xs text-muted-foreground">Built with Next.js & FastAPI</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

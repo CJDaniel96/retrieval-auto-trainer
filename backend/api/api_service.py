@@ -16,8 +16,7 @@ from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
-from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -114,19 +113,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/", response_class=FileResponse, tags=["UI"])
+@app.get("/", response_class=RedirectResponse, tags=["UI"])
 async def web_ui():
-    return FileResponse("static/index.html")
+    """重新導向到Next.js前端"""
+    return RedirectResponse(url="http://localhost:3002", status_code=307)
 
 
 @app.get("/favicon.ico", response_class=FileResponse, tags=["UI"])
 async def favicon():
-    # Return a simple response for favicon to avoid 404 errors
-    return FileResponse("static/favicon.ico", status_code=200) if Path("static/favicon.ico").exists() else JSONResponse({"status": "no favicon"}, status_code=404)
-
-
-# 掛載靜態檔案 - 這必須在所有具體路由之後
-app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+    # Try to serve favicon from frontend/public directory, fallback to 404
+    frontend_favicon = Path("frontend/public/favicon.ico")
+    if frontend_favicon.exists():
+        return FileResponse(str(frontend_favicon), status_code=200)
+    return JSONResponse({"status": "no favicon"}, status_code=404)
 
 
 @app.get("/health", tags=["Health"])
