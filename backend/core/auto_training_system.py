@@ -472,27 +472,35 @@ class AutoTrainingSystem:
             images = list(class_dir.rglob('*.jp*'))
             
             for img_path in images:
-                # 提取特徵
-                features = self._extract_features(model, str(img_path), transform)
-                
-                # 計算與所有golden sample的相似度
-                similarities = {}
-                for golden_class, golden_feat in golden_features.items():
-                    sim = torch.cosine_similarity(features, golden_feat, dim=0).item()
-                    similarities[golden_class] = sim
+                try:
+                    # 提取特徵
+                    features = self._extract_features(model, str(img_path), transform)
                     
-                # 找出最相似的類別
-                pred_class = max(similarities, key=similarities.get)
-                max_sim = similarities[pred_class]
-                
-                # 記錄結果
-                results.append({
-                    'image': img_path.name,
-                    'true_class': class_name,
-                    'pred_class': pred_class,
-                    'similarity': max_sim,
-                    'correct': class_name == pred_class
-                })
+                    # 計算與所有golden sample的相似度
+                    similarities = {}
+                    for golden_class, golden_feat in golden_features.items():
+                        sim = torch.cosine_similarity(features, golden_feat, dim=0).item()
+                        similarities[golden_class] = sim
+                        
+                    # 找出最相似的類別
+                    pred_class = max(similarities, key=similarities.get)
+                    max_sim = similarities[pred_class]
+                    
+                    # 記錄結果
+                    results.append({
+                        'image': img_path.name,
+                        'true_class': class_name,
+                        'pred_class': pred_class,
+                        'similarity': max_sim,
+                        'correct': class_name == pred_class
+                    })
+                    
+                except (OSError, IOError) as e:
+                    self.logger.warning(f"跳過損壞的圖片 {img_path}: {e}")
+                    continue
+                except Exception as e:
+                    self.logger.error(f"處理圖片時發生未知錯誤 {img_path}: {e}")
+                    continue
                 
         # 轉換為DataFrame
         df_results = pd.DataFrame(results)
@@ -510,9 +518,40 @@ class AutoTrainingSystem:
         
         return df_results
         
+    def _validate_image(self, img_path: str) -> bool:
+        """驗證圖片文件的完整性"""
+        from PIL import Image
+        import os
+        
+        try:
+            # 檢查文件是否存在
+            if not os.path.exists(img_path):
+                return False
+                
+            # 檢查文件大小
+            if os.path.getsize(img_path) < 100:  # 小於100字節的圖片通常是損壞的
+                return False
+                
+            # 嘗試打開和驗證圖片
+            with Image.open(img_path) as img:
+                img.verify()  # 驗證圖片完整性
+            
+            # 重新打開以檢查是否能正常轉換
+            with Image.open(img_path) as img:
+                img.convert('RGB')
+                
+            return True
+        except (OSError, IOError, Image.UnidentifiedImageError) as e:
+            self.logger.warning(f"圖片驗證失敗 {img_path}: {e}")
+            return False
+    
     def _extract_features(self, model: nn.Module, img_path: str, transform) -> torch.Tensor:
         """提取單張影像的特徵"""
         from PIL import Image
+        
+        # 驗證圖片完整性
+        if not self._validate_image(img_path):
+            raise OSError(f"圖片文件損壞或不完整: {img_path}")
         
         img = Image.open(img_path).convert('RGB')
         img_tensor = transform(img).unsqueeze(0).cuda()
@@ -544,12 +583,25 @@ class AutoTrainingSystem:
             orientation_dir.mkdir(exist_ok=True)
             orientation_dirs[orientation] = orientation_dir
         
-        # 處理NG資料夾（直接複製）
+        # 處理NG資料夾（驗證並複製）
         ng_source = Path(raw_data_dir) / 'NG'
         if ng_source.exists():
             ng_target = output_path / 'NG'
-            if ng_source != ng_target:
-                shutil.copytree(str(ng_source), str(ng_target), dirs_exist_ok=True)
+            ng_target.mkdir(exist_ok=True)
+            
+            # 逐個驗證NG圖片
+            ng_images = list(ng_source.rglob('*.jp*'))
+            valid_ng_count = 0
+            
+            for img in ng_images:
+                if self._validate_image(str(img)):
+                    target_path = ng_target / img.name
+                    shutil.copy2(str(img), str(target_path))
+                    valid_ng_count += 1
+                else:
+                    logger.warning(f"跳過損壞的NG圖片: {img}")
+                    
+            logger.info(f"NG資料夾: 成功複製 {valid_ng_count}/{len(ng_images)} 張有效影像")
         
         # 處理各個product_comp類別
         for class_dir in Path(raw_data_dir).iterdir():
@@ -572,11 +624,20 @@ class AutoTrainingSystem:
             
             logger.info(f"移動 {len(images)} 張影像從 {class_name} 到 {orientation}")
             
+            valid_count = 0
             for img in images:
+                # 驗證圖片完整性
+                if not self._validate_image(str(img)):
+                    logger.warning(f"跳過損壞的圖片: {img}")
+                    continue
+                    
                 # 保留原始檔名，避免衝突可以加上類別前綴
                 target_name = f"{class_name}_{img.name}"
                 target_path = target_dir / target_name
                 shutil.copy2(str(img), str(target_path))
+                valid_count += 1
+                
+            logger.info(f"成功移動 {valid_count}/{len(images)} 張有效影像從 {class_name} 到 {orientation}")
         
         logger.info("方向分類完成")
         

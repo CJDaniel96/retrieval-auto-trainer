@@ -6,6 +6,7 @@ torch = __import__('torch')
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
+from .robust_dataset import RobustImageFolder
  
 from .transforms import build_transforms
  
@@ -73,7 +74,7 @@ class DataStatistics:
  
         # Create DataLoader without normalization
         transform = build_transforms(mode='test', image_size=image_size)
-        dataset = ImageFolder(str(data_dir / 'train'), transform)
+        dataset = RobustImageFolder(str(data_dir / 'train'), transform)
         loader = DataLoader(
             dataset,
             batch_size=batch_size,

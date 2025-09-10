@@ -9,6 +9,7 @@ from pytorch_metric_learning.utils.inference import InferenceModel, MatchFinder
 from pytorch_metric_learning.distances import CosineSimilarity
 from pytorch_metric_learning.samplers import MPerClassSampler
 from torchvision.datasets import ImageFolder
+from .services.data.robust_dataset import RobustImageFolder
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import LambdaLR
  
@@ -66,11 +67,11 @@ class HOAMDataModule(pl.LightningDataModule):
             self.image_size,
             cache_file="mean_std.json"
         )
-        self.train_ds = ImageFolder(
+        self.train_ds = RobustImageFolder(
             self.data_dir / 'train',
             transform=build_transforms('train', self.image_size, mean, std)
         )
-        self.val_ds = ImageFolder(
+        self.val_ds = RobustImageFolder(
             self.data_dir / 'val',
             transform=build_transforms('val', self.image_size, mean, std)
         )
@@ -319,7 +320,7 @@ def run(cfg: DictConfig) -> None:
         emb_model.eval()
         mean, std = DataStatistics.get_mean_std(Path(cfg.data.data_dir), cfg.data.image_size)
         transforms = build_transforms('train', cfg.data.image_size, mean, std)
-        dataset = ImageFolder(Path(cfg.data.data_dir) / 'train', transforms)
+        dataset = RobustImageFolder(Path(cfg.data.data_dir) / 'train', transforms)
         match_finder = MatchFinder(distance=CosineSimilarity(), threshold=cfg.knn.threshold)
         inf_model = InferenceModel(emb_model.model, match_finder=match_finder)
         inf_model.train_knn(dataset)
