@@ -325,13 +325,11 @@ class AutoTrainingSystem:
         
         max_epochs = self.train_config['training']['max_epochs']
         if max_epochs > 10:
-            swa_epoch_start = int(max_epochs * 0.75)
             swa = StochasticWeightAveraging(
-                swa_lrs=self.train_config['training']['lr'] * 0.05,
-                swa_epoch_start=swa_epoch_start,
-                annealing_epochs=min(5, max_epochs - swa_epoch_start),
-                annealing_strategy='cos',
-                device=None
+                swa_lrs=[self.train_config['training']['lr'] * 0.01, self.train_config['training']['lr'] * 0.1],
+                swa_epoch_start=0.75,
+                annealing_epochs=min(5, max_epochs - int(max_epochs * 0.75)),
+                annealing_strategy='cos'
             )
             callbacks.append(swa)
             
@@ -339,15 +337,7 @@ class AutoTrainingSystem:
             'min_epochs': self.train_config['training'].get('min_epochs', 0),
             'max_epochs': max_epochs,
             'callbacks': callbacks,
-            'logger': TensorBoardLogger(save_dir=output_dir, name='logs'),
-            'accelerator': 'gpu' if torch.cuda.is_available() else 'cpu',
-            'devices': 1,
-            'gradient_clip_val': 1.0,
-            'accumulate_grad_batches': 1,
-            'enable_model_summary': True,
-            'enable_progress_bar': True,
-            'detect_anomaly': True,
-            'log_every_n_steps': 50
+            'logger': TensorBoardLogger(save_dir=output_dir, name='logs')
         }
         
         if torch.cuda.is_available():

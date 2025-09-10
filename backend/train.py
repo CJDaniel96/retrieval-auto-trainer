@@ -74,6 +74,27 @@ class HOAMDataModule(pl.LightningDataModule):
             self.data_dir / 'val',
             transform=build_transforms('val', self.image_size, mean, std)
         )
+        
+        # 驗證標籤範圍
+        train_labels = [label for _, label in self.train_ds.samples]
+        val_labels = [label for _, label in self.val_ds.samples]
+        
+        max_train_label = max(train_labels) if train_labels else -1
+        max_val_label = max(val_labels) if val_labels else -1
+        num_classes = len(self.train_ds.classes)
+        
+        print(f"資料集驗證:")
+        print(f"  訓練樣本數: {len(self.train_ds.samples)}")
+        print(f"  驗證樣本數: {len(self.val_ds.samples)}")
+        print(f"  類別數: {num_classes}")
+        print(f"  訓練最大標籤: {max_train_label}")
+        print(f"  驗證最大標籤: {max_val_label}")
+        print(f"  類別名稱: {self.train_ds.classes}")
+        
+        if max_train_label >= num_classes:
+            raise ValueError(f"訓練標籤超出範圍: max_label={max_train_label}, num_classes={num_classes}")
+        if max_val_label >= num_classes:
+            raise ValueError(f"驗證標籤超出範圍: max_label={max_val_label}, num_classes={num_classes}")
  
     def train_dataloader(self) -> DataLoader:
         sampler = build_sampler(self.train_ds, 4, self.batch_size)
@@ -105,7 +126,14 @@ class LightningModel(pl.LightningModule):
  
         # Determine classes
         train_path = Path(cfg.data.data_dir) / 'train'
-        num_classes = len([d for d in train_path.iterdir() if d.is_dir()])
+        class_dirs = [d for d in train_path.iterdir() if d.is_dir()]
+        num_classes = len(class_dirs)
+        
+        # 驗證類別數量
+        if num_classes == 0:
+            raise ValueError(f"在訓練路徑中找不到類別資料夾: {train_path}")
+        
+        print(f"找到 {num_classes} 個類別: {[d.name for d in class_dirs]}")
  
         # Model selection
         model_map = {'HOAM': HOAM, 'HOAMV2': HOAMV2}
@@ -130,6 +158,7 @@ class LightningModel(pl.LightningModule):
             raise ValueError(f"Unknown loss type: {loss_type}")
  
         if loss_type == 'HybridMarginLoss':
+            print(f"初始化 HybridMarginLoss: num_classes={num_classes}, embedding_size={cfg.model.embedding_size}")
             self.criterion = loss_cls(
                 num_classes=num_classes,
                 embedding_size=cfg.model.embedding_size,
@@ -181,7 +210,17 @@ class LightningModel(pl.LightningModule):
 
     def training_step(self, batch, batch_idx) -> torch.Tensor:
         imgs, labels = batch
-        loss = self.criterion(self(imgs), labels)
+        
+        # 檢查標籤範圍（使用類別數量而不是動態獲取dataloader）
+        max_label = labels.max().item()
+        train_path = Path(self.hparams.data.data_dir) / 'train'
+        num_classes = len([d for d in train_path.iterdir() if d.is_dir()])
+        
+        if max_label >= num_classes:
+            raise ValueError(f"標籤超出範圍: max_label={max_label}, num_classes={num_classes}")
+        
+        embeddings = self(imgs)
+        loss = self.criterion(embeddings, labels)
         self.log('train_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=imgs.size(0))
         return loss
  
