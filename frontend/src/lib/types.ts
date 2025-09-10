@@ -2,9 +2,11 @@ export interface TrainingRequest {
   input_dir: string;
   site?: string;
   line_id?: string;
-  max_epochs?: number;
-  batch_size?: number;
-  learning_rate?: number;
+  // Optional task-specific configuration
+  training_config?: Partial<TrainingConfig>;
+  model_config?: Partial<ModelConfig>;
+  data_config?: Partial<DataConfig>;
+  loss_config?: Partial<LossConfig>;
 }
 
 export interface TrainingStatus {

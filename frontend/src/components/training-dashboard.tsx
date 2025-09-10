@@ -35,30 +35,51 @@ import {
   Cog
 } from 'lucide-react';
 import { ApiClient } from '@/lib/api-client';
-import { TrainingStatus, TrainingRequest, FullConfig, ConfigUpdateRequest } from '@/lib/types';
+import { TrainingStatus, TrainingRequest } from '@/lib/types';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { toast } from 'sonner';
 
 export function TrainingDashboard() {
   const t = useTranslations();
   const [tasks, setTasks] = useState<TrainingStatus[]>([]);
-  const [config, setConfig] = useState<FullConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [startingTask, setStartingTask] = useState(false);
   const [activeTab, setActiveTab] = useState('new-training');
+  const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   
   const [formData, setFormData] = useState<TrainingRequest>({
     input_dir: '',
     site: 'HPH',
-    line_id: 'V31'
+    line_id: 'V31',
+    training_config: {
+      max_epochs: 50,
+      batch_size: 32,
+      lr: 0.001,
+      weight_decay: 0.0001,
+      patience: 10,
+      enable_early_stopping: true,
+      freeze_backbone_epochs: 0
+    },
+    model_config: {
+      structure: 'HOAMV2',
+      backbone: 'efficientnetv2_rw_s',
+      pretrained: true,
+      embedding_size: 512
+    },
+    data_config: {
+      image_size: 224,
+      num_workers: 4,
+      test_split: 0.2
+    },
+    loss_config: {
+      type: 'HybridMarginLoss',
+      subcenter_margin: 0.5,
+      subcenter_scale: 30
+    }
   });
-
-  const [configData, setConfigData] = useState<ConfigUpdateRequest>({});
 
   useEffect(() => {
     fetchTasks();
-    loadConfig();
     const interval = setInterval(fetchTasks, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -71,21 +92,6 @@ export function TrainingDashboard() {
     setLoading(false);
   };
 
-  const loadConfig = async () => {
-    const response = await ApiClient.getCurrentConfig();
-    if (response.data) {
-      setConfig(response.data);
-      setConfigData({
-        training: { ...response.data.training },
-        model: { ...response.data.model },
-        data: { ...response.data.data },
-        loss: { ...response.data.loss }
-      });
-    } else if (response.error) {
-      toast.error(`載入配置失敗: ${response.error}`);
-    }
-  };
-
   const handleStartTraining = async () => {
     if (!formData.input_dir) return;
 
@@ -93,24 +99,13 @@ export function TrainingDashboard() {
     const response = await ApiClient.startTraining(formData);
     if (response.data) {
       await fetchTasks();
+      // Reset only the input directory, keep the configuration
       setFormData({ ...formData, input_dir: '' });
-      toast.success('訓練任務已開始！');
+      toast.success('訓練任務已開始！此任務將使用獨立的配置設定。');
     } else if (response.error) {
       toast.error(`啟動訓練失敗: ${response.error}`);
     }
     setStartingTask(false);
-  };
-
-  const handleSaveConfig = async () => {
-    setSaving(true);
-    const response = await ApiClient.updateConfig(configData);
-    if (response.data) {
-      toast.success('配置已成功更新！');
-      await loadConfig();
-    } else if (response.error) {
-      toast.error(`更新失敗: ${response.error}`);
-    }
-    setSaving(false);
   };
 
   const handleCancelTask = async (taskId: string) => {
@@ -125,41 +120,41 @@ export function TrainingDashboard() {
     toast.success('任務已刪除');
   };
 
-  const updateTrainingField = (field: keyof NonNullable<ConfigUpdateRequest['training']>, value: any) => {
-    setConfigData(prev => ({
+  const updateTrainingField = (field: keyof NonNullable<TrainingRequest['training_config']>, value: any) => {
+    setFormData(prev => ({
       ...prev,
-      training: {
-        ...prev.training,
+      training_config: {
+        ...prev.training_config,
         [field]: value
       }
     }));
   };
 
-  const updateModelField = (field: keyof NonNullable<ConfigUpdateRequest['model']>, value: any) => {
-    setConfigData(prev => ({
+  const updateModelField = (field: keyof NonNullable<TrainingRequest['model_config']>, value: any) => {
+    setFormData(prev => ({
       ...prev,
-      model: {
-        ...prev.model,
+      model_config: {
+        ...prev.model_config,
         [field]: value
       }
     }));
   };
 
-  const updateDataField = (field: keyof NonNullable<ConfigUpdateRequest['data']>, value: any) => {
-    setConfigData(prev => ({
+  const updateDataField = (field: keyof NonNullable<TrainingRequest['data_config']>, value: any) => {
+    setFormData(prev => ({
       ...prev,
-      data: {
-        ...prev.data,
+      data_config: {
+        ...prev.data_config,
         [field]: value
       }
     }));
   };
 
-  const updateLossField = (field: keyof NonNullable<ConfigUpdateRequest['loss']>, value: any) => {
-    setConfigData(prev => ({
+  const updateLossField = (field: keyof NonNullable<TrainingRequest['loss_config']>, value: any) => {
+    setFormData(prev => ({
       ...prev,
-      loss: {
-        ...prev.loss,
+      loss_config: {
+        ...prev.loss_config,
         [field]: value
       }
     }));
@@ -212,7 +207,7 @@ export function TrainingDashboard() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 h-12 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20">
+          <TabsList className="grid w-full grid-cols-3 mb-8 h-12 bg-white/80 backdrop-blur-sm shadow-lg border border-white/20">
             <TabsTrigger value="new-training" className="flex items-center space-x-2">
               <Home className="w-4 h-4" />
               <span>新建訓練</span>
@@ -224,10 +219,6 @@ export function TrainingDashboard() {
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
               <span>系統設定</span>
-            </TabsTrigger>
-            <TabsTrigger value="config" className="flex items-center space-x-2">
-              <Cog className="w-4 h-4" />
-              <span>訓練配置</span>
             </TabsTrigger>
           </TabsList>
 
@@ -295,24 +286,170 @@ export function TrainingDashboard() {
                   </div>
                 </div>
                 
-                <Button
-                  onClick={handleStartTraining}
-                  disabled={!formData.input_dir || startingTask}
-                  className="w-full md:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                  size="lg"
-                >
-                  {startingTask ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      啟動中...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      開始訓練
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
+                      className="flex items-center space-x-2"
+                    >
+                      <Cog className="w-4 h-4" />
+                      <span>進階配置</span>
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={handleStartTraining}
+                    disabled={!formData.input_dir || startingTask}
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                    size="lg"
+                  >
+                    {startingTask ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        啟動中...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 mr-2" />
+                        開始訓練
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Advanced Configuration Panel */}
+                {showAdvancedConfig && (
+                  <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Cog className="w-5 h-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold text-gray-800">任務專用配置</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-6">
+                      這些設定僅會套用到當前的訓練任務，不會影響其他任務。
+                    </p>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Training Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Dumbbell className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">訓練參數</h4>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="max_epochs" className="text-xs">最大訓練輪數</Label>
+                            <Input
+                              id="max_epochs"
+                              type="number"
+                              min={1}
+                              max={200}
+                              value={formData.training_config?.max_epochs || ''}
+                              onChange={(e) => updateTrainingField('max_epochs', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="batch_size" className="text-xs">批次大小</Label>
+                            <Input
+                              id="batch_size"
+                              type="number"
+                              min={1}
+                              max={256}
+                              value={formData.training_config?.batch_size || ''}
+                              onChange={(e) => updateTrainingField('batch_size', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="lr" className="text-xs">學習率</Label>
+                            <Input
+                              id="lr"
+                              type="number"
+                              step="0.0001"
+                              min={0.0001}
+                              max={0.1}
+                              value={formData.training_config?.lr || ''}
+                              onChange={(e) => updateTrainingField('lr', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="weight_decay" className="text-xs">權重衰減</Label>
+                            <Input
+                              id="weight_decay"
+                              type="number"
+                              step="0.0001"
+                              min={0}
+                              max={0.01}
+                              value={formData.training_config?.weight_decay || ''}
+                              onChange={(e) => updateTrainingField('weight_decay', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="early_stopping"
+                            checked={formData.training_config?.enable_early_stopping ?? true}
+                            onCheckedChange={(checked) => updateTrainingField('enable_early_stopping', checked)}
+                          />
+                          <Label htmlFor="early_stopping" className="text-sm">啟用提前停止</Label>
+                        </div>
+                      </div>
+
+                      {/* Model Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Brain className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">模型配置</h4>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="structure" className="text-xs">模型結構</Label>
+                            <Select
+                              value={formData.model_config?.structure || ''}
+                              onValueChange={(value) => updateModelField('structure', value as 'HOAM' | 'HOAMV2')}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="選擇模型結構" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="HOAM">HOAM</SelectItem>
+                                <SelectItem value="HOAMV2">HOAMV2</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="backbone" className="text-xs">骨幹網路</Label>
+                            <Select
+                              value={formData.model_config?.backbone || ''}
+                              onValueChange={(value) => updateModelField('backbone', value)}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="選擇骨幹網路" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
+                                <SelectItem value="efficientnetv2_rw_m">EfficientNetV2-M</SelectItem>
+                                <SelectItem value="resnet50">ResNet50</SelectItem>
+                                <SelectItem value="resnet101">ResNet101</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="flex items-center space-x-2 pt-2">
+                            <Switch
+                              id="pretrained"
+                              checked={formData.model_config?.pretrained ?? false}
+                              onCheckedChange={(checked) => updateModelField('pretrained', checked)}
+                            />
+                            <Label htmlFor="pretrained" className="text-sm">使用預訓練權重</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -451,157 +588,6 @@ export function TrainingDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Configuration Tab */}
-          <TabsContent value="config" className="space-y-6">
-            <Alert className="border-blue-200 bg-blue-50/80">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                在這裡修改的配置會影響所有新的訓練任務。修改後請記得保存配置。
-              </AlertDescription>
-            </Alert>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Training Configuration */}
-              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-                <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <Dumbbell className="w-5 h-5 text-blue-600" />
-                    <CardTitle>訓練配置</CardTitle>
-                  </div>
-                  <CardDescription>調整訓練相關的參數設定</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="max_epochs">最大訓練輪數</Label>
-                      <Input
-                        id="max_epochs"
-                        type="number"
-                        min={1}
-                        max={200}
-                        value={configData.training?.max_epochs || ''}
-                        onChange={(e) => updateTrainingField('max_epochs', parseInt(e.target.value) || 0)}
-                        className="bg-white/70"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="batch_size">批次大小</Label>
-                      <Input
-                        id="batch_size"
-                        type="number"
-                        min={1}
-                        max={256}
-                        value={configData.training?.batch_size || ''}
-                        onChange={(e) => updateTrainingField('batch_size', parseInt(e.target.value) || 0)}
-                        className="bg-white/70"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lr">學習率</Label>
-                      <Input
-                        id="lr"
-                        type="number"
-                        step="0.0001"
-                        min={0.0001}
-                        max={0.1}
-                        value={configData.training?.lr || ''}
-                        onChange={(e) => updateTrainingField('lr', parseFloat(e.target.value) || 0)}
-                        className="bg-white/70"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="weight_decay">權重衰減</Label>
-                      <Input
-                        id="weight_decay"
-                        type="number"
-                        step="0.0001"
-                        min={0}
-                        max={0.01}
-                        value={configData.training?.weight_decay || ''}
-                        onChange={(e) => updateTrainingField('weight_decay', parseFloat(e.target.value) || 0)}
-                        className="bg-white/70"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="early_stopping"
-                      checked={configData.training?.enable_early_stopping ?? true}
-                      onCheckedChange={(checked) => updateTrainingField('enable_early_stopping', checked)}
-                    />
-                    <Label htmlFor="early_stopping">啟用提前停止</Label>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Model Configuration */}
-              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-                <CardHeader>
-                  <div className="flex items-center space-x-2">
-                    <Brain className="w-5 h-5 text-blue-600" />
-                    <CardTitle>模型配置</CardTitle>
-                  </div>
-                  <CardDescription>調整模型架構和相關參數</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="structure">模型結構</Label>
-                    <Select
-                      value={configData.model?.structure || ''}
-                      onValueChange={(value) => updateModelField('structure', value as 'HOAM' | 'HOAMV2')}
-                    >
-                      <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder="選擇模型結構" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HOAM">HOAM</SelectItem>
-                        <SelectItem value="HOAMV2">HOAMV2</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="backbone">骨幹網路</Label>
-                    <Select
-                      value={configData.model?.backbone || ''}
-                      onValueChange={(value) => updateModelField('backbone', value)}
-                    >
-                      <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder="選擇骨幹網路" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
-                        <SelectItem value="efficientnetv2_rw_m">EfficientNetV2-M</SelectItem>
-                        <SelectItem value="resnet50">ResNet50</SelectItem>
-                        <SelectItem value="resnet101">ResNet101</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Save Button */}
-            <div className="flex justify-center pt-6">
-              <Button 
-                onClick={handleSaveConfig} 
-                disabled={saving}
-                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 transition-all duration-200"
-                size="lg"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    保存中...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    保存配置
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
     </div>
