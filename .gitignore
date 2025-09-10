@@ -68,3 +68,7 @@ coverage.xml
 datasets/
 *.jpg
 *.jpeg
+
+outputs/
+
+temp_uploads/
