@@ -82,5 +82,75 @@
     "download_results": "Download Results",
     "confusion_matrix": "Confusion Matrix",
     "evaluation_report": "Evaluation Report"
+  },
+  "config": {
+    "title": "Advanced Settings",
+    "experiment": {
+      "title": "Experiment Settings",
+      "name": "Experiment Name"
+    },
+    "training": {
+      "title": "Training Parameters",
+      "min_epochs": "Minimum Epochs",
+      "max_epochs": "Maximum Epochs",
+      "learning_rate": "Learning Rate",
+      "weight_decay": "Weight Decay",
+      "batch_size": "Batch Size",
+      "freeze_backbone_epochs": "Freeze Backbone Epochs",
+      "patience": "Early Stopping Patience",
+      "enable_early_stopping": "Enable Early Stopping",
+      "checkpoint_dir": "Checkpoint Directory"
+    },
+    "model": {
+      "title": "Model Settings",
+      "structure": "Model Structure",
+      "backbone": "Backbone Network",
+      "pretrained": "Use Pretrained",
+      "embedding_size": "Embedding Size"
+    },
+    "data": {
+      "title": "Data Settings",
+      "image_size": "Image Size",
+      "num_workers": "Number of Workers",
+      "test_split": "Test Split Ratio"
+    },
+    "loss": {
+      "title": "Loss Function Settings",
+      "type": "Loss Function Type",
+      "subcenter_margin": "Subcenter Margin",
+      "subcenter_scale": "Subcenter Scale",
+      "sub_centers": "Number of Sub Centers",
+      "triplet_margin": "Triplet Margin",
+      "center_loss_weight": "Center Loss Weight"
+    },
+    "knn": {
+      "title": "KNN Settings",
+      "enable": "Enable KNN",
+      "threshold": "Threshold",
+      "index_path": "Index Path",
+      "dataset_pkl": "Dataset PKL"
+    }
+  },
+  "messages": {
+    "config_updated": "Configuration updated successfully",
+    "config_reset": "Configuration reset successfully",
+    "invalid_task_id": "Invalid task ID",
+    "orientation_confirmed": "Orientation confirmed successfully, training started",
+    "training_started": "Training started successfully",
+    "task_cancelled": "Task cancelled successfully",
+    "error_occurred": "An error occurred",
+    "loading_config": "Loading configuration...",
+    "loading_tasks": "Loading tasks...",
+    "refreshing_tasks": "Refreshing tasks...",
+    "starting_training": "Starting training...",
+    "confirming_orientation": "Confirming orientation...",
+    "cancelling_task": "Cancelling task...",
+    "updating_config": "Updating configuration...",
+    "resetting_config": "Resetting configuration..."
+  },
+  "footer": {
+    "powered_by": "Powered by",
+    "ai_system": "AI Automated Training System",
+    "powered": ""
   }
 }

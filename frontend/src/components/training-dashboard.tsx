@@ -33,7 +33,10 @@ import {
   Target,
   Home,
   ListTodo,
-  Cog
+  Cog,
+  Search,
+  Zap,
+  FileText
 } from 'lucide-react';
 import { ApiClient } from '@/lib/api-client';
 import { TrainingStatus, TrainingRequest } from '@/lib/types';
@@ -54,19 +57,24 @@ export function TrainingDashboard() {
     input_dir: '',
     site: 'HPH',
     line_id: 'V31',
+    experiment_config: {
+      name: 'hoam_experiment'
+    },
     training_config: {
+      min_epochs: 0,
       max_epochs: 50,
-      batch_size: 32,
-      lr: 0.001,
+      lr: 0.0003,
       weight_decay: 0.0001,
+      batch_size: 8,
+      freeze_backbone_epochs: 10,
       patience: 10,
       enable_early_stopping: true,
-      freeze_backbone_epochs: 0
+      checkpoint_dir: 'checkpoints'
     },
     model_config: {
       structure: 'HOAMV2',
       backbone: 'efficientnetv2_rw_s',
-      pretrained: true,
+      pretrained: false,
       embedding_size: 512
     },
     data_config: {
@@ -76,8 +84,17 @@ export function TrainingDashboard() {
     },
     loss_config: {
       type: 'HybridMarginLoss',
-      subcenter_margin: 0.5,
-      subcenter_scale: 30
+      subcenter_margin: 0.4,
+      subcenter_scale: 30.0,
+      sub_centers: 3,
+      triplet_margin: 0.3,
+      center_loss_weight: 0.01
+    },
+    knn_config: {
+      enable: false,
+      threshold: 0.5,
+      index_path: 'knn.index',
+      dataset_pkl: 'dataset.pkl'
     }
   });
 
@@ -104,9 +121,9 @@ export function TrainingDashboard() {
       await fetchTasks();
       // Reset only the input directory, keep the configuration
       setFormData({ ...formData, input_dir: '' });
-      toast.success('訓練任務已開始！此任務將使用獨立的配置設定。');
+      toast.success(t('messages.training_started'));
     } else if (response.error) {
-      toast.error(`啟動訓練失敗: ${response.error}`);
+      toast.error(`${t('messages.error_occurred')}: ${response.error}`);
     }
     setStartingTask(false);
   };
@@ -114,13 +131,13 @@ export function TrainingDashboard() {
   const handleCancelTask = async (taskId: string) => {
     await ApiClient.cancelTraining(taskId);
     await fetchTasks();
-    toast.success('任務已取消');
+    toast.success(t('messages.task_cancelled'));
   };
 
   const handleDeleteTask = async (taskId: string) => {
     await ApiClient.deleteTraining(taskId);
     await fetchTasks();
-    toast.success('任務已刪除');
+    toast.success(t('messages.task_cancelled'));
   };
 
   const handleOrientationConfirm = (taskId: string) => {
@@ -172,6 +189,26 @@ export function TrainingDashboard() {
     }));
   };
 
+  const updateExperimentField = (field: keyof NonNullable<TrainingRequest['experiment_config']>, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      experiment_config: {
+        ...prev.experiment_config,
+        [field]: value
+      }
+    }));
+  };
+
+  const updateKnnField = (field: keyof NonNullable<TrainingRequest['knn_config']>, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      knn_config: {
+        ...prev.knn_config,
+        [field]: value
+      }
+    }));
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
@@ -218,7 +255,7 @@ export function TrainingDashboard() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  自動化訓練系統
+                  {t('common.title')}
                 </h1>
                 <p className="text-sm text-muted-foreground">Image Retrieval Model Training Platform</p>
               </div>
@@ -226,7 +263,7 @@ export function TrainingDashboard() {
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                系統運行中
+{t('footer.powered_by')} {t('footer.ai_system')}
               </div>
               <LanguageSwitcher />
             </div>
@@ -245,14 +282,14 @@ export function TrainingDashboard() {
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <Home className="w-4 h-4 mr-2" />
-                新建訓練
+{t('training.start_new')}
               </TabsTrigger>
               <TabsTrigger 
                 value="task-list" 
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <ListTodo className="w-4 h-4 mr-2" />
-                任務列表
+{t('navigation.training')}
                 {tasks.length > 0 && (
                   <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
                     {tasks.length}
@@ -264,7 +301,7 @@ export function TrainingDashboard() {
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                系統設定
+                {t('navigation.settings')}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -281,37 +318,37 @@ export function TrainingDashboard() {
               <CardHeader>
                 <div className="flex items-center space-x-2">
                   <Play className="w-6 h-6 text-blue-600" />
-                  <CardTitle className="text-2xl">開始新的訓練任務</CardTitle>
+                  <CardTitle className="text-2xl">{t('training.start_new')}</CardTitle>
                 </div>
                 <CardDescription>
-                  配置並啟動新的模型訓練任務
+{t('form.configure_task')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <Alert className="border-blue-200 bg-blue-50/80">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-800">
-                    請確保輸入資料夾中包含正確格式的圖片文件，系統會自動處理資料夾管理。
+{t('form.folder_management_info')}
                   </AlertDescription>
                 </Alert>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="input_dir" className="text-sm font-medium">輸入資料夾路徑</Label>
+                    <Label htmlFor="input_dir" className="text-sm font-medium">{t('training.input_directory')}</Label>
                     <Input
                       id="input_dir"
                       value={formData.input_dir}
                       onChange={(e) => setFormData({ ...formData, input_dir: e.target.value })}
-                      placeholder="請輸入資料夾路徑"
+                      placeholder={t('form.input_placeholder')}
                       className="bg-white/70"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="site" className="text-sm font-medium">產線站點</Label>
+                    <Label htmlFor="site" className="text-sm font-medium">{t('training.site')}</Label>
                     <Select value={formData.site} onValueChange={(value) => setFormData({ ...formData, site: value })}>
                       <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder="選擇站點" />
+                        <SelectValue placeholder={t('form.select_site')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="HPH">HPH</SelectItem>
@@ -323,10 +360,10 @@ export function TrainingDashboard() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="line_id" className="text-sm font-medium">產線ID</Label>
+                    <Label htmlFor="line_id" className="text-sm font-medium">{t('training.line_id')}</Label>
                     <Select value={formData.line_id} onValueChange={(value) => setFormData({ ...formData, line_id: value })}>
                       <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder="選擇產線" />
+                        <SelectValue placeholder={t('form.select_line')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="V31">V31</SelectItem>
@@ -348,7 +385,7 @@ export function TrainingDashboard() {
                       className="flex items-center space-x-2"
                     >
                       <Cog className="w-4 h-4" />
-                      <span>進階配置</span>
+                      <span>{t('config.title')}</span>
                     </Button>
                   </div>
                   <Button
@@ -360,12 +397,12 @@ export function TrainingDashboard() {
                     {startingTask ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        啟動中...
+{t('messages.starting_training')}
                       </>
                     ) : (
                       <>
                         <Play className="w-4 h-4 mr-2" />
-                        開始訓練
+{t('common.start')}
                       </>
                     )}
                   </Button>
@@ -376,22 +413,52 @@ export function TrainingDashboard() {
                   <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-2 mb-4">
                       <Cog className="w-5 h-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-gray-800">任務專用配置</h3>
+                      <h3 className="text-lg font-semibold text-gray-800">{t('config.title')}</h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-6">
-                      這些設定僅會套用到當前的訓練任務，不會影響其他任務。
+這些設定僅會套用到當前的訓練任務，不會影響其他任務。所有參數都來自training_configs.yaml。
                     </p>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                      {/* Experiment Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">{t('config.experiment.title')}</h4>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="experiment_name" className="text-xs">{t('config.experiment.name')}</Label>
+                          <Input
+                            id="experiment_name"
+                            value={formData.experiment_config?.name || ''}
+                            onChange={(e) => updateExperimentField('name', e.target.value)}
+                            className="h-8 text-sm"
+                            placeholder="hoam_experiment"
+                          />
+                        </div>
+                      </div>
+
                       {/* Training Configuration */}
                       <div className="space-y-4">
                         <div className="flex items-center space-x-2">
                           <Dumbbell className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">訓練參數</h4>
+                          <h4 className="font-medium text-gray-700">{t('config.training.title')}</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
-                            <Label htmlFor="max_epochs" className="text-xs">最大訓練輪數</Label>
+                            <Label htmlFor="min_epochs" className="text-xs">{t('config.training.min_epochs')}</Label>
+                            <Input
+                              id="min_epochs"
+                              type="number"
+                              min={0}
+                              max={50}
+                              value={formData.training_config?.min_epochs || ''}
+                              onChange={(e) => updateTrainingField('min_epochs', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="max_epochs" className="text-xs">{t('config.training.max_epochs')}</Label>
                             <Input
                               id="max_epochs"
                               type="number"
@@ -403,7 +470,7 @@ export function TrainingDashboard() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="batch_size" className="text-xs">批次大小</Label>
+                            <Label htmlFor="batch_size" className="text-xs">{t('config.training.batch_size')}</Label>
                             <Input
                               id="batch_size"
                               type="number"
@@ -415,7 +482,7 @@ export function TrainingDashboard() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="lr" className="text-xs">學習率</Label>
+                            <Label htmlFor="lr" className="text-xs">{t('config.training.learning_rate')}</Label>
                             <Input
                               id="lr"
                               type="number"
@@ -428,7 +495,7 @@ export function TrainingDashboard() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="weight_decay" className="text-xs">權重衰減</Label>
+                            <Label htmlFor="weight_decay" className="text-xs">{t('config.training.weight_decay')}</Label>
                             <Input
                               id="weight_decay"
                               type="number"
@@ -440,6 +507,40 @@ export function TrainingDashboard() {
                               className="h-8 text-sm"
                             />
                           </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="patience" className="text-xs">{t('config.training.patience')}</Label>
+                            <Input
+                              id="patience"
+                              type="number"
+                              min={1}
+                              max={50}
+                              value={formData.training_config?.patience || ''}
+                              onChange={(e) => updateTrainingField('patience', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="freeze_epochs" className="text-xs">{t('config.training.freeze_backbone_epochs')}</Label>
+                            <Input
+                              id="freeze_epochs"
+                              type="number"
+                              min={0}
+                              max={20}
+                              value={formData.training_config?.freeze_backbone_epochs || ''}
+                              onChange={(e) => updateTrainingField('freeze_backbone_epochs', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="checkpoint_dir" className="text-xs">{t('config.training.checkpoint_dir')}</Label>
+                            <Input
+                              id="checkpoint_dir"
+                              value={formData.training_config?.checkpoint_dir || ''}
+                              onChange={(e) => updateTrainingField('checkpoint_dir', e.target.value)}
+                              className="h-8 text-sm"
+                              placeholder="checkpoints"
+                            />
+                          </div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Switch
@@ -447,25 +548,27 @@ export function TrainingDashboard() {
                             checked={formData.training_config?.enable_early_stopping ?? true}
                             onCheckedChange={(checked) => updateTrainingField('enable_early_stopping', checked)}
                           />
-                          <Label htmlFor="early_stopping" className="text-sm">啟用提前停止</Label>
+                          <Label htmlFor="early_stopping" className="text-sm">{t('config.training.enable_early_stopping')}</Label>
                         </div>
                       </div>
+                    </div>
 
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
                       {/* Model Configuration */}
                       <div className="space-y-4">
                         <div className="flex items-center space-x-2">
                           <Brain className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">模型配置</h4>
+                          <h4 className="font-medium text-gray-700">{t('config.model.title')}</h4>
                         </div>
                         <div className="space-y-3">
                           <div className="space-y-2">
-                            <Label htmlFor="structure" className="text-xs">模型結構</Label>
+                            <Label htmlFor="structure" className="text-xs">{t('config.model.structure')}</Label>
                             <Select
                               value={formData.model_config?.structure || ''}
                               onValueChange={(value) => updateModelField('structure', value as 'HOAM' | 'HOAMV2')}
                             >
                               <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="選擇模型結構" />
+                                <SelectValue placeholder={t('config.model.structure')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="HOAM">HOAM</SelectItem>
@@ -474,13 +577,13 @@ export function TrainingDashboard() {
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="backbone" className="text-xs">骨幹網路</Label>
+                            <Label htmlFor="backbone" className="text-xs">{t('config.model.backbone')}</Label>
                             <Select
                               value={formData.model_config?.backbone || ''}
                               onValueChange={(value) => updateModelField('backbone', value)}
                             >
                               <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="選擇骨幹網路" />
+                                <SelectValue placeholder={t('config.model.backbone')} />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
@@ -490,13 +593,223 @@ export function TrainingDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="embedding_size" className="text-xs">{t('config.model.embedding_size')}</Label>
+                            <Input
+                              id="embedding_size"
+                              type="number"
+                              min={64}
+                              max={2048}
+                              step={64}
+                              value={formData.model_config?.embedding_size || ''}
+                              onChange={(e) => updateModelField('embedding_size', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
                           <div className="flex items-center space-x-2 pt-2">
                             <Switch
                               id="pretrained"
                               checked={formData.model_config?.pretrained ?? false}
                               onCheckedChange={(checked) => updateModelField('pretrained', checked)}
                             />
-                            <Label htmlFor="pretrained" className="text-sm">使用預訓練權重</Label>
+                            <Label htmlFor="pretrained" className="text-sm">{t('config.model.pretrained')}</Label>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Data Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Database className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">{t('config.data.title')}</h4>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="image_size" className="text-xs">{t('config.data.image_size')}</Label>
+                            <Select
+                              value={formData.data_config?.image_size?.toString() || ''}
+                              onValueChange={(value) => updateDataField('image_size', parseInt(value))}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder={t('config.data.image_size')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="224">224x224</SelectItem>
+                                <SelectItem value="256">256x256</SelectItem>
+                                <SelectItem value="384">384x384</SelectItem>
+                                <SelectItem value="512">512x512</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="num_workers" className="text-xs">{t('config.data.num_workers')}</Label>
+                            <Input
+                              id="num_workers"
+                              type="number"
+                              min={0}
+                              max={16}
+                              value={formData.data_config?.num_workers || ''}
+                              onChange={(e) => updateDataField('num_workers', parseInt(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="test_split" className="text-xs">{t('config.data.test_split')}</Label>
+                            <Input
+                              id="test_split"
+                              type="number"
+                              step="0.05"
+                              min={0.1}
+                              max={0.5}
+                              value={formData.data_config?.test_split || ''}
+                              onChange={(e) => updateDataField('test_split', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+                      {/* Loss Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Target className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">{t('config.loss.title')}</h4>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="loss_type" className="text-xs">{t('config.loss.type')}</Label>
+                            <Select
+                              value={formData.loss_config?.type || ''}
+                              onValueChange={(value) => updateLossField('type', value as 'HybridMarginLoss' | 'ArcFaceLoss' | 'SubCenterArcFaceLoss')}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder={t('config.loss.type')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="HybridMarginLoss">HybridMarginLoss</SelectItem>
+                                <SelectItem value="ArcFaceLoss">ArcFaceLoss</SelectItem>
+                                <SelectItem value="SubCenterArcFaceLoss">SubCenterArcFaceLoss</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="subcenter_margin" className="text-xs">{t('config.loss.subcenter_margin')}</Label>
+                              <Input
+                                id="subcenter_margin"
+                                type="number"
+                                step="0.1"
+                                min={0.1}
+                                max={1.0}
+                                value={formData.loss_config?.subcenter_margin || ''}
+                                onChange={(e) => updateLossField('subcenter_margin', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="subcenter_scale" className="text-xs">{t('config.loss.subcenter_scale')}</Label>
+                              <Input
+                                id="subcenter_scale"
+                                type="number"
+                                step="1"
+                                min={1}
+                                max={100}
+                                value={formData.loss_config?.subcenter_scale || ''}
+                                onChange={(e) => updateLossField('subcenter_scale', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="sub_centers" className="text-xs">{t('config.loss.sub_centers')}</Label>
+                              <Input
+                                id="sub_centers"
+                                type="number"
+                                min={1}
+                                max={10}
+                                value={formData.loss_config?.sub_centers || ''}
+                                onChange={(e) => updateLossField('sub_centers', parseInt(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="triplet_margin" className="text-xs">{t('config.loss.triplet_margin')}</Label>
+                              <Input
+                                id="triplet_margin"
+                                type="number"
+                                step="0.1"
+                                min={0.1}
+                                max={1.0}
+                                value={formData.loss_config?.triplet_margin || ''}
+                                onChange={(e) => updateLossField('triplet_margin', parseFloat(e.target.value) || 0)}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="center_loss_weight" className="text-xs">{t('config.loss.center_loss_weight')}</Label>
+                            <Input
+                              id="center_loss_weight"
+                              type="number"
+                              step="0.001"
+                              min={0.001}
+                              max={0.1}
+                              value={formData.loss_config?.center_loss_weight || ''}
+                              onChange={(e) => updateLossField('center_loss_weight', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* KNN Configuration */}
+                      <div className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Search className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-medium text-gray-700">{t('config.knn.title')}</h4>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="knn_enable"
+                              checked={formData.knn_config?.enable ?? false}
+                              onCheckedChange={(checked) => updateKnnField('enable', checked)}
+                            />
+                            <Label htmlFor="knn_enable" className="text-sm">{t('config.knn.enable')}</Label>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="knn_threshold" className="text-xs">{t('config.knn.threshold')}</Label>
+                            <Input
+                              id="knn_threshold"
+                              type="number"
+                              step="0.1"
+                              min={0.1}
+                              max={1.0}
+                              value={formData.knn_config?.threshold || ''}
+                              onChange={(e) => updateKnnField('threshold', parseFloat(e.target.value) || 0)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="index_path" className="text-xs">{t('config.knn.index_path')}</Label>
+                            <Input
+                              id="index_path"
+                              value={formData.knn_config?.index_path || ''}
+                              onChange={(e) => updateKnnField('index_path', e.target.value)}
+                              className="h-8 text-sm"
+                              placeholder="knn.index"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="dataset_pkl" className="text-xs">{t('config.knn.dataset_pkl')}</Label>
+                            <Input
+                              id="dataset_pkl"
+                              value={formData.knn_config?.dataset_pkl || ''}
+                              onChange={(e) => updateKnnField('dataset_pkl', e.target.value)}
+                              className="h-8 text-sm"
+                              placeholder="dataset.pkl"
+                            />
                           </div>
                         </div>
                       </div>
@@ -521,15 +834,15 @@ export function TrainingDashboard() {
                 <div>
                   <div className="flex items-center space-x-2">
                     <ListTodo className="w-6 h-6 text-blue-600" />
-                    <CardTitle className="text-2xl">訓練任務列表</CardTitle>
+                    <CardTitle className="text-2xl">{t('training.title')}</CardTitle>
                   </div>
                   <CardDescription>
-                    監控和管理所有訓練任務的執行狀態
+{t('form.monitor_tasks')}
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={fetchTasks} disabled={loading}>
                   <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  刷新
+{t('form.refresh')}
                 </Button>
               </CardHeader>
               <CardContent>
@@ -540,9 +853,9 @@ export function TrainingDashboard() {
                 ) : tasks.length === 0 ? (
                   <Alert className="border-gray-200 bg-gray-50/80">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>目前沒有訓練任務</AlertTitle>
+                    <AlertTitle>{t('form.no_training_tasks')}</AlertTitle>
                     <AlertDescription>
-                      請先建立新的訓練任務來開始使用系統。
+{t('form.no_tasks_description')}
                     </AlertDescription>
                   </Alert>
                 ) : (
@@ -567,13 +880,13 @@ export function TrainingDashboard() {
                                   onClick={() => handleOrientationConfirm(task.task_id)}
                                 >
                                   <AlertCircle className="w-4 h-4 mr-2" />
-                                  確認方向
+{t('form.confirm_orientation')}
                                 </Button>
                               )}
                               {task.status === 'completed' && (
                                 <Button size="sm" variant="outline">
                                   <Download className="w-4 h-4 mr-2" />
-                                  下載
+{t('common.download')}
                                 </Button>
                               )}
                               {(task.status === 'pending' || task.status === 'running') && (
@@ -583,7 +896,7 @@ export function TrainingDashboard() {
                                   onClick={() => handleCancelTask(task.task_id)}
                                 >
                                   <Square className="w-4 h-4 mr-2" />
-                                  取消
+{t('common.cancel')}
                                 </Button>
                               )}
                               <Button 
@@ -592,7 +905,7 @@ export function TrainingDashboard() {
                                 onClick={() => handleDeleteTask(task.task_id)}
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                刪除
+{t('common.delete')}
                               </Button>
                             </div>
                           </div>
@@ -600,9 +913,9 @@ export function TrainingDashboard() {
                           {task.status === 'pending_orientation' && (
                             <Alert className="border-yellow-200 bg-yellow-50/80">
                               <AlertCircle className="h-4 w-4 text-yellow-600" />
-                              <AlertTitle className="text-yellow-800">需要確認方向</AlertTitle>
+                              <AlertTitle className="text-yellow-800">{t('orientation.title')}</AlertTitle>
                               <AlertDescription className="text-yellow-700">
-                                訓練任務已完成數據分類，請點擊「確認方向」按鈕來確認每個類別的圖像方向，以便進行數據增強。
+  {t('orientation.description')}
                               </AlertDescription>
                             </Alert>
                           )}
@@ -616,7 +929,7 @@ export function TrainingDashboard() {
                           {task.progress !== undefined && (
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span>訓練進度</span>
+                                <span>{t('training.progress')}</span>
                                 <span className="font-medium">{Math.round(task.progress * 100)}%</span>
                               </div>
                               <Progress value={task.progress * 100} className="h-2" />
@@ -626,15 +939,15 @@ export function TrainingDashboard() {
                           {task.error_message && (
                             <Alert variant="destructive" className="border-red-200 bg-red-50/80">
                               <XCircle className="h-4 w-4" />
-                              <AlertTitle>錯誤訊息</AlertTitle>
+                              <AlertTitle>{t('form.error_title')}</AlertTitle>
                               <AlertDescription>{task.error_message}</AlertDescription>
                             </Alert>
                           )}
                           
                           <div className="flex justify-between text-sm text-muted-foreground pt-2 border-t border-gray-200/50">
-                            <span>建立時間: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'}</span>
+                            <span>{t('training.created_at')}: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'}</span>
                             {task.end_time && (
-                              <span>完成時間: {new Date(task.end_time).toLocaleString()}</span>
+                              <span>{t('training.completed_at')}: {new Date(task.end_time).toLocaleString()}</span>
                             )}
                           </div>
                         </CardContent>
@@ -659,10 +972,10 @@ export function TrainingDashboard() {
               <CardHeader>
                 <div className="flex items-center space-x-2">
                   <Settings className="w-6 h-6 text-blue-600" />
-                  <CardTitle className="text-2xl">系統設定</CardTitle>
+                  <CardTitle className="text-2xl">{t('navigation.settings')}</CardTitle>
                 </div>
                 <CardDescription>
-                  管理系統相關設定和偏好
+管理系統相關設定和偏好
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -689,7 +1002,7 @@ export function TrainingDashboard() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                   <Brain className="w-5 h-5 text-white" />
                 </div>
-                <span className="font-semibold text-gray-800">自動化訓練系統</span>
+                <span className="font-semibold text-gray-800">{t('footer.ai_system')}</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-xs">
                 專為影像檢索模型設計的自動化訓練平台，提供完整的訓練工作流程和任務管理功能。

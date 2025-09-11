@@ -82,5 +82,75 @@
     "download_results": "下載結果",
     "confusion_matrix": "混淆矩陣",
     "evaluation_report": "評估報告"
+  },
+  "config": {
+    "title": "進階設定",
+    "experiment": {
+      "title": "實驗設定",
+      "name": "實驗名稱"
+    },
+    "training": {
+      "title": "訓練參數",
+      "min_epochs": "最小訓練回合",
+      "max_epochs": "最大訓練回合",
+      "learning_rate": "學習率",
+      "weight_decay": "權重衰減",
+      "batch_size": "批次大小",
+      "freeze_backbone_epochs": "骨幹凍結回合",
+      "patience": "早停耐心值",
+      "enable_early_stopping": "啟用早期停止",
+      "checkpoint_dir": "檢查點目錄"
+    },
+    "model": {
+      "title": "模型設定",
+      "structure": "模型架構",
+      "backbone": "骨幹網絡",
+      "pretrained": "使用預訓練",
+      "embedding_size": "嵌入維度"
+    },
+    "data": {
+      "title": "數據設定",
+      "image_size": "影像尺寸",
+      "num_workers": "工作執行緒數",
+      "test_split": "測試集比例"
+    },
+    "loss": {
+      "title": "損失函數設定",
+      "type": "損失函數類型",
+      "subcenter_margin": "子中心邊界",
+      "subcenter_scale": "子中心縮放",
+      "sub_centers": "子中心數量",
+      "triplet_margin": "三元組邊界",
+      "center_loss_weight": "中心損失權重"
+    },
+    "knn": {
+      "title": "KNN設定",
+      "enable": "啟用KNN",
+      "threshold": "閾值",
+      "index_path": "索引路徑",
+      "dataset_pkl": "數據集PKL"
+    }
+  },
+  "messages": {
+    "config_updated": "設定更新成功",
+    "config_reset": "設定重置成功",
+    "invalid_task_id": "無效的任務 ID",
+    "orientation_confirmed": "方向確認成功，訓練已開始",
+    "training_started": "訓練開始成功",
+    "task_cancelled": "任務取消成功",
+    "error_occurred": "發生錯誤",
+    "loading_config": "載入設定中...",
+    "loading_tasks": "載入任務中...",
+    "refreshing_tasks": "刷新任務中...",
+    "starting_training": "開始訓練中...",
+    "confirming_orientation": "確認方向中...",
+    "cancelling_task": "取消任務中...",
+    "updating_config": "更新設定中...",
+    "resetting_config": "重置設定中..."
+  },
+  "footer": {
+    "powered_by": "由",
+    "ai_system": "AI 自動化訓練系統",
+    "powered": "提供支援"
   }
 }

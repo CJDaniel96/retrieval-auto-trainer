@@ -3,10 +3,12 @@ export interface TrainingRequest {
   site?: string;
   line_id?: string;
   // Optional task-specific configuration
+  experiment_config?: Partial<ExperimentConfig>;
   training_config?: Partial<TrainingConfig>;
   model_config?: Partial<ModelConfig>;
   data_config?: Partial<DataConfig>;
   loss_config?: Partial<LossConfig>;
+  knn_config?: Partial<KnnConfig>;
 }
 
 export interface TrainingStatus {
@@ -82,25 +84,31 @@ export interface LossConfig {
   center_loss_weight: number;
 }
 
+export interface ExperimentConfig {
+  name: string;
+}
+
+export interface KnnConfig {
+  enable: boolean;
+  threshold: number;
+  index_path: string;
+  dataset_pkl: string;
+}
+
 export interface FullConfig {
-  experiment: {
-    name: string;
-  };
+  experiment: ExperimentConfig;
   training: TrainingConfig;
   model: ModelConfig;
   data: DataConfig;
   loss: LossConfig;
-  knn?: {
-    enable: boolean;
-    threshold: number;
-    index_path: string;
-    dataset_pkl: string;
-  };
+  knn: KnnConfig;
 }
 
 export interface ConfigUpdateRequest {
+  experiment?: Partial<ExperimentConfig>;
   training?: Partial<TrainingConfig>;
   model?: Partial<ModelConfig>;
   data?: Partial<DataConfig>;
   loss?: Partial<LossConfig>;
+  knn?: Partial<KnnConfig>;
 }
