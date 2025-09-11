@@ -50,6 +50,7 @@ export function TrainingDashboard() {
   const [tasks, setTasks] = useState<TrainingStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [startingTask, setStartingTask] = useState(false);
   const [activeTab, setActiveTab] = useState('new-training');
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
@@ -108,27 +109,65 @@ export function TrainingDashboard() {
     
     return () => clearInterval(interval);
   }, []); // 只在組件掛載時執行一次
+  
+  // 防止無限載入的保險機制
+  useEffect(() => {
+    const failsafeTimeout = setTimeout(() => {
+      if (loading && initialLoad) {
+        console.warn('強制停止載入狀態 - 防止無限載入');
+        setLoading(false);
+        setError('載入超時，請手動刷新或檢查網路連接');
+      }
+    }, 15000); // 15秒後強制停止載入
+    
+    return () => clearTimeout(failsafeTimeout);
+  }, [loading, initialLoad]);
 
   const fetchTasks = async () => {
+    console.log('開始獲取任務...');
     try {
       setError(null); // 清除之前的錯誤
-      const response = await ApiClient.listTrainingTasks();
+      
+      // 使用 Promise.race 來確保最多 8 秒就會有結果
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('請求超時')), 8000)
+      );
+      
+      const apiPromise = ApiClient.listTrainingTasks();
+      
+      const response = await Promise.race([apiPromise, timeoutPromise]) as any;
+      
       if (response.data) {
-        setTasks(response.data);
+        setTasks(Array.isArray(response.data) ? response.data : []);
+        setError(null);
       } else if (response.error) {
         setError(response.error);
         setTasks([]);
       } else {
         // 如果沒有資料，設置為空陣列
         setTasks([]);
+        setError(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch tasks:', error);
-      setError('無法連接到後端服務，請確認後端服務已啟動');
+      
+      // 根據錯誤類型設置不同的錯誤訊息
+      let errorMessage = '無法連接到後端服務';
+      if (error.message === '請求超時') {
+        errorMessage = '後端服務響應超時，請檢查服務狀態';
+      } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        errorMessage = '無法連接到後端服務 (http://localhost:8000)，請確認後端服務已啟動';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'API 端點不存在，請檢查後端服務版本';
+      }
+      
+      setError(errorMessage);
       setTasks([]);
     } finally {
-      // 無論成功或失敗都要停止載入狀態
+      // 確保無論什麼情況都停止載入狀態
+      console.log('設置載入狀態為 false');
       setLoading(false);
+      setInitialLoad(false);
     }
   };
 
@@ -865,6 +904,7 @@ export function TrainingDashboard() {
                   size="sm" 
                   onClick={() => {
                     setLoading(true);
+                    setError(null);
                     fetchTasks();
                   }} 
                   disabled={loading}
