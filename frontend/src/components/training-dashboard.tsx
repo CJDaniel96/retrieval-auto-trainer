@@ -49,6 +49,7 @@ export function TrainingDashboard() {
   const router = useRouter();
   const [tasks, setTasks] = useState<TrainingStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [startingTask, setStartingTask] = useState(false);
   const [activeTab, setActiveTab] = useState('new-training');
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
@@ -99,17 +100,36 @@ export function TrainingDashboard() {
   });
 
   useEffect(() => {
+    // 首次載入任務
     fetchTasks();
+    
+    // 設定定期刷新
     const interval = setInterval(fetchTasks, 5000);
+    
     return () => clearInterval(interval);
-  }, []);
+  }, []); // 只在組件掛載時執行一次
 
   const fetchTasks = async () => {
-    const response = await ApiClient.listTrainingTasks();
-    if (response.data) {
-      setTasks(response.data);
+    try {
+      setError(null); // 清除之前的錯誤
+      const response = await ApiClient.listTrainingTasks();
+      if (response.data) {
+        setTasks(response.data);
+      } else if (response.error) {
+        setError(response.error);
+        setTasks([]);
+      } else {
+        // 如果沒有資料，設置為空陣列
+        setTasks([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+      setError('無法連接到後端服務，請確認後端服務已啟動');
+      setTasks([]);
+    } finally {
+      // 無論成功或失敗都要停止載入狀態
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleStartTraining = async () => {
@@ -840,16 +860,33 @@ export function TrainingDashboard() {
 {t('form.monitor_tasks')}
                   </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={fetchTasks} disabled={loading}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setLoading(true);
+                    fetchTasks();
+                  }} 
+                  disabled={loading}
+                >
                   <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
 {t('form.refresh')}
                 </Button>
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin" />
+                  <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                    <p className="text-sm text-muted-foreground">{t('messages.loading_tasks')}</p>
                   </div>
+                ) : error ? (
+                  <Alert variant="destructive" className="border-red-200 bg-red-50/80">
+                    <XCircle className="h-4 w-4" />
+                    <AlertTitle>{t('form.error_title')}</AlertTitle>
+                    <AlertDescription>
+                      {error}
+                    </AlertDescription>
+                  </Alert>
                 ) : tasks.length === 0 ? (
                   <Alert className="border-gray-200 bg-gray-50/80">
                     <AlertCircle className="h-4 w-4" />
