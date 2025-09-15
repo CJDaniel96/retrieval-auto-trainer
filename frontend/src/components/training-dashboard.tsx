@@ -1070,80 +1070,190 @@ export function TrainingDashboard() {
         </Tabs>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/20 bg-white/60 backdrop-blur-sm mt-16">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
-                  <Brain className="w-5 h-5 text-white" />
+      {/* Footer - Technical Style */}
+      <footer className="border-t border-slate-800/20 bg-slate-900/95 backdrop-blur-md mt-16">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          {/* Main Footer Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-12">
+            {/* System Overview */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
                 </div>
-                <span className="font-semibold text-gray-800">{t('footer.ai_system')}</span>
+                <div>
+                  <h3 className="text-lg font-bold text-white tracking-tight">{t('footer.ai_system')}</h3>
+                  <p className="text-xs text-slate-400 font-mono">AI Training Platform v2.0</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                專為影像檢索模型設計的自動化訓練平台，提供完整的訓練工作流程和任務管理功能。
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="font-medium text-gray-800">系統功能</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li className="flex items-center space-x-2">
-                  <Play className="w-3 h-3 text-blue-600" />
-                  <span>自動化訓練管理</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Database className="w-3 h-3 text-blue-600" />
-                  <span>數據處理與分類</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Target className="w-3 h-3 text-blue-600" />
-                  <span>模型評估與分析</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <Cog className="w-3 h-3 text-blue-600" />
-                  <span>彈性配置設定</span>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="space-y-4">
-              <h3 className="font-medium text-gray-800">系統狀態</h3>
+
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-2 rounded-lg bg-green-50 border border-green-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-green-700">API服務</span>
+                <p className="text-sm text-slate-300 leading-relaxed max-w-md">
+                  {t('footer.description')}
+                </p>
+
+                {/* Technical Specs */}
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Architecture</h4>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
+                        <span className="font-mono">HOAM/HOAMV2</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full"></div>
+                        <span className="font-mono">EfficientNetV2</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
+                        <span className="font-mono">PyTorch Lightning</span>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-xs text-green-600 font-medium">運行中</span>
+
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Capabilities</h4>
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <Zap className="w-3 h-3 text-yellow-400" />
+                        <span>Auto-Training</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <Search className="w-3 h-3 text-cyan-400" />
+                        <span>Image Retrieval</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-slate-300">
+                        <Target className="w-3 h-3 text-red-400" />
+                        <span>Quality Inspection</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 border border-blue-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-blue-700">前端介面</span>
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-semibold text-white mb-4 flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>SYSTEM STATUS</span>
+                </h4>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-slate-300 font-mono">API Gateway</span>
+                    </div>
+                    <span className="text-xs text-green-400 font-semibold">ONLINE</span>
                   </div>
-                  <span className="text-xs text-blue-600 font-medium">運行中</span>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-slate-300 font-mono">Frontend UI</span>
+                    </div>
+                    <span className="text-xs text-blue-400 font-semibold">ACTIVE</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                      <span className="text-sm text-slate-300 font-mono">GPU Cluster</span>
+                    </div>
+                    <span className="text-xs text-purple-400 font-semibold">READY</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                      <span className="text-sm text-slate-300 font-mono">Active Tasks</span>
+                    </div>
+                    <span className="text-xs text-orange-400 font-semibold font-mono">
+                      {tasks.filter(t => t.status === 'running').length.toString().padStart(2, '0')}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-2 rounded-lg bg-gray-50 border border-gray-200">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm text-gray-600">活動任務</span>
+              </div>
+            </div>
+
+            {/* Technical Info */}
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-sm font-semibold text-white mb-4 flex items-center space-x-2">
+                  <Cog className="w-4 h-4" />
+                  <span>TECH STACK</span>
+                </h4>
+
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Frontend</div>
+                    <div className="text-sm text-slate-200 font-mono">Next.js 14 + TypeScript</div>
                   </div>
-                  <span className="text-xs text-gray-500 font-medium">{tasks.filter(t => t.status === 'running').length} 個</span>
+
+                  <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Backend</div>
+                    <div className="text-sm text-slate-200 font-mono">FastAPI + Python 3.10</div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">ML Framework</div>
+                    <div className="text-sm text-slate-200 font-mono">PyTorch Lightning</div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Database</div>
+                    <div className="text-sm text-slate-200 font-mono">PostgreSQL + SSH</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="border-t border-gray-200 mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              © 2024 自動化訓練系統. 專為影像檢索模型訓練設計.
-            </p>
-            <div className="flex items-center space-x-4 mt-4 md:mt-0">
-              <span className="text-xs text-muted-foreground">Version 1.0.0</span>
-              <div className="w-1 h-1 bg-gray-300 rounded-full"></div>
-              <span className="text-xs text-muted-foreground">Built with Next.js & FastAPI</span>
+
+          {/* Bottom Footer */}
+          <div className="border-t border-slate-700/50 pt-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-slate-400">© 2024 Automated Retrieval Training System</span>
+                  <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
+                  <span className="text-sm text-slate-400">Industrial AI Solutions</span>
+                </div>
+                <p className="text-xs text-slate-500 font-mono">
+                  Specialized for image quality inspection and retrieval model training
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-slate-400 font-mono">Version 2.0.1</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-3 h-3 text-slate-500" />
+                  <span className="text-xs text-slate-400 font-mono">
+                    {new Date().toLocaleString('en-US', {
+                      timeZone: 'Asia/Taipei',
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: false
+                    })} UTC+8
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span className="text-xs text-slate-400 font-mono">Build #{Math.floor(Math.random() * 1000) + 1000}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

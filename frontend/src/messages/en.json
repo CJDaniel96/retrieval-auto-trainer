@@ -151,6 +151,7 @@
   "footer": {
     "powered_by": "Powered by",
     "ai_system": "AI Automated Training System",
-    "powered": ""
+    "powered": "",
+    "description": "Enterprise-grade automated training platform designed for image retrieval models, integrating advanced deep learning technologies with industrial quality inspection solutions."
   }
 }
