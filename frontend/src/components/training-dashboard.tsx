@@ -71,6 +71,7 @@ export function TrainingDashboard() {
   const [showCreateModuleDialog, setShowCreateModuleDialog] = useState(false);
   const [createModuleTaskId, setCreateModuleTaskId] = useState<string | null>(null);
   const [moduleName, setModuleName] = useState('');
+  const [partNumber, setPartNumber] = useState('');
   const [creatingModule, setCreatingModule] = useState(false);
 
   const [formData, setFormData] = useState<TrainingRequest>({
@@ -229,15 +230,16 @@ export function TrainingDashboard() {
   };
 
   const handleCreateModuleConfirm = async () => {
-    if (!moduleName.trim() || !createModuleTaskId) return;
+    if (!moduleName.trim() || !partNumber.trim() || !createModuleTaskId) return;
 
     setCreatingModule(true);
     try {
-      const response = await ApiClient.createModule(createModuleTaskId, moduleName.trim());
+      const response = await ApiClient.createModule(createModuleTaskId, moduleName.trim(), partNumber.trim());
       if (response.data) {
         toast.success(t('messages.module_created_successfully'));
         setShowCreateModuleDialog(false);
         setModuleName('');
+        setPartNumber('');
         setCreateModuleTaskId(null);
       } else if (response.error) {
         toast.error(`${t('messages.error_occurred')}: ${response.error}`);
@@ -252,6 +254,7 @@ export function TrainingDashboard() {
   const handleCreateModuleCancel = () => {
     setShowCreateModuleDialog(false);
     setModuleName('');
+    setPartNumber('');
     setCreateModuleTaskId(null);
   };
 
@@ -1760,6 +1763,22 @@ export function TrainingDashboard() {
                   {t("form.module_name_example")}
                 </p>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="part_number" className="text-sm font-medium">
+                  料號 (Part Number)
+                </Label>
+                <Input
+                  id="part_number"
+                  value={partNumber}
+                  onChange={(e) => setPartNumber(e.target.value)}
+                  placeholder="例如: 32-500020-01"
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500">
+                  請輸入對應的料號，將用於配置文件中
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end space-x-2 mt-6">
@@ -1772,7 +1791,7 @@ export function TrainingDashboard() {
               </Button>
               <Button
                 onClick={handleCreateModuleConfirm}
-                disabled={!moduleName.trim() || creatingModule}
+                disabled={!moduleName.trim() || !partNumber.trim() || creatingModule}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {creatingModule ? (

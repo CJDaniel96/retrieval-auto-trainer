@@ -147,9 +147,9 @@ class HOAMV2(nn.Module):
         return embedding
 
 
-class M32_973604_01:
+class Sample:
     def __init__(self):
-        self.name = "M32_973604_01"
+        self.name = "sample"
         self.configs = self._get_configs()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.thresholds = self.configs["thresholds"]

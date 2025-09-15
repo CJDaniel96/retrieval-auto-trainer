@@ -3,12 +3,12 @@
     "Polarity"
   ],
   "pkg_type": {
-    "M32_500010_02": []
+    "part_number": []
   },
-  "model_path": "modules/M32_500010_02/models/polarity/best.pt",
+  "model_path": "modules/sample/models/polarity/best.pt",
   "embedding_size": 512,
   "thresholds": {
-    "M32_500010_02": {
+    "part_number": {
       "1005-700700-00B": {
         "U604": {
           "side": 0.7,
@@ -33,19 +33,19 @@
     0.6500587463378906,
     0.6967505216598511
   ],
-  "golden_sample_base_path": "modules/M32_500010_02/data/golden_sample",
+  "golden_sample_base_path": "modules/sample/data/golden_sample",
   "golden_sample_folders": {
-    "M32_500010_02": {
+    "part_number": {
       "1005-700700-00B": {
         "U604": {
-          "side": "20250905150149_00VN558S449_T@U604_1_side.jpg",
+          "side": "20250905073442_00VN558S115_T@U604_2_side.jpg",
           "top": "20250905134746_00VN558S2B2_T@U604_1_top.jpg"
         }
       },
       "1005-700700-40B": {
         "U604": {
-          "side": "20250904023109_40VN558S09D_T@U604_1_side.jpg",
-          "top": "20250904041204_40VN558S366_T@U604_1_top.jpg"
+          "side": "20250904015205_40VN558S17E_T@U604_3_side.jpg",
+          "top": "20250904000559_40VN558S01C_T@U604_3_top.jpg"
         }
       }
     }

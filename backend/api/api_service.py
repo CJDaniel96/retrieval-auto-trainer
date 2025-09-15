@@ -56,6 +56,7 @@ class ConfigUpdateRequest(BaseModel):
 class CreateModuleRequest(BaseModel):
     """創建模組請求模型"""
     module_name: str = Field(..., description="模組名稱", pattern=r"^[A-Za-z0-9_-]+$")
+    part_number: str = Field(..., description="料號", pattern=r"^[A-Za-z0-9_-]+$")
 
 class TrainingStatus(BaseModel):
     """訓練狀態模型"""
@@ -430,7 +431,8 @@ async def create_module(task_id: str, request: CreateModuleRequest, background_t
 
     # 在背景執行模組創建
     module_name = request.module_name
-    background_tasks.add_task(create_module_task, task_id, module_name, str(output_dir))
+    part_number = request.part_number
+    background_tasks.add_task(create_module_task, task_id, module_name, part_number, str(output_dir))
 
     return {
         "message": f"正在創建模組 {module_name}，請稍候...",
@@ -709,38 +711,68 @@ def run_orientation_and_training_task(task_id: str):
         logging.error(f"訓練任務 {task_id} 失敗: {str(e)}", exc_info=True)
 
 
-def create_module_task(task_id: str, module_name: str, output_dir: str):
+def create_module_task(task_id: str, module_name: str, part_number: str, output_dir: str):
     """
-    創建可部署的模組
+    創建可部署的模組，基於 sample 模板
 
     Args:
         task_id: 任務ID
         module_name: 模組名稱
+        part_number: 料號
         output_dir: 輸出目錄路徑
     """
     import shutil
     import random
     from pathlib import Path
+    import re
 
     try:
         logger = logging.getLogger(__name__)
-        logger.info(f"開始創建模組 {module_name} for task {task_id}")
+        logger.info(f"開始創建模組 {module_name} (part_number: {part_number}) for task {task_id}")
 
         output_path = Path(output_dir)
+        sample_template_path = Path("modules/sample")
+
+        if not sample_template_path.exists():
+            raise FileNotFoundError(f"找不到 sample 模板: {sample_template_path}")
 
         # 創建模組目錄結構
         module_base_path = Path("modules") / module_name
         module_base_path.mkdir(parents=True, exist_ok=True)
 
-        # 創建子目錄
-        (module_base_path / "data").mkdir(exist_ok=True)
-        (module_base_path / "data" / "golden_sample").mkdir(exist_ok=True)
-        (module_base_path / "models").mkdir(exist_ok=True)
-        (module_base_path / "models" / "polarity").mkdir(exist_ok=True)
+        # 複製整個 sample 目錄結構
+        for item in sample_template_path.iterdir():
+            if item.name in ["Sample.py", "configs.json"]:
+                continue  # 這些文件需要特殊處理
 
-        # 複製模型文件
+            dst_path = module_base_path / item.name
+            if item.is_dir():
+                shutil.copytree(str(item), str(dst_path), dirs_exist_ok=True)
+            else:
+                shutil.copy2(str(item), str(dst_path))
+
+        # 複製並修改 Sample.py
+        sample_py_src = sample_template_path / "Sample.py"
+        module_py_dst = module_base_path / f"{module_name}.py"
+
+        with open(sample_py_src, 'r', encoding='utf-8') as f:
+            sample_content = f.read()
+
+        # 修改類名和 self.name
+        # 1. 將 class Sample: 改為 class {module_name}:
+        sample_content = re.sub(r'class Sample:', f'class {module_name}:', sample_content)
+
+        # 2. 將 self.name = "sample" 改為 self.name = "{module_name}"
+        sample_content = re.sub(r'self\.name = "sample"', f'self.name = "{module_name}"', sample_content)
+
+        with open(module_py_dst, 'w', encoding='utf-8') as f:
+            f.write(sample_content)
+        logger.info(f"創建模組文件: {module_py_dst}")
+
+        # 複製模型文件到正確位置
         model_src = output_path / "model" / "best_model.pt"
         model_dst = module_base_path / "models" / "polarity" / "best.pt"
+        model_dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(str(model_src), str(model_dst))
         logger.info(f"複製模型文件: {model_src} -> {model_dst}")
 
@@ -775,39 +807,39 @@ def create_module_task(task_id: str, module_name: str, output_dir: str):
 
             selected_image = random.choice(image_files)
 
-            # 創建目標目錄結構
-            golden_sample_path = module_base_path / "data" / "golden_sample" / module_name / product_name / comp_name
+            # 創建目標目錄結構 (使用 part_number)
+            golden_sample_path = module_base_path / "data" / "golden_sample" / part_number / product_name / comp_name
             golden_sample_path.mkdir(parents=True, exist_ok=True)
 
             # 複製選中的圖片
             dst_image_path = golden_sample_path / selected_image.name
             shutil.copy2(str(selected_image), str(dst_image_path))
 
-            # 構建 golden_sample_folders 結構
-            if module_name not in golden_sample_folders:
-                golden_sample_folders[module_name] = {}
-            if product_name not in golden_sample_folders[module_name]:
-                golden_sample_folders[module_name][product_name] = {}
-            if comp_name not in golden_sample_folders[module_name][product_name]:
-                golden_sample_folders[module_name][product_name][comp_name] = {}
+            # 構建 golden_sample_folders 結構 (使用 part_number 作為 key)
+            if part_number not in golden_sample_folders:
+                golden_sample_folders[part_number] = {}
+            if product_name not in golden_sample_folders[part_number]:
+                golden_sample_folders[part_number][product_name] = {}
+            if comp_name not in golden_sample_folders[part_number][product_name]:
+                golden_sample_folders[part_number][product_name][comp_name] = {}
 
-            golden_sample_folders[module_name][product_name][comp_name][light] = selected_image.name
+            golden_sample_folders[part_number][product_name][comp_name][light] = selected_image.name
 
-            # 構建 thresholds 結構
-            if module_name not in thresholds:
-                thresholds[module_name] = {}
-            if product_name not in thresholds[module_name]:
-                thresholds[module_name][product_name] = {}
-            if comp_name not in thresholds[module_name][product_name]:
-                thresholds[module_name][product_name][comp_name] = {}
+            # 構建 thresholds 結構 (使用 part_number 作為 key)
+            if part_number not in thresholds:
+                thresholds[part_number] = {}
+            if product_name not in thresholds[part_number]:
+                thresholds[part_number][product_name] = {}
+            if comp_name not in thresholds[part_number][product_name]:
+                thresholds[part_number][product_name][comp_name] = {}
 
-            thresholds[module_name][product_name][comp_name][light] = 0.7  # 預設閾值
+            thresholds[part_number][product_name][comp_name][light] = 0.7  # 預設閾值
 
-        # 創建 configs.json
+        # 創建 configs.json (基於 sample 的結構，但替換相關字段)
         configs = {
             "ai_defect": ["Polarity"],
             "pkg_type": {
-                module_name: []
+                part_number: []  # 使用 part_number 而非 module_name
             },
             "model_path": f"modules/{module_name}/models/polarity/best.pt",
             "embedding_size": 512,
@@ -822,35 +854,12 @@ def create_module_task(task_id: str, module_name: str, output_dir: str):
         configs_file = module_base_path / "configs.json"
         with open(configs_file, 'w', encoding='utf-8') as f:
             json.dump(configs, f, ensure_ascii=False, indent=2)
-
-        # 創建 __init__.py
-        init_file = module_base_path / "__init__.py"
-        init_file.write_text("", encoding='utf-8')
-
-        # 創建 Polarity.py (從參考模組複製)
-        reference_module = Path("D:/Daniel/Project/HPH/code/AMR/02_Main/modules/M32_973604_01/M32_973604_01.py")
-        polarity_file = module_base_path / f"{module_name}.py"
-
-        if reference_module.exists():
-            shutil.copy2(str(reference_module), str(polarity_file))
-            logger.info(f"複製 Polarity 模板: {reference_module} -> {polarity_file}")
-        else:
-            # 如果參考文件不存在，創建一個基本的 Polarity.py
-            polarity_content = f'''"""
-{module_name} 模組
-AI 缺陷檢測模組
-"""
-
-# 基本的 Polarity 模組實現
-class {module_name}:
-    def __init__(self):
-        pass
-'''
-            polarity_file.write_text(polarity_content, encoding='utf-8')
+        logger.info(f"創建配置文件: {configs_file}")
 
         logger.info(f"模組 {module_name} 創建完成")
         logger.info(f"模組路徑: {module_base_path}")
-        logger.info(f"包含 {len(golden_sample_folders.get(module_name, {}))} 個產品的金樣本")
+        logger.info(f"料號: {part_number}")
+        logger.info(f"包含 {len(golden_sample_folders.get(part_number, {}))} 個產品的金樣本")
 
     except Exception as e:
         logger = logging.getLogger(__name__)

@@ -78,9 +78,12 @@ export class ApiClient {
     }
   }
 
-  static async createModule(taskId: string, moduleName: string): Promise<ApiResponse<{ message: string; module_path: string }>> {
+  static async createModule(taskId: string, moduleName: string, partNumber: string): Promise<ApiResponse<{ message: string; module_path: string }>> {
     try {
-      const response = await api.post(`/training/create-module/${taskId}`, { module_name: moduleName });
+      const response = await api.post(`/training/create-module/${taskId}`, {
+        module_name: moduleName,
+        part_number: partNumber
+      });
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };
