@@ -15,6 +15,8 @@
     "browse": "Browse",
     "save": "Save",
     "reset": "Reset",
+    "create": "Create",
+    "create_module": "Create Module",
     "back": "Back",
     "next": "Next",
     "previous": "Previous",
@@ -70,7 +72,11 @@
     "monitor_tasks": "Monitor and manage training tasks",
     "error_title": "Error",
     "missing_orientation": "Please select orientation for all classes",
-    "folder_management_info": "Input folder will be copied to datasets/ directory. Output will be automatically saved to outputs/site/line/folder_name/"
+    "folder_management_info": "Input folder will be copied to datasets/ directory. Output will be automatically saved to outputs/site/line/folder_name/",
+    "module_creation_info": "Create a deployable module containing trained model, configuration files and golden samples.",
+    "module_name": "Module Name",
+    "module_name_placeholder": "Enter module name, e.g., M32_973604_01",
+    "module_name_example": "Example: M32_973604_01, M33_875432_02"
   },
   "results": {
     "title": "Training Results",
@@ -146,12 +152,42 @@
     "confirming_orientation": "Confirming orientation...",
     "cancelling_task": "Cancelling task...",
     "updating_config": "Updating configuration...",
-    "resetting_config": "Resetting configuration..."
+    "resetting_config": "Resetting configuration...",
+    "creating_module": "Creating module...",
+    "module_created_successfully": "Module created successfully"
   },
   "footer": {
     "powered_by": "Powered by",
     "ai_system": "AI Automated Training System",
     "powered": "",
-    "description": "Enterprise-grade automated training platform designed for image retrieval models, integrating advanced deep learning technologies with industrial quality inspection solutions."
+    "description": "Enterprise-grade automated training platform designed for image retrieval models, integrating advanced deep learning technologies with industrial quality inspection solutions.",
+    "platform_version": "AI Training Platform v2.0",
+    "architecture": "Architecture",
+    "capabilities": "Capabilities",
+    "auto_training": "Auto-Training",
+    "image_retrieval": "Image Retrieval",
+    "quality_inspection": "Quality Inspection",
+    "system_status": "SYSTEM STATUS",
+    "tech_stack": "TECH STACK",
+    "api_gateway": "API Gateway",
+    "frontend_ui": "Frontend UI",
+    "gpu_cluster": "GPU Cluster",
+    "active_tasks": "Active Tasks",
+    "status_online": "ONLINE",
+    "status_active": "ACTIVE",
+    "status_ready": "READY",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "ml_framework": "ML Framework",
+    "database": "Database",
+    "frontend_tech": "Next.js 14 + TypeScript",
+    "backend_tech": "FastAPI + Python 3.10",
+    "ml_tech": "PyTorch Lightning",
+    "database_tech": "PostgreSQL + SSH",
+    "company_name": "Automated Retrieval Training System",
+    "company_subtitle": "Industrial AI Solutions",
+    "specialization": "Specialized for image quality inspection and retrieval model training",
+    "version": "Version",
+    "build": "Build"
   }
 }

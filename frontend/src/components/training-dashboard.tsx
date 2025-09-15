@@ -1,25 +1,37 @@
-'use client';
+"use client";
 
-import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion } from 'framer-motion';
-import { 
-  Play, 
-  Square, 
-  Download, 
-  Trash2, 
-  RefreshCw, 
+import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import {
+  Play,
+  Square,
+  Download,
+  Trash2,
+  RefreshCw,
   Clock,
   CheckCircle,
   XCircle,
@@ -36,13 +48,15 @@ import {
   Cog,
   Search,
   Zap,
-  FileText
-} from 'lucide-react';
-import { ApiClient } from '@/lib/api-client';
-import { TrainingStatus, TrainingRequest } from '@/lib/types';
-import { LanguageSwitcher } from '@/components/language-switcher';
-import { toast } from 'sonner';
-import { useRouter } from '@/i18n/routing';
+  FileText,
+  Package,
+  X,
+} from "lucide-react";
+import { ApiClient } from "@/lib/api-client";
+import { TrainingStatus, TrainingRequest } from "@/lib/types";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { toast } from "sonner";
+import { useRouter } from "@/i18n/routing";
 
 export function TrainingDashboard() {
   const t = useTranslations();
@@ -52,15 +66,19 @@ export function TrainingDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [initialLoad, setInitialLoad] = useState(true);
   const [startingTask, setStartingTask] = useState(false);
-  const [activeTab, setActiveTab] = useState('new-training');
+  const [activeTab, setActiveTab] = useState("new-training");
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
-  
+  const [showCreateModuleDialog, setShowCreateModuleDialog] = useState(false);
+  const [createModuleTaskId, setCreateModuleTaskId] = useState<string | null>(null);
+  const [moduleName, setModuleName] = useState('');
+  const [creatingModule, setCreatingModule] = useState(false);
+
   const [formData, setFormData] = useState<TrainingRequest>({
-    input_dir: '',
-    site: 'HPH',
-    line_id: 'V31',
+    input_dir: "",
+    site: "HPH",
+    line_id: "V31",
     experiment_config: {
-      name: 'hoam_experiment'
+      name: "hoam_experiment",
     },
     training_config: {
       min_epochs: 0,
@@ -71,72 +89,75 @@ export function TrainingDashboard() {
       freeze_backbone_epochs: 10,
       patience: 10,
       enable_early_stopping: true,
-      checkpoint_dir: 'checkpoints'
+      checkpoint_dir: "checkpoints",
     },
     model_config: {
-      structure: 'HOAMV2',
-      backbone: 'efficientnetv2_rw_s',
+      structure: "HOAMV2",
+      backbone: "efficientnetv2_rw_s",
       pretrained: false,
-      embedding_size: 512
+      embedding_size: 512,
     },
     data_config: {
       image_size: 224,
       num_workers: 4,
-      test_split: 0.2
+      test_split: 0.2,
     },
     loss_config: {
-      type: 'HybridMarginLoss',
+      type: "HybridMarginLoss",
       subcenter_margin: 0.4,
       subcenter_scale: 30.0,
       sub_centers: 3,
       triplet_margin: 0.3,
-      center_loss_weight: 0.01
+      center_loss_weight: 0.01,
     },
     knn_config: {
       enable: false,
       threshold: 0.5,
-      index_path: 'knn.index',
-      dataset_pkl: 'dataset.pkl'
-    }
+      index_path: "knn.index",
+      dataset_pkl: "dataset.pkl",
+    },
   });
 
   useEffect(() => {
     // 首次載入任務
     fetchTasks();
-    
+
     // 設定定期刷新
     const interval = setInterval(fetchTasks, 5000);
-    
+
     return () => clearInterval(interval);
   }, []); // 只在組件掛載時執行一次
-  
+
   // 防止無限載入的保險機制
   useEffect(() => {
     const failsafeTimeout = setTimeout(() => {
       if (loading && initialLoad) {
-        console.warn('強制停止載入狀態 - 防止無限載入');
+        console.warn("強制停止載入狀態 - 防止無限載入");
         setLoading(false);
-        setError('載入超時，請手動刷新或檢查網路連接');
+        setError("載入超時，請手動刷新或檢查網路連接");
       }
     }, 15000); // 15秒後強制停止載入
-    
+
     return () => clearTimeout(failsafeTimeout);
   }, [loading, initialLoad]);
 
   const fetchTasks = async () => {
-    console.log('開始獲取任務...');
+    console.log("開始獲取任務...");
     try {
       setError(null); // 清除之前的錯誤
-      
+
       // 使用 Promise.race 來確保最多 8 秒就會有結果
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('請求超時')), 8000)
+        setTimeout(() => reject(new Error("請求超時")), 8000)
       );
-      
+
       const apiPromise = ApiClient.listTrainingTasks();
-      
-      const response = await Promise.race([apiPromise, timeoutPromise]) as any;
-      
+
+      const response = (await Promise.race([
+        apiPromise,
+        timeoutPromise,
+      ])) as any;
+
       if (response.data) {
         setTasks(Array.isArray(response.data) ? response.data : []);
         setError(null);
@@ -149,23 +170,27 @@ export function TrainingDashboard() {
         setError(null);
       }
     } catch (error: any) {
-      console.error('Failed to fetch tasks:', error);
-      
+      console.error("Failed to fetch tasks:", error);
+
       // 根據錯誤類型設置不同的錯誤訊息
-      let errorMessage = '無法連接到後端服務';
-      if (error.message === '請求超時') {
-        errorMessage = '後端服務響應超時，請檢查服務狀態';
-      } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
-        errorMessage = '無法連接到後端服務 (http://localhost:8000)，請確認後端服務已啟動';
+      let errorMessage = "無法連接到後端服務";
+      if (error.message === "請求超時") {
+        errorMessage = "後端服務響應超時，請檢查服務狀態";
+      } else if (
+        error.code === "ECONNREFUSED" ||
+        error.message.includes("Network Error")
+      ) {
+        errorMessage =
+          "無法連接到後端服務 (http://localhost:8000)，請確認後端服務已啟動";
       } else if (error.response?.status === 404) {
-        errorMessage = 'API 端點不存在，請檢查後端服務版本';
+        errorMessage = "API 端點不存在，請檢查後端服務版本";
       }
-      
+
       setError(errorMessage);
       setTasks([]);
     } finally {
       // 確保無論什麼情況都停止載入狀態
-      console.log('設置載入狀態為 false');
+      console.log("設置載入狀態為 false");
       setLoading(false);
       setInitialLoad(false);
     }
@@ -179,10 +204,10 @@ export function TrainingDashboard() {
     if (response.data) {
       await fetchTasks();
       // Reset only the input directory, keep the configuration
-      setFormData({ ...formData, input_dir: '' });
-      toast.success(t('messages.training_started'));
+      setFormData({ ...formData, input_dir: "" });
+      toast.success(t("messages.training_started"));
     } else if (response.error) {
-      toast.error(`${t('messages.error_occurred')}: ${response.error}`);
+      toast.error(`${t("messages.error_occurred")}: ${response.error}`);
     }
     setStartingTask(false);
   };
@@ -190,95 +215,145 @@ export function TrainingDashboard() {
   const handleCancelTask = async (taskId: string) => {
     await ApiClient.cancelTraining(taskId);
     await fetchTasks();
-    toast.success(t('messages.task_cancelled'));
+    toast.success(t("messages.task_cancelled"));
   };
 
   const handleDeleteTask = async (taskId: string) => {
     await ApiClient.deleteTraining(taskId);
     await fetchTasks();
-    toast.success(t('messages.task_cancelled'));
+    toast.success(t("messages.task_cancelled"));
   };
 
   const handleOrientationConfirm = (taskId: string) => {
     // Construct the URL based on the current origin and locale
     const currentUrl = new URL(window.location.href);
-    const pathSegments = currentUrl.pathname.split('/').filter(Boolean);
-    const locale = pathSegments[0] || 'zh'; // Get locale from current path
+    const pathSegments = currentUrl.pathname.split("/").filter(Boolean);
+    const locale = pathSegments[0] || "zh"; // Get locale from current path
     const orientationUrl = `${currentUrl.origin}/${locale}/orientation/${taskId}`;
-    window.open(orientationUrl, '_blank');
+    window.open(orientationUrl, "_blank");
   };
 
-  const updateTrainingField = (field: keyof NonNullable<TrainingRequest['training_config']>, value: any) => {
-    setFormData(prev => ({
+  const handleCreateModule = (taskId: string) => {
+    setCreateModuleTaskId(taskId);
+    setShowCreateModuleDialog(true);
+  };
+
+  const handleCreateModuleConfirm = async () => {
+    if (!moduleName.trim() || !createModuleTaskId) return;
+
+    setCreatingModule(true);
+    try {
+      const response = await ApiClient.createModule(createModuleTaskId, moduleName.trim());
+      if (response.data) {
+        toast.success(t('messages.module_created_successfully'));
+        setShowCreateModuleDialog(false);
+        setModuleName('');
+        setCreateModuleTaskId(null);
+      } else if (response.error) {
+        toast.error(`${t('messages.error_occurred')}: ${response.error}`);
+      }
+    } catch (error: any) {
+      toast.error(`${t('messages.error_occurred')}: ${error.message}`);
+    } finally {
+      setCreatingModule(false);
+    }
+  };
+
+  const handleCreateModuleCancel = () => {
+    setShowCreateModuleDialog(false);
+    setModuleName('');
+    setCreateModuleTaskId(null);
+  };
+
+  const updateTrainingField = (
+    field: keyof NonNullable<TrainingRequest["training_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       training_config: {
         ...prev.training_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
-  const updateModelField = (field: keyof NonNullable<TrainingRequest['model_config']>, value: any) => {
-    setFormData(prev => ({
+  const updateModelField = (
+    field: keyof NonNullable<TrainingRequest["model_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       model_config: {
         ...prev.model_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
-  const updateDataField = (field: keyof NonNullable<TrainingRequest['data_config']>, value: any) => {
-    setFormData(prev => ({
+  const updateDataField = (
+    field: keyof NonNullable<TrainingRequest["data_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       data_config: {
         ...prev.data_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
-  const updateLossField = (field: keyof NonNullable<TrainingRequest['loss_config']>, value: any) => {
-    setFormData(prev => ({
+  const updateLossField = (
+    field: keyof NonNullable<TrainingRequest["loss_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       loss_config: {
         ...prev.loss_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
-  const updateExperimentField = (field: keyof NonNullable<TrainingRequest['experiment_config']>, value: any) => {
-    setFormData(prev => ({
+  const updateExperimentField = (
+    field: keyof NonNullable<TrainingRequest["experiment_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       experiment_config: {
         ...prev.experiment_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
-  const updateKnnField = (field: keyof NonNullable<TrainingRequest['knn_config']>, value: any) => {
-    setFormData(prev => ({
+  const updateKnnField = (
+    field: keyof NonNullable<TrainingRequest["knn_config"]>,
+    value: any
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       knn_config: {
         ...prev.knn_config,
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock className="w-4 h-4" />;
-      case 'pending_orientation':
+      case "pending_orientation":
         return <AlertCircle className="w-4 h-4" />;
-      case 'running':
+      case "running":
         return <Loader2 className="w-4 h-4 animate-spin" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle className="w-4 h-4" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
@@ -287,18 +362,18 @@ export function TrainingDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-muted text-muted-foreground';
-      case 'pending_orientation':
-        return 'bg-yellow-500 text-yellow-50';
-      case 'running':
-        return 'bg-blue-500 text-blue-50';
-      case 'completed':
-        return 'bg-green-500 text-green-50';
-      case 'failed':
-        return 'bg-destructive text-destructive-foreground';
+      case "pending":
+        return "bg-muted text-muted-foreground";
+      case "pending_orientation":
+        return "bg-yellow-500 text-yellow-50";
+      case "running":
+        return "bg-blue-500 text-blue-50";
+      case "completed":
+        return "bg-green-500 text-green-50";
+      case "failed":
+        return "bg-destructive text-destructive-foreground";
       default:
-        return 'bg-muted text-muted-foreground';
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -314,15 +389,17 @@ export function TrainingDashboard() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  {t('common.title')}
+                  {t("common.title")}
                 </h1>
-                <p className="text-sm text-muted-foreground">Image Retrieval Model Training Platform</p>
+                <p className="text-sm text-muted-foreground">
+                  Image Retrieval Model Training Platform
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-medium">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-{t('footer.powered_by')} {t('footer.ai_system')}
+                {t("footer.powered_by")} {t("footer.ai_system")}
               </div>
               <LanguageSwitcher />
             </div>
@@ -336,31 +413,31 @@ export function TrainingDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex justify-center mb-8">
             <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-white/90 to-gray-50/90 p-1.5 shadow-xl border border-white/40 backdrop-blur-lg">
-              <TabsTrigger 
-                value="new-training" 
+              <TabsTrigger
+                value="new-training"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <Home className="w-4 h-4 mr-2" />
-{t('training.start_new')}
+                {t("training.start_new")}
               </TabsTrigger>
-              <TabsTrigger 
-                value="task-list" 
+              <TabsTrigger
+                value="task-list"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <ListTodo className="w-4 h-4 mr-2" />
-{t('navigation.training')}
+                {t("navigation.training")}
                 {tasks.length > 0 && (
                   <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
                     {tasks.length}
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="settings" 
+              <TabsTrigger
+                value="settings"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                {t('navigation.settings')}
+                {t("navigation.settings")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -373,510 +450,806 @@ export function TrainingDashboard() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="space-y-6"
             >
-            <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Play className="w-6 h-6 text-blue-600" />
-                  <CardTitle className="text-2xl">{t('training.start_new')}</CardTitle>
-                </div>
-                <CardDescription>
-{t('form.configure_task')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <Alert className="border-blue-200 bg-blue-50/80">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-800">
-{t('form.folder_management_info')}
-                  </AlertDescription>
-                </Alert>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="input_dir" className="text-sm font-medium">{t('training.input_directory')}</Label>
-                    <Input
-                      id="input_dir"
-                      value={formData.input_dir}
-                      onChange={(e) => setFormData({ ...formData, input_dir: e.target.value })}
-                      placeholder={t('form.input_placeholder')}
-                      className="bg-white/70"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="site" className="text-sm font-medium">{t('training.site')}</Label>
-                    <Select value={formData.site} onValueChange={(value) => setFormData({ ...formData, site: value })}>
-                      <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder={t('form.select_site')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="HPH">HPH</SelectItem>
-                        <SelectItem value="HPI">HPI</SelectItem>
-                        <SelectItem value="HPM">HPM</SelectItem>
-                        <SelectItem value="HPC">HPC</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="line_id" className="text-sm font-medium">{t('training.line_id')}</Label>
-                    <Select value={formData.line_id} onValueChange={(value) => setFormData({ ...formData, line_id: value })}>
-                      <SelectTrigger className="bg-white/70">
-                        <SelectValue placeholder={t('form.select_line')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="V31">V31</SelectItem>
-                        <SelectItem value="V32">V32</SelectItem>
-                        <SelectItem value="V33">V33</SelectItem>
-                        <SelectItem value="V34">V34</SelectItem>
-                        <SelectItem value="V35">V35</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between">
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
                   <div className="flex items-center space-x-2">
+                    <Play className="w-6 h-6 text-blue-600" />
+                    <CardTitle className="text-2xl">
+                      {t("training.start_new")}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>{t("form.configure_task")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert className="border-blue-200 bg-blue-50/80">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      {t("form.folder_management_info")}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="input_dir"
+                        className="text-sm font-medium"
+                      >
+                        {t("training.input_directory")}
+                      </Label>
+                      <Input
+                        id="input_dir"
+                        value={formData.input_dir}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            input_dir: e.target.value,
+                          })
+                        }
+                        placeholder={t("form.input_placeholder")}
+                        className="bg-white/70"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="site" className="text-sm font-medium">
+                        {t("training.site")}
+                      </Label>
+                      <Select
+                        value={formData.site}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, site: value })
+                        }
+                      >
+                        <SelectTrigger className="bg-white/70">
+                          <SelectValue placeholder={t("form.select_site")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HPH">HPH</SelectItem>
+                          <SelectItem value="HPI">HPI</SelectItem>
+                          <SelectItem value="HPM">HPM</SelectItem>
+                          <SelectItem value="HPC">HPC</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="line_id" className="text-sm font-medium">
+                        {t("training.line_id")}
+                      </Label>
+                      <Select
+                        value={formData.line_id}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, line_id: value })
+                        }
+                      >
+                        <SelectTrigger className="bg-white/70">
+                          <SelectValue placeholder={t("form.select_line")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="V31">V31</SelectItem>
+                          <SelectItem value="V32">V32</SelectItem>
+                          <SelectItem value="V33">V33</SelectItem>
+                          <SelectItem value="V34">V34</SelectItem>
+                          <SelectItem value="V35">V35</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          setShowAdvancedConfig(!showAdvancedConfig)
+                        }
+                        className="flex items-center space-x-2"
+                      >
+                        <Cog className="w-4 h-4" />
+                        <span>{t("config.title")}</span>
+                      </Button>
+                    </div>
                     <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowAdvancedConfig(!showAdvancedConfig)}
-                      className="flex items-center space-x-2"
+                      onClick={handleStartTraining}
+                      disabled={!formData.input_dir || startingTask}
+                      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
+                      size="lg"
                     >
-                      <Cog className="w-4 h-4" />
-                      <span>{t('config.title')}</span>
+                      {startingTask ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t("messages.starting_training")}
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          {t("common.start")}
+                        </>
+                      )}
                     </Button>
                   </div>
-                  <Button
-                    onClick={handleStartTraining}
-                    disabled={!formData.input_dir || startingTask}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
-                    size="lg"
-                  >
-                    {startingTask ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-{t('messages.starting_training')}
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-{t('common.start')}
-                      </>
-                    )}
-                  </Button>
-                </div>
-                
-                {/* Advanced Configuration Panel */}
-                {showAdvancedConfig && (
-                  <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Cog className="w-5 h-5 text-blue-600" />
-                      <h3 className="text-lg font-semibold text-gray-800">{t('config.title')}</h3>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-6">
-這些設定僅會套用到當前的訓練任務，不會影響其他任務。所有參數都來自training_configs.yaml。
-                    </p>
-                    
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                      {/* Experiment Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.experiment.title')}</h4>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="experiment_name" className="text-xs">{t('config.experiment.name')}</Label>
-                          <Input
-                            id="experiment_name"
-                            value={formData.experiment_config?.name || ''}
-                            onChange={(e) => updateExperimentField('name', e.target.value)}
-                            className="h-8 text-sm"
-                            placeholder="hoam_experiment"
-                          />
-                        </div>
-                      </div>
 
-                      {/* Training Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Dumbbell className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.training.title')}</h4>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="min_epochs" className="text-xs">{t('config.training.min_epochs')}</Label>
-                            <Input
-                              id="min_epochs"
-                              type="number"
-                              min={0}
-                              max={50}
-                              value={formData.training_config?.min_epochs || ''}
-                              onChange={(e) => updateTrainingField('min_epochs', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="max_epochs" className="text-xs">{t('config.training.max_epochs')}</Label>
-                            <Input
-                              id="max_epochs"
-                              type="number"
-                              min={1}
-                              max={200}
-                              value={formData.training_config?.max_epochs || ''}
-                              onChange={(e) => updateTrainingField('max_epochs', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="batch_size" className="text-xs">{t('config.training.batch_size')}</Label>
-                            <Input
-                              id="batch_size"
-                              type="number"
-                              min={1}
-                              max={256}
-                              value={formData.training_config?.batch_size || ''}
-                              onChange={(e) => updateTrainingField('batch_size', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="lr" className="text-xs">{t('config.training.learning_rate')}</Label>
-                            <Input
-                              id="lr"
-                              type="number"
-                              step="0.0001"
-                              min={0.0001}
-                              max={0.1}
-                              value={formData.training_config?.lr || ''}
-                              onChange={(e) => updateTrainingField('lr', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="weight_decay" className="text-xs">{t('config.training.weight_decay')}</Label>
-                            <Input
-                              id="weight_decay"
-                              type="number"
-                              step="0.0001"
-                              min={0}
-                              max={0.01}
-                              value={formData.training_config?.weight_decay || ''}
-                              onChange={(e) => updateTrainingField('weight_decay', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="patience" className="text-xs">{t('config.training.patience')}</Label>
-                            <Input
-                              id="patience"
-                              type="number"
-                              min={1}
-                              max={50}
-                              value={formData.training_config?.patience || ''}
-                              onChange={(e) => updateTrainingField('patience', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="freeze_epochs" className="text-xs">{t('config.training.freeze_backbone_epochs')}</Label>
-                            <Input
-                              id="freeze_epochs"
-                              type="number"
-                              min={0}
-                              max={20}
-                              value={formData.training_config?.freeze_backbone_epochs || ''}
-                              onChange={(e) => updateTrainingField('freeze_backbone_epochs', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="checkpoint_dir" className="text-xs">{t('config.training.checkpoint_dir')}</Label>
-                            <Input
-                              id="checkpoint_dir"
-                              value={formData.training_config?.checkpoint_dir || ''}
-                              onChange={(e) => updateTrainingField('checkpoint_dir', e.target.value)}
-                              className="h-8 text-sm"
-                              placeholder="checkpoints"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="early_stopping"
-                            checked={formData.training_config?.enable_early_stopping ?? true}
-                            onCheckedChange={(checked) => updateTrainingField('enable_early_stopping', checked)}
-                          />
-                          <Label htmlFor="early_stopping" className="text-sm">{t('config.training.enable_early_stopping')}</Label>
-                        </div>
+                  {/* Advanced Configuration Panel */}
+                  {showAdvancedConfig && (
+                    <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Cog className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {t("config.title")}
+                        </h3>
                       </div>
-                    </div>
+                      <p className="text-sm text-gray-600 mb-6">
+                        這些設定僅會套用到當前的訓練任務，不會影響其他任務。所有參數都來自training_configs.yaml。
+                      </p>
 
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-                      {/* Model Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Brain className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.model.title')}</h4>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="structure" className="text-xs">{t('config.model.structure')}</Label>
-                            <Select
-                              value={formData.model_config?.structure || ''}
-                              onValueChange={(value) => updateModelField('structure', value as 'HOAM' | 'HOAMV2')}
-                            >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder={t('config.model.structure')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="HOAM">HOAM</SelectItem>
-                                <SelectItem value="HOAMV2">HOAMV2</SelectItem>
-                              </SelectContent>
-                            </Select>
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        {/* Experiment Configuration */}
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.experiment.title")}
+                            </h4>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="backbone" className="text-xs">{t('config.model.backbone')}</Label>
-                            <Select
-                              value={formData.model_config?.backbone || ''}
-                              onValueChange={(value) => updateModelField('backbone', value)}
+                            <Label
+                              htmlFor="experiment_name"
+                              className="text-xs"
                             >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder={t('config.model.backbone')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
-                                <SelectItem value="efficientnetv2_rw_m">EfficientNetV2-M</SelectItem>
-                                <SelectItem value="resnet50">ResNet50</SelectItem>
-                                <SelectItem value="resnet101">ResNet101</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="embedding_size" className="text-xs">{t('config.model.embedding_size')}</Label>
+                              {t("config.experiment.name")}
+                            </Label>
                             <Input
-                              id="embedding_size"
-                              type="number"
-                              min={64}
-                              max={2048}
-                              step={64}
-                              value={formData.model_config?.embedding_size || ''}
-                              onChange={(e) => updateModelField('embedding_size', parseInt(e.target.value) || 0)}
+                              id="experiment_name"
+                              value={formData.experiment_config?.name || ""}
+                              onChange={(e) =>
+                                updateExperimentField("name", e.target.value)
+                              }
                               className="h-8 text-sm"
+                              placeholder="hoam_experiment"
                             />
-                          </div>
-                          <div className="flex items-center space-x-2 pt-2">
-                            <Switch
-                              id="pretrained"
-                              checked={formData.model_config?.pretrained ?? false}
-                              onCheckedChange={(checked) => updateModelField('pretrained', checked)}
-                            />
-                            <Label htmlFor="pretrained" className="text-sm">{t('config.model.pretrained')}</Label>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Data Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Database className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.data.title')}</h4>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="image_size" className="text-xs">{t('config.data.image_size')}</Label>
-                            <Select
-                              value={formData.data_config?.image_size?.toString() || ''}
-                              onValueChange={(value) => updateDataField('image_size', parseInt(value))}
-                            >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder={t('config.data.image_size')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="224">224x224</SelectItem>
-                                <SelectItem value="256">256x256</SelectItem>
-                                <SelectItem value="384">384x384</SelectItem>
-                                <SelectItem value="512">512x512</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="num_workers" className="text-xs">{t('config.data.num_workers')}</Label>
-                            <Input
-                              id="num_workers"
-                              type="number"
-                              min={0}
-                              max={16}
-                              value={formData.data_config?.num_workers || ''}
-                              onChange={(e) => updateDataField('num_workers', parseInt(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="test_split" className="text-xs">{t('config.data.test_split')}</Label>
-                            <Input
-                              id="test_split"
-                              type="number"
-                              step="0.05"
-                              min={0.1}
-                              max={0.5}
-                              value={formData.data_config?.test_split || ''}
-                              onChange={(e) => updateDataField('test_split', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
-                      {/* Loss Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Target className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.loss.title')}</h4>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="loss_type" className="text-xs">{t('config.loss.type')}</Label>
-                            <Select
-                              value={formData.loss_config?.type || ''}
-                              onValueChange={(value) => updateLossField('type', value as 'HybridMarginLoss' | 'ArcFaceLoss' | 'SubCenterArcFaceLoss')}
-                            >
-                              <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder={t('config.loss.type')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="HybridMarginLoss">HybridMarginLoss</SelectItem>
-                                <SelectItem value="ArcFaceLoss">ArcFaceLoss</SelectItem>
-                                <SelectItem value="SubCenterArcFaceLoss">SubCenterArcFaceLoss</SelectItem>
-                              </SelectContent>
-                            </Select>
+                        {/* Training Configuration */}
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <Dumbbell className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.training.title")}
+                            </h4>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
-                              <Label htmlFor="subcenter_margin" className="text-xs">{t('config.loss.subcenter_margin')}</Label>
+                              <Label htmlFor="min_epochs" className="text-xs">
+                                {t("config.training.min_epochs")}
+                              </Label>
                               <Input
-                                id="subcenter_margin"
+                                id="min_epochs"
                                 type="number"
-                                step="0.1"
-                                min={0.1}
-                                max={1.0}
-                                value={formData.loss_config?.subcenter_margin || ''}
-                                onChange={(e) => updateLossField('subcenter_margin', parseFloat(e.target.value) || 0)}
+                                min={0}
+                                max={50}
+                                value={
+                                  formData.training_config?.min_epochs || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "min_epochs",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="subcenter_scale" className="text-xs">{t('config.loss.subcenter_scale')}</Label>
+                              <Label htmlFor="max_epochs" className="text-xs">
+                                {t("config.training.max_epochs")}
+                              </Label>
                               <Input
-                                id="subcenter_scale"
-                                type="number"
-                                step="1"
-                                min={1}
-                                max={100}
-                                value={formData.loss_config?.subcenter_scale || ''}
-                                onChange={(e) => updateLossField('subcenter_scale', parseFloat(e.target.value) || 0)}
-                                className="h-8 text-sm"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="sub_centers" className="text-xs">{t('config.loss.sub_centers')}</Label>
-                              <Input
-                                id="sub_centers"
+                                id="max_epochs"
                                 type="number"
                                 min={1}
-                                max={10}
-                                value={formData.loss_config?.sub_centers || ''}
-                                onChange={(e) => updateLossField('sub_centers', parseInt(e.target.value) || 0)}
+                                max={200}
+                                value={
+                                  formData.training_config?.max_epochs || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "max_epochs",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
                                 className="h-8 text-sm"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="triplet_margin" className="text-xs">{t('config.loss.triplet_margin')}</Label>
+                              <Label htmlFor="batch_size" className="text-xs">
+                                {t("config.training.batch_size")}
+                              </Label>
                               <Input
-                                id="triplet_margin"
+                                id="batch_size"
                                 type="number"
-                                step="0.1"
-                                min={0.1}
-                                max={1.0}
-                                value={formData.loss_config?.triplet_margin || ''}
-                                onChange={(e) => updateLossField('triplet_margin', parseFloat(e.target.value) || 0)}
+                                min={1}
+                                max={256}
+                                value={
+                                  formData.training_config?.batch_size || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "batch_size",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
                                 className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="lr" className="text-xs">
+                                {t("config.training.learning_rate")}
+                              </Label>
+                              <Input
+                                id="lr"
+                                type="number"
+                                step="0.0001"
+                                min={0.0001}
+                                max={0.1}
+                                value={formData.training_config?.lr || ""}
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "lr",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="weight_decay" className="text-xs">
+                                {t("config.training.weight_decay")}
+                              </Label>
+                              <Input
+                                id="weight_decay"
+                                type="number"
+                                step="0.0001"
+                                min={0}
+                                max={0.01}
+                                value={
+                                  formData.training_config?.weight_decay || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "weight_decay",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="patience" className="text-xs">
+                                {t("config.training.patience")}
+                              </Label>
+                              <Input
+                                id="patience"
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={formData.training_config?.patience || ""}
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "patience",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="freeze_epochs"
+                                className="text-xs"
+                              >
+                                {t("config.training.freeze_backbone_epochs")}
+                              </Label>
+                              <Input
+                                id="freeze_epochs"
+                                type="number"
+                                min={0}
+                                max={20}
+                                value={
+                                  formData.training_config
+                                    ?.freeze_backbone_epochs || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "freeze_backbone_epochs",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="checkpoint_dir"
+                                className="text-xs"
+                              >
+                                {t("config.training.checkpoint_dir")}
+                              </Label>
+                              <Input
+                                id="checkpoint_dir"
+                                value={
+                                  formData.training_config?.checkpoint_dir || ""
+                                }
+                                onChange={(e) =>
+                                  updateTrainingField(
+                                    "checkpoint_dir",
+                                    e.target.value
+                                  )
+                                }
+                                className="h-8 text-sm"
+                                placeholder="checkpoints"
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="center_loss_weight" className="text-xs">{t('config.loss.center_loss_weight')}</Label>
-                            <Input
-                              id="center_loss_weight"
-                              type="number"
-                              step="0.001"
-                              min={0.001}
-                              max={0.1}
-                              value={formData.loss_config?.center_loss_weight || ''}
-                              onChange={(e) => updateLossField('center_loss_weight', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="early_stopping"
+                              checked={
+                                formData.training_config
+                                  ?.enable_early_stopping ?? true
+                              }
+                              onCheckedChange={(checked) =>
+                                updateTrainingField(
+                                  "enable_early_stopping",
+                                  checked
+                                )
+                              }
                             />
+                            <Label htmlFor="early_stopping" className="text-sm">
+                              {t("config.training.enable_early_stopping")}
+                            </Label>
                           </div>
                         </div>
                       </div>
 
-                      {/* KNN Configuration */}
-                      <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                          <Search className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-medium text-gray-700">{t('config.knn.title')}</h4>
-                        </div>
-                        <div className="space-y-3">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+                        {/* Model Configuration */}
+                        <div className="space-y-4">
                           <div className="flex items-center space-x-2">
-                            <Switch
-                              id="knn_enable"
-                              checked={formData.knn_config?.enable ?? false}
-                              onCheckedChange={(checked) => updateKnnField('enable', checked)}
-                            />
-                            <Label htmlFor="knn_enable" className="text-sm">{t('config.knn.enable')}</Label>
+                            <Brain className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.model.title")}
+                            </h4>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="knn_threshold" className="text-xs">{t('config.knn.threshold')}</Label>
-                            <Input
-                              id="knn_threshold"
-                              type="number"
-                              step="0.1"
-                              min={0.1}
-                              max={1.0}
-                              value={formData.knn_config?.threshold || ''}
-                              onChange={(e) => updateKnnField('threshold', parseFloat(e.target.value) || 0)}
-                              className="h-8 text-sm"
-                            />
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="structure" className="text-xs">
+                                {t("config.model.structure")}
+                              </Label>
+                              <Select
+                                value={formData.model_config?.structure || ""}
+                                onValueChange={(value) =>
+                                  updateModelField(
+                                    "structure",
+                                    value as "HOAM" | "HOAMV2"
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue
+                                    placeholder={t("config.model.structure")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="HOAM">HOAM</SelectItem>
+                                  <SelectItem value="HOAMV2">HOAMV2</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="backbone" className="text-xs">
+                                {t("config.model.backbone")}
+                              </Label>
+                              <Select
+                                value={formData.model_config?.backbone || ""}
+                                onValueChange={(value) =>
+                                  updateModelField("backbone", value)
+                                }
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue
+                                    placeholder={t("config.model.backbone")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="efficientnetv2_rw_s">
+                                    EfficientNetV2-S
+                                  </SelectItem>
+                                  <SelectItem value="efficientnetv2_rw_m">
+                                    EfficientNetV2-M
+                                  </SelectItem>
+                                  <SelectItem value="resnet50">
+                                    ResNet50
+                                  </SelectItem>
+                                  <SelectItem value="resnet101">
+                                    ResNet101
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="embedding_size"
+                                className="text-xs"
+                              >
+                                {t("config.model.embedding_size")}
+                              </Label>
+                              <Input
+                                id="embedding_size"
+                                type="number"
+                                min={64}
+                                max={2048}
+                                step={64}
+                                value={
+                                  formData.model_config?.embedding_size || ""
+                                }
+                                onChange={(e) =>
+                                  updateModelField(
+                                    "embedding_size",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2 pt-2">
+                              <Switch
+                                id="pretrained"
+                                checked={
+                                  formData.model_config?.pretrained ?? false
+                                }
+                                onCheckedChange={(checked) =>
+                                  updateModelField("pretrained", checked)
+                                }
+                              />
+                              <Label htmlFor="pretrained" className="text-sm">
+                                {t("config.model.pretrained")}
+                              </Label>
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="index_path" className="text-xs">{t('config.knn.index_path')}</Label>
-                            <Input
-                              id="index_path"
-                              value={formData.knn_config?.index_path || ''}
-                              onChange={(e) => updateKnnField('index_path', e.target.value)}
-                              className="h-8 text-sm"
-                              placeholder="knn.index"
-                            />
+                        </div>
+
+                        {/* Data Configuration */}
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <Database className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.data.title")}
+                            </h4>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="dataset_pkl" className="text-xs">{t('config.knn.dataset_pkl')}</Label>
-                            <Input
-                              id="dataset_pkl"
-                              value={formData.knn_config?.dataset_pkl || ''}
-                              onChange={(e) => updateKnnField('dataset_pkl', e.target.value)}
-                              className="h-8 text-sm"
-                              placeholder="dataset.pkl"
-                            />
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="image_size" className="text-xs">
+                                {t("config.data.image_size")}
+                              </Label>
+                              <Select
+                                value={
+                                  formData.data_config?.image_size?.toString() ||
+                                  ""
+                                }
+                                onValueChange={(value) =>
+                                  updateDataField("image_size", parseInt(value))
+                                }
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue
+                                    placeholder={t("config.data.image_size")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="224">224x224</SelectItem>
+                                  <SelectItem value="256">256x256</SelectItem>
+                                  <SelectItem value="384">384x384</SelectItem>
+                                  <SelectItem value="512">512x512</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="num_workers" className="text-xs">
+                                {t("config.data.num_workers")}
+                              </Label>
+                              <Input
+                                id="num_workers"
+                                type="number"
+                                min={0}
+                                max={16}
+                                value={formData.data_config?.num_workers || ""}
+                                onChange={(e) =>
+                                  updateDataField(
+                                    "num_workers",
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="test_split" className="text-xs">
+                                {t("config.data.test_split")}
+                              </Label>
+                              <Input
+                                id="test_split"
+                                type="number"
+                                step="0.05"
+                                min={0.1}
+                                max={0.5}
+                                value={formData.data_config?.test_split || ""}
+                                onChange={(e) =>
+                                  updateDataField(
+                                    "test_split",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mt-6">
+                        {/* Loss Configuration */}
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <Target className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.loss.title")}
+                            </h4>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="loss_type" className="text-xs">
+                                {t("config.loss.type")}
+                              </Label>
+                              <Select
+                                value={formData.loss_config?.type || ""}
+                                onValueChange={(value) =>
+                                  updateLossField(
+                                    "type",
+                                    value as
+                                      | "HybridMarginLoss"
+                                      | "ArcFaceLoss"
+                                      | "SubCenterArcFaceLoss"
+                                  )
+                                }
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue
+                                    placeholder={t("config.loss.type")}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="HybridMarginLoss">
+                                    HybridMarginLoss
+                                  </SelectItem>
+                                  <SelectItem value="ArcFaceLoss">
+                                    ArcFaceLoss
+                                  </SelectItem>
+                                  <SelectItem value="SubCenterArcFaceLoss">
+                                    SubCenterArcFaceLoss
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="subcenter_margin"
+                                  className="text-xs"
+                                >
+                                  {t("config.loss.subcenter_margin")}
+                                </Label>
+                                <Input
+                                  id="subcenter_margin"
+                                  type="number"
+                                  step="0.1"
+                                  min={0.1}
+                                  max={1.0}
+                                  value={
+                                    formData.loss_config?.subcenter_margin || ""
+                                  }
+                                  onChange={(e) =>
+                                    updateLossField(
+                                      "subcenter_margin",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="subcenter_scale"
+                                  className="text-xs"
+                                >
+                                  {t("config.loss.subcenter_scale")}
+                                </Label>
+                                <Input
+                                  id="subcenter_scale"
+                                  type="number"
+                                  step="1"
+                                  min={1}
+                                  max={100}
+                                  value={
+                                    formData.loss_config?.subcenter_scale || ""
+                                  }
+                                  onChange={(e) =>
+                                    updateLossField(
+                                      "subcenter_scale",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="sub_centers"
+                                  className="text-xs"
+                                >
+                                  {t("config.loss.sub_centers")}
+                                </Label>
+                                <Input
+                                  id="sub_centers"
+                                  type="number"
+                                  min={1}
+                                  max={10}
+                                  value={
+                                    formData.loss_config?.sub_centers || ""
+                                  }
+                                  onChange={(e) =>
+                                    updateLossField(
+                                      "sub_centers",
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor="triplet_margin"
+                                  className="text-xs"
+                                >
+                                  {t("config.loss.triplet_margin")}
+                                </Label>
+                                <Input
+                                  id="triplet_margin"
+                                  type="number"
+                                  step="0.1"
+                                  min={0.1}
+                                  max={1.0}
+                                  value={
+                                    formData.loss_config?.triplet_margin || ""
+                                  }
+                                  onChange={(e) =>
+                                    updateLossField(
+                                      "triplet_margin",
+                                      parseFloat(e.target.value) || 0
+                                    )
+                                  }
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="center_loss_weight"
+                                className="text-xs"
+                              >
+                                {t("config.loss.center_loss_weight")}
+                              </Label>
+                              <Input
+                                id="center_loss_weight"
+                                type="number"
+                                step="0.001"
+                                min={0.001}
+                                max={0.1}
+                                value={
+                                  formData.loss_config?.center_loss_weight || ""
+                                }
+                                onChange={(e) =>
+                                  updateLossField(
+                                    "center_loss_weight",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* KNN Configuration */}
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <Search className="w-4 h-4 text-blue-600" />
+                            <h4 className="font-medium text-gray-700">
+                              {t("config.knn.title")}
+                            </h4>
+                          </div>
+                          <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                id="knn_enable"
+                                checked={formData.knn_config?.enable ?? false}
+                                onCheckedChange={(checked) =>
+                                  updateKnnField("enable", checked)
+                                }
+                              />
+                              <Label htmlFor="knn_enable" className="text-sm">
+                                {t("config.knn.enable")}
+                              </Label>
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor="knn_threshold"
+                                className="text-xs"
+                              >
+                                {t("config.knn.threshold")}
+                              </Label>
+                              <Input
+                                id="knn_threshold"
+                                type="number"
+                                step="0.1"
+                                min={0.1}
+                                max={1.0}
+                                value={formData.knn_config?.threshold || ""}
+                                onChange={(e) =>
+                                  updateKnnField(
+                                    "threshold",
+                                    parseFloat(e.target.value) || 0
+                                  )
+                                }
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="index_path" className="text-xs">
+                                {t("config.knn.index_path")}
+                              </Label>
+                              <Input
+                                id="index_path"
+                                value={formData.knn_config?.index_path || ""}
+                                onChange={(e) =>
+                                  updateKnnField("index_path", e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="knn.index"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="dataset_pkl" className="text-xs">
+                                {t("config.knn.dataset_pkl")}
+                              </Label>
+                              <Input
+                                id="dataset_pkl"
+                                value={formData.knn_config?.dataset_pkl || ""}
+                                onChange={(e) =>
+                                  updateKnnField("dataset_pkl", e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="dataset.pkl"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           </TabsContent>
 
@@ -888,152 +1261,200 @@ export function TrainingDashboard() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="space-y-6"
             >
-            <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <ListTodo className="w-6 h-6 text-blue-600" />
-                    <CardTitle className="text-2xl">{t('training.title')}</CardTitle>
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <ListTodo className="w-6 h-6 text-blue-600" />
+                      <CardTitle className="text-2xl">
+                        {t("training.title")}
+                      </CardTitle>
+                    </div>
+                    <CardDescription>{t("form.monitor_tasks")}</CardDescription>
                   </div>
-                  <CardDescription>
-{t('form.monitor_tasks')}
-                  </CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    setLoading(true);
-                    setError(null);
-                    fetchTasks();
-                  }} 
-                  disabled={loading}
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-{t('form.refresh')}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                    <p className="text-sm text-muted-foreground">{t('messages.loading_tasks')}</p>
-                  </div>
-                ) : error ? (
-                  <Alert variant="destructive" className="border-red-200 bg-red-50/80">
-                    <XCircle className="h-4 w-4" />
-                    <AlertTitle>{t('form.error_title')}</AlertTitle>
-                    <AlertDescription>
-                      {error}
-                    </AlertDescription>
-                  </Alert>
-                ) : tasks.length === 0 ? (
-                  <Alert className="border-gray-200 bg-gray-50/80">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{t('form.no_training_tasks')}</AlertTitle>
-                    <AlertDescription>
-{t('form.no_tasks_description')}
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="space-y-4">
-                    {tasks.map((task) => (
-                      <Card key={task.task_id} className="bg-gradient-to-r from-white/90 to-gray-50/90 border border-gray-200/50">
-                        <CardContent className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              {getStatusIcon(task.status)}
-                              <span className="font-semibold text-lg">{task.task_id}</span>
-                              <Badge className={getStatusColor(task.status)}>
-                                {t(`training.${task.status}`)}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              {task.status === 'pending_orientation' && (
-                                <Button 
-                                  size="sm" 
-                                  variant="default"
-                                  className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                                  onClick={() => handleOrientationConfirm(task.task_id)}
-                                >
-                                  <AlertCircle className="w-4 h-4 mr-2" />
-{t('form.confirm_orientation')}
-                                </Button>
-                              )}
-                              {task.status === 'completed' && (
-                                <Button size="sm" variant="outline">
-                                  <Download className="w-4 h-4 mr-2" />
-{t('common.download')}
-                                </Button>
-                              )}
-                              {(task.status === 'pending' || task.status === 'running') && (
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleCancelTask(task.task_id)}
-                                >
-                                  <Square className="w-4 h-4 mr-2" />
-{t('common.cancel')}
-                                </Button>
-                              )}
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handleDeleteTask(task.task_id)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-{t('common.delete')}
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          {task.status === 'pending_orientation' && (
-                            <Alert className="border-yellow-200 bg-yellow-50/80">
-                              <AlertCircle className="h-4 w-4 text-yellow-600" />
-                              <AlertTitle className="text-yellow-800">{t('orientation.title')}</AlertTitle>
-                              <AlertDescription className="text-yellow-700">
-  {t('orientation.description')}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          {task.current_step && (
-                            <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border">
-                              {task.current_step}
-                            </p>
-                          )}
-                          
-                          {task.progress !== undefined && (
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span>{t('training.progress')}</span>
-                                <span className="font-medium">{Math.round(task.progress * 100)}%</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLoading(true);
+                      setError(null);
+                      fetchTasks();
+                    }}
+                    disabled={loading}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 mr-2 ${
+                        loading ? "animate-spin" : ""
+                      }`}
+                    />
+                    {t("form.refresh")}
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                      <p className="text-sm text-muted-foreground">
+                        {t("messages.loading_tasks")}
+                      </p>
+                    </div>
+                  ) : error ? (
+                    <Alert
+                      variant="destructive"
+                      className="border-red-200 bg-red-50/80"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      <AlertTitle>{t("form.error_title")}</AlertTitle>
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  ) : tasks.length === 0 ? (
+                    <Alert className="border-gray-200 bg-gray-50/80">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>{t("form.no_training_tasks")}</AlertTitle>
+                      <AlertDescription>
+                        {t("form.no_tasks_description")}
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div className="space-y-4">
+                      {tasks.map((task) => (
+                        <Card
+                          key={task.task_id}
+                          className="bg-gradient-to-r from-white/90 to-gray-50/90 border border-gray-200/50"
+                        >
+                          <CardContent className="p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                {getStatusIcon(task.status)}
+                                <span className="font-semibold text-lg">
+                                  {task.task_id}
+                                </span>
+                                <Badge className={getStatusColor(task.status)}>
+                                  {t(`training.${task.status}`)}
+                                </Badge>
                               </div>
-                              <Progress value={task.progress * 100} className="h-2" />
+                              <div className="flex items-center space-x-2">
+                                {task.status === "pending_orientation" && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                                    onClick={() =>
+                                      handleOrientationConfirm(task.task_id)
+                                    }
+                                  >
+                                    <AlertCircle className="w-4 h-4 mr-2" />
+                                    {t("form.confirm_orientation")}
+                                  </Button>
+                                )}
+                                {task.status === "completed" && (
+                                  <>
+                                    <Button size="sm" variant="outline">
+                                      <Download className="w-4 h-4 mr-2" />
+                                      {t("common.download")}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleCreateModule(task.task_id)}
+                                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                    >
+                                      <Package className="w-4 h-4 mr-2" />
+                                      {t("common.create_module")}
+                                    </Button>
+                                  </>
+                                )}
+                                {(task.status === "pending" ||
+                                  task.status === "running") && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleCancelTask(task.task_id)
+                                    }
+                                  >
+                                    <Square className="w-4 h-4 mr-2" />
+                                    {t("common.cancel")}
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteTask(task.task_id)}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  {t("common.delete")}
+                                </Button>
+                              </div>
                             </div>
-                          )}
-                          
-                          {task.error_message && (
-                            <Alert variant="destructive" className="border-red-200 bg-red-50/80">
-                              <XCircle className="h-4 w-4" />
-                              <AlertTitle>{t('form.error_title')}</AlertTitle>
-                              <AlertDescription>{task.error_message}</AlertDescription>
-                            </Alert>
-                          )}
-                          
-                          <div className="flex justify-between text-sm text-muted-foreground pt-2 border-t border-gray-200/50">
-                            <span>{t('training.created_at')}: {task.start_time ? new Date(task.start_time).toLocaleString() : 'N/A'}</span>
-                            {task.end_time && (
-                              <span>{t('training.completed_at')}: {new Date(task.end_time).toLocaleString()}</span>
+
+                            {task.status === "pending_orientation" && (
+                              <Alert className="border-yellow-200 bg-yellow-50/80">
+                                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                                <AlertTitle className="text-yellow-800">
+                                  {t("orientation.title")}
+                                </AlertTitle>
+                                <AlertDescription className="text-yellow-700">
+                                  {t("orientation.description")}
+                                </AlertDescription>
+                              </Alert>
                             )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+
+                            {task.current_step && (
+                              <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border">
+                                {task.current_step}
+                              </p>
+                            )}
+
+                            {task.progress !== undefined && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>{t("training.progress")}</span>
+                                  <span className="font-medium">
+                                    {Math.round(task.progress * 100)}%
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={task.progress * 100}
+                                  className="h-2"
+                                />
+                              </div>
+                            )}
+
+                            {task.error_message && (
+                              <Alert
+                                variant="destructive"
+                                className="border-red-200 bg-red-50/80"
+                              >
+                                <XCircle className="h-4 w-4" />
+                                <AlertTitle>{t("form.error_title")}</AlertTitle>
+                                <AlertDescription>
+                                  {task.error_message}
+                                </AlertDescription>
+                              </Alert>
+                            )}
+
+                            <div className="flex justify-between text-sm text-muted-foreground pt-2 border-t border-gray-200/50">
+                              <span>
+                                {t("training.created_at")}:{" "}
+                                {task.start_time
+                                  ? new Date(task.start_time).toLocaleString()
+                                  : "N/A"}
+                              </span>
+                              {task.end_time && (
+                                <span>
+                                  {t("training.completed_at")}:{" "}
+                                  {new Date(task.end_time).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           </TabsContent>
 
@@ -1045,28 +1466,27 @@ export function TrainingDashboard() {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="space-y-6"
             >
-            <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Settings className="w-6 h-6 text-blue-600" />
-                  <CardTitle className="text-2xl">{t('navigation.settings')}</CardTitle>
-                </div>
-                <CardDescription>
-管理系統相關設定和偏好
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Alert className="border-blue-200 bg-blue-50/80">
-                  <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-blue-800">
-                    系統設定功能正在開發中，敬請期待。
-                  </AlertDescription>
-                </Alert>
-              </CardContent>
-            </Card>
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Settings className="w-6 h-6 text-blue-600" />
+                    <CardTitle className="text-2xl">
+                      {t("navigation.settings")}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>管理系統相關設定和偏好</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Alert className="border-blue-200 bg-blue-50/80">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      系統設定功能正在開發中，敬請期待。
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
             </motion.div>
           </TabsContent>
-
         </Tabs>
       </main>
 
@@ -1085,20 +1505,26 @@ export function TrainingDashboard() {
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white tracking-tight">{t('footer.ai_system')}</h3>
-                  <p className="text-xs text-slate-400 font-mono">AI Training Platform v2.0</p>
+                  <h3 className="text-lg font-bold text-white tracking-tight">
+                    {t("footer.ai_system")}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    {t("footer.platform_version")}
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <p className="text-sm text-slate-300 leading-relaxed max-w-md">
-                  {t('footer.description')}
+                  {t("footer.description")}
                 </p>
 
                 {/* Technical Specs */}
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Architecture</h4>
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                      {t("footer.architecture")}
+                    </h4>
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 text-xs text-slate-300">
                         <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
@@ -1110,25 +1536,27 @@ export function TrainingDashboard() {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-slate-300">
                         <div className="w-1.5 h-1.5 bg-purple-400 rounded-full"></div>
-                        <span className="font-mono">PyTorch Lightning</span>
+                        <span className="font-mono">{t("footer.ml_tech")}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Capabilities</h4>
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                      {t("footer.capabilities")}
+                    </h4>
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2 text-xs text-slate-300">
                         <Zap className="w-3 h-3 text-yellow-400" />
-                        <span>Auto-Training</span>
+                        <span>{t("footer.auto_training")}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-slate-300">
                         <Search className="w-3 h-3 text-cyan-400" />
-                        <span>Image Retrieval</span>
+                        <span>{t("footer.image_retrieval")}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-slate-300">
                         <Target className="w-3 h-3 text-red-400" />
-                        <span>Quality Inspection</span>
+                        <span>{t("footer.quality_inspection")}</span>
                       </div>
                     </div>
                   </div>
@@ -1141,41 +1569,58 @@ export function TrainingDashboard() {
               <div>
                 <h4 className="text-sm font-semibold text-white mb-4 flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>SYSTEM STATUS</span>
+                  <span>{t("footer.system_status")}</span>
                 </h4>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-300 font-mono">API Gateway</span>
+                      <span className="text-sm text-slate-300 font-mono">
+                        {t("footer.api_gateway")}
+                      </span>
                     </div>
-                    <span className="text-xs text-green-400 font-semibold">ONLINE</span>
+                    <span className="text-xs text-green-400 font-semibold">
+                      {t("footer.status_online")}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-300 font-mono">Frontend UI</span>
+                      <span className="text-sm text-slate-300 font-mono">
+                        {t("footer.frontend_ui")}
+                      </span>
                     </div>
-                    <span className="text-xs text-blue-400 font-semibold">ACTIVE</span>
+                    <span className="text-xs text-blue-400 font-semibold">
+                      {t("footer.status_active")}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-slate-300 font-mono">GPU Cluster</span>
+                      <span className="text-sm text-slate-300 font-mono">
+                        {t("footer.gpu_cluster")}
+                      </span>
                     </div>
-                    <span className="text-xs text-purple-400 font-semibold">READY</span>
+                    <span className="text-xs text-purple-400 font-semibold">
+                      {t("footer.status_ready")}
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                      <span className="text-sm text-slate-300 font-mono">Active Tasks</span>
+                      <span className="text-sm text-slate-300 font-mono">
+                        {t("footer.active_tasks")}
+                      </span>
                     </div>
                     <span className="text-xs text-orange-400 font-semibold font-mono">
-                      {tasks.filter(t => t.status === 'running').length.toString().padStart(2, '0')}
+                      {tasks
+                        .filter((t) => t.status === "running")
+                        .length.toString()
+                        .padStart(2, "0")}
                     </span>
                   </div>
                 </div>
@@ -1187,28 +1632,44 @@ export function TrainingDashboard() {
               <div>
                 <h4 className="text-sm font-semibold text-white mb-4 flex items-center space-x-2">
                   <Cog className="w-4 h-4" />
-                  <span>TECH STACK</span>
+                  <span>{t("footer.tech_stack")}</span>
                 </h4>
 
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Frontend</div>
-                    <div className="text-sm text-slate-200 font-mono">Next.js 14 + TypeScript</div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                      {t("footer.frontend")}
+                    </div>
+                    <div className="text-sm text-slate-200 font-mono">
+                      {t("footer.frontend_tech")}
+                    </div>
                   </div>
 
                   <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Backend</div>
-                    <div className="text-sm text-slate-200 font-mono">FastAPI + Python 3.10</div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                      {t("footer.backend")}
+                    </div>
+                    <div className="text-sm text-slate-200 font-mono">
+                      {t("footer.backend_tech")}
+                    </div>
                   </div>
 
                   <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">ML Framework</div>
-                    <div className="text-sm text-slate-200 font-mono">PyTorch Lightning</div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                      {t("footer.ml_framework")}
+                    </div>
+                    <div className="text-sm text-slate-200 font-mono">
+                      {t("footer.ml_tech")}
+                    </div>
                   </div>
 
                   <div className="p-3 rounded-lg bg-slate-800/30 border border-slate-700/30">
-                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">Database</div>
-                    <div className="text-sm text-slate-200 font-mono">PostgreSQL + SSH</div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide mb-1">
+                      {t("footer.database")}
+                    </div>
+                    <div className="text-sm text-slate-200 font-mono">
+                      {t("footer.database_tech")}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1220,44 +1681,126 @@ export function TrainingDashboard() {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
               <div className="space-y-2">
                 <div className="flex items-center space-x-4">
-                  <span className="text-sm text-slate-400">© 2024 Automated Retrieval Training System</span>
+                  <span className="text-sm text-slate-400">
+                    © 2024 {t("footer.company_name")}
+                  </span>
                   <div className="w-1 h-1 bg-slate-600 rounded-full"></div>
-                  <span className="text-sm text-slate-400">Industrial AI Solutions</span>
+                  <span className="text-sm text-slate-400">
+                    {t("footer.company_subtitle")}
+                  </span>
                 </div>
                 <p className="text-xs text-slate-500 font-mono">
-                  Specialized for image quality inspection and retrieval model training
+                  {t("footer.specialization")}
                 </p>
               </div>
 
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-slate-400 font-mono">Version 2.0.1</span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {t("footer.version")} 2.0.1
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="w-3 h-3 text-slate-500" />
                   <span className="text-xs text-slate-400 font-mono">
-                    {new Date().toLocaleString('en-US', {
-                      timeZone: 'Asia/Taipei',
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: false
-                    })} UTC+8
+                    {new Date().toLocaleString("en-US", {
+                      timeZone: "Asia/Taipei",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: false,
+                    })}{" "}
+                    UTC+8
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  <span className="text-xs text-slate-400 font-mono">Build #{Math.floor(Math.random() * 1000) + 1000}</span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    {t("footer.build")} #{Math.floor(Math.random() * 1000) + 1000}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Create Module Dialog */}
+      {showCreateModuleDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t("common.create_module")}
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCreateModuleCancel}
+                className="w-8 h-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <Alert className="border-blue-200 bg-blue-50">
+                <Package className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  {t("form.module_creation_info")}
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="module_name" className="text-sm font-medium">
+                  {t("form.module_name")}
+                </Label>
+                <Input
+                  id="module_name"
+                  value={moduleName}
+                  onChange={(e) => setModuleName(e.target.value)}
+                  placeholder={t("form.module_name_placeholder")}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500">
+                  {t("form.module_name_example")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button
+                variant="outline"
+                onClick={handleCreateModuleCancel}
+                disabled={creatingModule}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={handleCreateModuleConfirm}
+                disabled={!moduleName.trim() || creatingModule}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {creatingModule ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t("messages.creating_module")}
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 mr-2" />
+                    {t("common.create")}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

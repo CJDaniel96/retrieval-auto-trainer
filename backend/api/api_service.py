@@ -46,6 +46,11 @@ class ConfigUpdateRequest(BaseModel):
     data: Optional[dict] = Field(None, description="數據配置")
     loss: Optional[dict] = Field(None, description="損失函數配置")
 
+
+class CreateModuleRequest(BaseModel):
+    """創建模組請求模型"""
+    module_name: str = Field(..., description="模組名稱", pattern=r"^[A-Za-z0-9_-]+$")
+
 class TrainingStatus(BaseModel):
     """訓練狀態模型"""
     task_id: str
@@ -348,6 +353,56 @@ async def delete_training_task(task_id: str, delete_files: bool = False):
     return {"message": f"任務 {task_id} 已刪除"}
 
 
+@app.post("/training/create-module/{task_id}", tags=["Training"])
+async def create_module(task_id: str, request: CreateModuleRequest, background_tasks: BackgroundTasks):
+    """
+    創建可部署的模組
+
+    Args:
+        task_id: 任務ID
+        request: 創建模組請求，包含模組名稱
+
+    Returns:
+        Dict: 包含訊息和模組路徑
+    """
+    if task_id not in training_tasks:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
+
+    task = training_tasks[task_id]
+
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail=f"任務必須完成才能創建模組，當前狀態: {task.status}")
+
+    if not task.output_dir:
+        raise HTTPException(status_code=400, detail="任務輸出目錄不存在")
+
+    output_dir = Path(task.output_dir)
+    if not output_dir.exists():
+        raise HTTPException(status_code=400, detail="任務輸出目錄不存在")
+
+    # 檢查必要的文件是否存在
+    model_file = output_dir / "model" / "best_model.pt"
+    rawdata_dir = output_dir / "raw_data"
+    dataset_dir = output_dir / "dataset"
+    mean_std_file = dataset_dir / "mean_std.json"
+
+    if not model_file.exists():
+        raise HTTPException(status_code=400, detail="找不到訓練好的模型文件")
+    if not rawdata_dir.exists():
+        raise HTTPException(status_code=400, detail="找不到原始數據目錄")
+    if not mean_std_file.exists():
+        raise HTTPException(status_code=400, detail="找不到 mean_std.json 文件")
+
+    # 在背景執行模組創建
+    module_name = request.module_name
+    background_tasks.add_task(create_module_task, task_id, module_name, str(output_dir))
+
+    return {
+        "message": f"正在創建模組 {module_name}，請稍候...",
+        "module_path": f"modules/{module_name}"
+    }
+
+
 @app.get("/orientation/samples/{task_id}", response_model=List[OrientationSample], tags=["Orientation"])
 async def get_orientation_samples(task_id: str):
     """
@@ -619,7 +674,156 @@ def run_orientation_and_training_task(task_id: str):
         task.error_message = str(e)
         task.current_step = "訓練失敗"
         logging.error(f"訓練任務 {task_id} 失敗: {str(e)}", exc_info=True)
-        
+
+
+def create_module_task(task_id: str, module_name: str, output_dir: str):
+    """
+    創建可部署的模組
+
+    Args:
+        task_id: 任務ID
+        module_name: 模組名稱
+        output_dir: 輸出目錄路徑
+    """
+    import shutil
+    import random
+    from pathlib import Path
+
+    try:
+        logger = logging.getLogger(__name__)
+        logger.info(f"開始創建模組 {module_name} for task {task_id}")
+
+        output_path = Path(output_dir)
+
+        # 創建模組目錄結構
+        module_base_path = Path("modules") / module_name
+        module_base_path.mkdir(parents=True, exist_ok=True)
+
+        # 創建子目錄
+        (module_base_path / "data").mkdir(exist_ok=True)
+        (module_base_path / "data" / "golden_sample").mkdir(exist_ok=True)
+        (module_base_path / "models").mkdir(exist_ok=True)
+        (module_base_path / "models" / "polarity").mkdir(exist_ok=True)
+
+        # 複製模型文件
+        model_src = output_path / "model" / "best_model.pt"
+        model_dst = module_base_path / "models" / "polarity" / "best.pt"
+        shutil.copy2(str(model_src), str(model_dst))
+        logger.info(f"複製模型文件: {model_src} -> {model_dst}")
+
+        # 讀取 mean_std.json
+        mean_std_file = output_path / "dataset" / "mean_std.json"
+        with open(mean_std_file, 'r') as f:
+            mean_std_data = json.load(f)
+
+        # 處理 golden samples
+        rawdata_dir = output_path / "raw_data"
+        golden_sample_folders = {}
+        thresholds = {}
+
+        # 掃描 rawdata 目錄
+        for class_folder in rawdata_dir.iterdir():
+            if not class_folder.is_dir() or class_folder.name == "NG":
+                continue
+
+            # 解析文件夾名稱：{product_name}_{comp_name}_{light}
+            folder_parts = class_folder.name.split('_')
+            if len(folder_parts) < 3:
+                continue
+
+            product_name = folder_parts[0]
+            comp_name = folder_parts[1]
+            light = '_'.join(folder_parts[2:])  # 處理可能包含下劃線的光源名稱
+
+            # 隨機選擇一張圖片
+            image_files = [f for f in class_folder.iterdir() if f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']]
+            if not image_files:
+                continue
+
+            selected_image = random.choice(image_files)
+
+            # 創建目標目錄結構
+            golden_sample_path = module_base_path / "data" / "golden_sample" / module_name / product_name / comp_name
+            golden_sample_path.mkdir(parents=True, exist_ok=True)
+
+            # 複製選中的圖片
+            dst_image_path = golden_sample_path / selected_image.name
+            shutil.copy2(str(selected_image), str(dst_image_path))
+
+            # 構建 golden_sample_folders 結構
+            if module_name not in golden_sample_folders:
+                golden_sample_folders[module_name] = {}
+            if product_name not in golden_sample_folders[module_name]:
+                golden_sample_folders[module_name][product_name] = {}
+            if comp_name not in golden_sample_folders[module_name][product_name]:
+                golden_sample_folders[module_name][product_name][comp_name] = {}
+
+            golden_sample_folders[module_name][product_name][comp_name][light] = selected_image.name
+
+            # 構建 thresholds 結構
+            if module_name not in thresholds:
+                thresholds[module_name] = {}
+            if product_name not in thresholds[module_name]:
+                thresholds[module_name][product_name] = {}
+            if comp_name not in thresholds[module_name][product_name]:
+                thresholds[module_name][product_name][comp_name] = {}
+
+            thresholds[module_name][product_name][comp_name][light] = 0.7  # 預設閾值
+
+        # 創建 configs.json
+        configs = {
+            "ai_defect": ["Polarity"],
+            "pkg_type": {
+                module_name: []
+            },
+            "model_path": f"modules/{module_name}/models/polarity/best.pt",
+            "embedding_size": 512,
+            "thresholds": thresholds,
+            "mean": mean_std_data.get("mean", [0, 0, 0]),
+            "std": mean_std_data.get("std", [1, 1, 1]),
+            "golden_sample_base_path": f"modules/{module_name}/data/golden_sample",
+            "golden_sample_folders": golden_sample_folders,
+            "device": "cuda"
+        }
+
+        configs_file = module_base_path / "configs.json"
+        with open(configs_file, 'w', encoding='utf-8') as f:
+            json.dump(configs, f, ensure_ascii=False, indent=2)
+
+        # 創建 __init__.py
+        init_file = module_base_path / "__init__.py"
+        init_file.write_text("", encoding='utf-8')
+
+        # 創建 Polarity.py (從參考模組複製)
+        reference_module = Path("D:/Daniel/Project/HPH/code/AMR/02_Main/modules/M32_973604_01/M32_973604_01.py")
+        polarity_file = module_base_path / f"{module_name}.py"
+
+        if reference_module.exists():
+            shutil.copy2(str(reference_module), str(polarity_file))
+            logger.info(f"複製 Polarity 模板: {reference_module} -> {polarity_file}")
+        else:
+            # 如果參考文件不存在，創建一個基本的 Polarity.py
+            polarity_content = f'''"""
+{module_name} 模組
+AI 缺陷檢測模組
+"""
+
+# 基本的 Polarity 模組實現
+class {module_name}:
+    def __init__(self):
+        pass
+'''
+            polarity_file.write_text(polarity_content, encoding='utf-8')
+
+        logger.info(f"模組 {module_name} 創建完成")
+        logger.info(f"模組路徑: {module_base_path}")
+        logger.info(f"包含 {len(golden_sample_folders.get(module_name, {}))} 個產品的金樣本")
+
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"創建模組 {module_name} 失敗: {str(e)}", exc_info=True)
+        raise
+
 
 @app.post("/config/update", tags=["Configuration"])
 async def update_training_config(request: ConfigUpdateRequest):

@@ -15,6 +15,8 @@
     "browse": "瀏覽",
     "save": "儲存",
     "reset": "重設",
+    "create": "創建",
+    "create_module": "創建模組",
     "back": "返回",
     "next": "下一步",
     "previous": "上一步",
@@ -70,7 +72,11 @@
     "monitor_tasks": "監控和管理訓練任務",
     "error_title": "錯誤",
     "missing_orientation": "請為所有類別選擇方向",
-    "folder_management_info": "輸入資料夾將複製到 datasets/ 目錄。輸出將自動儲存到 outputs/地區/產線/資料夾名稱/"
+    "folder_management_info": "輸入資料夾將複製到 datasets/ 目錄。輸出將自動儲存到 outputs/地區/產線/資料夾名稱/",
+    "module_creation_info": "創建可部署的模組包含訓練好的模型、配置文件和金樣本。",
+    "module_name": "模組名稱",
+    "module_name_placeholder": "輸入模組名稱，例如：M32_973604_01",
+    "module_name_example": "範例：M32_973604_01, M33_875432_02"
   },
   "results": {
     "title": "訓練結果",
@@ -146,12 +152,42 @@
     "confirming_orientation": "確認方向中...",
     "cancelling_task": "取消任務中...",
     "updating_config": "更新設定中...",
-    "resetting_config": "重置設定中..."
+    "resetting_config": "重置設定中...",
+    "creating_module": "創建模組中...",
+    "module_created_successfully": "模組創建成功"
   },
   "footer": {
     "powered_by": "由",
     "ai_system": "AI 自動化訓練系統",
     "powered": "提供支援",
-    "description": "專為影像檢索模型設計的企業級自動化訓練平台，整合先進的深度學習技術與工業品質檢測解決方案。"
+    "description": "專為影像檢索模型設計的企業級自動化訓練平台，整合先進的深度學習技術與工業品質檢測解決方案。",
+    "platform_version": "AI 訓練平台 v2.0",
+    "architecture": "架構",
+    "capabilities": "功能",
+    "auto_training": "自動化訓練",
+    "image_retrieval": "影像檢索",
+    "quality_inspection": "品質檢測",
+    "system_status": "系統狀態",
+    "tech_stack": "技術堆疊",
+    "api_gateway": "API 閘道",
+    "frontend_ui": "前端介面",
+    "gpu_cluster": "GPU 集群",
+    "active_tasks": "活動任務",
+    "status_online": "線上",
+    "status_active": "運行中",
+    "status_ready": "就緒",
+    "frontend": "前端",
+    "backend": "後端",
+    "ml_framework": "機器學習框架",
+    "database": "資料庫",
+    "frontend_tech": "Next.js 14 + TypeScript",
+    "backend_tech": "FastAPI + Python 3.10",
+    "ml_tech": "PyTorch Lightning",
+    "database_tech": "PostgreSQL + SSH",
+    "company_name": "自動化檢索訓練系統",
+    "company_subtitle": "工業 AI 解決方案",
+    "specialization": "專精於影像品質檢測和檢索模型訓練",
+    "version": "版本",
+    "build": "建置"
   }
 }

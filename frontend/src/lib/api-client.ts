@@ -78,6 +78,15 @@ export class ApiClient {
     }
   }
 
+  static async createModule(taskId: string, moduleName: string): Promise<ApiResponse<{ message: string; module_path: string }>> {
+    try {
+      const response = await api.post(`/training/create-module/${taskId}`, { module_name: moduleName });
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
   // Orientation endpoints
   static async getOrientationSamples(taskId: string): Promise<ApiResponse<OrientationSample[]>> {
     try {
