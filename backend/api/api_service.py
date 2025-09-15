@@ -22,6 +22,7 @@ from pydantic import BaseModel, Field
 import uvicorn
 
 from ..core.auto_training_system import AutoTrainingSystem
+from ..database.task_manager import get_task_manager, TrainingStatus as ManagedTrainingStatus
 
 
 # Pydantic模型定義
@@ -87,18 +88,33 @@ class TrainingResult(BaseModel):
     
 
 # 全域變數
-training_tasks: Dict[str, TrainingStatus] = {}
 executor = ThreadPoolExecutor(max_workers=2)  # 限制同時訓練的任務數
+
+# 獲取任務管理器實例
+task_manager = get_task_manager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """應用生命週期管理"""
     # 應用啟動時執行的程式碼
+    logging.info("AutoTraining API 服務啟動中...")
+
     # 確保必要的目錄存在
     Path("temp_uploads").mkdir(exist_ok=True)
     Path("logs").mkdir(exist_ok=True)
+    Path("modules").mkdir(exist_ok=True)
+
+    # 初始化數據庫
+    from ..database import init_database
+    init_database()
+
+    # 恢復運行中的任務狀態
+    await recover_running_tasks()
+
+    logging.info("AutoTraining API 服務啟動完成")
     yield
     # 應用關閉時執行的程式碼
+    logging.info("AutoTraining API 服務關閉中...")
     executor.shutdown(wait=True)
 
 # 建立FastAPI應用
@@ -155,16 +171,19 @@ async def start_training(
         Dict containing task_id
     """
     # 生成任務ID
-    task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{len(training_tasks)}"
+    task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{len(task_manager.get_all_tasks())}"
     
     # 驗證輸入目錄
     if not Path(request.input_dir).exists():
         raise HTTPException(status_code=400, detail=f"輸入目錄不存在: {request.input_dir}")
     
     # 初始化任務狀態
-    training_tasks[task_id] = TrainingStatus(
+    task_manager.create_task(
         task_id=task_id,
         status="pending",
+        input_dir=request.input_dir,
+        site=request.site,
+        line_id=request.line_id,
         start_time=datetime.now(),
         end_time=None,
         current_step="初始化",
@@ -194,10 +213,11 @@ async def get_training_status(task_id: str):
     Returns:
         TrainingStatus: 任務狀態資訊
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    return training_tasks[task_id]
+
+    return task
     
 
 @app.get("/training/list", response_model=List[TrainingStatus], tags=["Training"])
@@ -208,7 +228,7 @@ async def list_training_tasks():
     Returns:
         List[TrainingStatus]: 所有任務的狀態列表
     """
-    return list(training_tasks.values())
+    return list(task_manager.get_all_tasks().values())
     
 
 @app.get("/training/result/{task_id}", response_model=TrainingResult, tags=["Training"])
@@ -222,10 +242,9 @@ async def get_training_result(task_id: str):
     Returns:
         TrainingResult: 訓練結果資訊
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     
     if task.status != "completed":
         raise HTTPException(status_code=400, detail=f"任務尚未完成: {task.status}")
@@ -263,10 +282,9 @@ async def download_file(task_id: str, file_type: str):
     Returns:
         檔案回應
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     if task.status != "completed":
         raise HTTPException(status_code=400, detail=f"任務尚未完成: {task.status}")
         
@@ -308,10 +326,9 @@ async def cancel_training(task_id: str):
     Returns:
         訊息
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     
     if task.status in ["completed", "failed"]:
         raise HTTPException(status_code=400, detail=f"任務已結束: {task.status}")
@@ -335,10 +352,9 @@ async def delete_training_task(task_id: str, delete_files: bool = False):
     Returns:
         訊息
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     
     # 刪除輸出檔案（如果指定）
     if delete_files and task.output_dir:
@@ -348,7 +364,7 @@ async def delete_training_task(task_id: str, delete_files: bool = False):
             shutil.rmtree(str(output_dir))
             
     # 刪除任務記錄
-    del training_tasks[task_id]
+    task_manager.delete_task(task_id)
     
     return {"message": f"任務 {task_id} 已刪除"}
 
@@ -368,7 +384,7 @@ async def create_module(task_id: str, request: CreateModuleRequest, background_t
     if task_id not in training_tasks:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
 
-    task = training_tasks[task_id]
+    task = task_manager.get_task(task_id)
 
     if task.status != "completed":
         raise HTTPException(status_code=400, detail=f"任務必須完成才能創建模組，當前狀態: {task.status}")
@@ -414,10 +430,9 @@ async def get_orientation_samples(task_id: str):
     Returns:
         List[OrientationSample]: 各類別的樣本影像
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     if task.status != "pending_orientation":
         raise HTTPException(status_code=400, detail=f"任務狀態錯誤，期望 pending_orientation，實際: {task.status}")
     
@@ -473,10 +488,9 @@ async def confirm_orientations(
     Returns:
         訊息
     """
-    if task_id not in training_tasks:
+    task = task_manager.get_task(task_id)
+    if not task:
         raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-        
-    task = training_tasks[task_id]
     if task.status != "pending_orientation":
         raise HTTPException(status_code=400, detail=f"任務狀態錯誤，期望 pending_orientation，實際: {task.status}")
     
@@ -517,7 +531,7 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         task_id: 任務ID
         request: 訓練請求
     """
-    task = training_tasks[task_id]
+    task = task_manager.get_task(task_id)
     
     try:
         # 更新狀態為執行中
@@ -601,7 +615,7 @@ def run_orientation_and_training_task(task_id: str):
     Args:
         task_id: 任務ID
     """
-    task = training_tasks[task_id]
+    task = task_manager.get_task(task_id)
     
     try:
         # 讀取方向確認資料
@@ -905,6 +919,51 @@ async def general_exception_handler(request, exc):
             "type": type(exc).__name__
         }
     )
+
+
+async def recover_running_tasks():
+    """
+    應用啟動時恢復運行中的任務狀態
+    """
+    try:
+        logger = logging.getLogger(__name__)
+        logger.info("開始恢復運行中的任務...")
+
+        # 獲取所有運行中的任務
+        running_tasks = task_manager.get_tasks_by_status("running")
+        pending_orientation_tasks = task_manager.get_tasks_by_status("pending_orientation")
+
+        total_recovered = 0
+
+        # 將運行中的任務標記為失敗（因為服務重啟）
+        for task in running_tasks:
+            task.status = "failed"
+            task.error_message = "服務重啟，任務中斷"
+            task.end_time = datetime.now()
+            total_recovered += 1
+
+        # 保持 pending_orientation 狀態不變，因為這些任務在等待用戶確認
+        logger.info(f"恢復了 {len(pending_orientation_tasks)} 個等待方向確認的任務")
+
+        # 清理超過24小時的臨時文件
+        temp_dir = Path("temp_uploads")
+        if temp_dir.exists():
+            cutoff_time = datetime.now().timestamp() - (24 * 3600)  # 24小時前
+            for item in temp_dir.iterdir():
+                try:
+                    if item.stat().st_mtime < cutoff_time:
+                        if item.is_dir():
+                            import shutil
+                            shutil.rmtree(str(item))
+                        else:
+                            item.unlink()
+                except Exception as e:
+                    logger.warning(f"清理臨時文件失敗 {item}: {e}")
+
+        logger.info(f"任務恢復完成，處理了 {total_recovered} 個中斷的任務")
+
+    except Exception as e:
+        logger.error(f"恢復任務時發生錯誤: {e}")
 
 
 if __name__ == "__main__":
