@@ -5,8 +5,13 @@ Auto Training System for Image Retrieval Models
 """
 
 import os
+import sys
 import json
 import yaml
+
+# 設置正確的編碼環境，避免中文字符錯誤
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
 import shutil
 import random
 import logging

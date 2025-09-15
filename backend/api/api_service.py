@@ -4,9 +4,14 @@ FastAPI服務 - 自動化訓練系統API介面
 """
 
 import os
+import sys
 import json
 import asyncio
 import logging
+
+# 設置正確的編碼環境，避免中文字符錯誤
+if sys.platform == 'win32':
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
 import random
 import shutil
 from pathlib import Path
@@ -395,10 +400,10 @@ async def create_module(task_id: str, request: CreateModuleRequest, background_t
     Returns:
         Dict: 包含訊息和模組路徑
     """
-    if task_id not in training_tasks:
-        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
-
     task = task_manager.get_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
 
     if task.status != "completed":
         raise HTTPException(status_code=400, detail=f"任務必須完成才能創建模組，當前狀態: {task.status}")
