@@ -68,6 +68,7 @@ class TrainingStatus(BaseModel):
     progress: Optional[float]
     error_message: Optional[str]
     output_dir: Optional[str]
+    input_dir: Optional[str]
     
     
 class OrientationSample(BaseModel):

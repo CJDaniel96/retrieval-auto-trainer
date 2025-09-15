@@ -20,6 +20,7 @@ export interface TrainingStatus {
   progress?: number;
   error_message?: string;
   output_dir?: string;
+  input_dir?: string;
 }
 
 export interface OrientationSample {

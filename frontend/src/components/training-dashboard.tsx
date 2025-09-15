@@ -1320,7 +1320,7 @@ export function TrainingDashboard() {
                               <div className="flex items-center space-x-3">
                                 {getStatusIcon(task.status)}
                                 <span className="font-semibold text-lg">
-                                  {task.task_id}
+                                  {task.task_id} {task.input_dir ? `(${task.input_dir.split(/[\/\\]/).pop()})` : ''}
                                 </span>
                                 <Badge className={getStatusColor(task.status)}>
                                   {t(`training.${task.status}`)}
