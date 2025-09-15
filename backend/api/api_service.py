@@ -99,23 +99,37 @@ async def lifespan(app: FastAPI):
     # 應用啟動時執行的程式碼
     logging.info("AutoTraining API 服務啟動中...")
 
-    # 確保必要的目錄存在
-    Path("temp_uploads").mkdir(exist_ok=True)
-    Path("logs").mkdir(exist_ok=True)
-    Path("modules").mkdir(exist_ok=True)
+    try:
+        # 確保必要的目錄存在
+        Path("temp_uploads").mkdir(exist_ok=True)
+        Path("logs").mkdir(exist_ok=True)
+        Path("modules").mkdir(exist_ok=True)
 
-    # 初始化數據庫
-    from ..database import init_database
-    init_database()
+        # 初始化數據庫
+        try:
+            from ..database import init_database
+            init_database()
+            logging.info("數據庫初始化完成")
+        except Exception as e:
+            logging.error(f"數據庫初始化失敗: {e}")
+            logging.info("服務將以非持久化模式啟動")
 
-    # 恢復運行中的任務狀態
-    await recover_running_tasks()
+        # 恢復運行中的任務狀態
+        await recover_running_tasks()
 
-    logging.info("AutoTraining API 服務啟動完成")
+        logging.info("AutoTraining API 服務啟動完成")
+    except Exception as e:
+        logging.error(f"服務啟動時發生錯誤: {e}")
+        logging.info("服務將以基本模式啟動")
+
     yield
+
     # 應用關閉時執行的程式碼
-    logging.info("AutoTraining API 服務關閉中...")
-    executor.shutdown(wait=True)
+    try:
+        logging.info("AutoTraining API 服務關閉中...")
+        executor.shutdown(wait=True)
+    except Exception as e:
+        logging.error(f"服務關閉時發生錯誤: {e}")
 
 # 建立FastAPI應用
 app = FastAPI(
@@ -929,9 +943,18 @@ async def recover_running_tasks():
         logger = logging.getLogger(__name__)
         logger.info("開始恢復運行中的任務...")
 
-        # 獲取所有運行中的任務
-        running_tasks = task_manager.get_tasks_by_status("running")
-        pending_orientation_tasks = task_manager.get_tasks_by_status("pending_orientation")
+        # 設置超時，避免初始化時卡住
+        try:
+            # 重新獲取任務管理器實例（確保數據庫已初始化）
+            task_mgr = get_task_manager()
+
+            # 獲取所有運行中的任務
+            running_tasks = task_mgr.get_tasks_by_status("running")
+            pending_orientation_tasks = task_mgr.get_tasks_by_status("pending_orientation")
+        except Exception as db_error:
+            logger.error(f"數據庫操作失敗: {db_error}")
+            logger.info("跳過任務恢復，服務將繼續啟動")
+            return
 
         total_recovered = 0
 

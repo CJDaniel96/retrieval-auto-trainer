@@ -146,17 +146,7 @@ export function TrainingDashboard() {
     try {
       setError(null); // 清除之前的錯誤
 
-      // 使用 Promise.race 來確保最多 8 秒就會有結果
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("請求超時")), 8000)
-      );
-
-      const apiPromise = ApiClient.listTrainingTasks();
-
-      const response = (await Promise.race([
-        apiPromise,
-        timeoutPromise,
-      ])) as any;
+      const response = await ApiClient.listTrainingTasks();
 
       if (response.data) {
         setTasks(Array.isArray(response.data) ? response.data : []);

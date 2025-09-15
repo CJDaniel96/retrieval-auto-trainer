@@ -5,7 +5,8 @@
       "Bash(curl:*)",
       "Bash(npm install:*)",
       "Bash(python:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []
