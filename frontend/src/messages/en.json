@@ -156,6 +156,97 @@
     "creating_module": "Creating module...",
     "module_created_successfully": "Module created successfully"
   },
+  "download": {
+    "title": "Download Raw Data",
+    "description": "Download image data from database matching specified criteria",
+    "tab_name": "Download Data",
+    "form": {
+      "site": "Site",
+      "line_id": "Line ID",
+      "part_number": "Part Number",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "limit": "Limit Count (Optional)",
+      "estimate_count": "Estimated Count",
+      "start_download": "Start Download",
+      "downloading": "Downloading...",
+      "download_all": "Start Download (All {count} images)",
+      "download_limited": "Start Download ({limit} images)",
+      "cancel": "Cancel",
+      "back": "Back"
+    },
+    "downloaded_parts": {
+      "title": "Downloaded Parts",
+      "description": "List of downloaded parts available for image classification",
+      "no_data": "No data downloaded yet",
+      "download_time": "Download Time",
+      "image_count": "Image Count",
+      "actions": "Actions",
+      "use_for_training": "Use for Training",
+      "classify_images": "Classify Images",
+      "refresh": "Refresh"
+    },
+    "messages": {
+      "missing_fields": "Please fill in all required fields",
+      "estimate_success": "Estimated count loaded successfully",
+      "estimate_failed": "Unable to get estimated count",
+      "download_success": "Download successful",
+      "download_failed": "Download failed",
+      "estimating": "Estimating count...",
+      "loading_parts": "Loading parts list..."
+    },
+    "info": {
+      "rawdata_usage": "Use downloaded and classified data for training",
+      "rawdata_description": "Use downloaded data that has been classified as OK/NG for training. Please go to the 'Download Data' page first to download and classify data.",
+      "select_part": "Select downloaded part"
+    }
+  },
+  "classify": {
+    "title": "Image Classification",
+    "description": "Classify images as OK/NG",
+    "image_info": {
+      "size": "Size",
+      "filename": "Filename",
+      "number": "Number"
+    },
+    "classification": {
+      "ok": "OK",
+      "ng": "NG",
+      "confirm": "Confirm Classification",
+      "confirm_count": "Confirm Classification ({count})",
+      "classifying": "Classifying..."
+    },
+    "progress": {
+      "title": "Classification Progress",
+      "classified": "Classified",
+      "total": "Total",
+      "percentage": "Completion Rate"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "first": "First",
+      "last": "Last",
+      "page_info": "Page {current} of {total}",
+      "item_range": "Showing {start}-{end} of {total} items"
+    },
+    "delete": {
+      "confirm": "Are you sure you want to delete image \"{filename}\"? This action cannot be undone.",
+      "success": "Image deleted successfully",
+      "failed": "Delete failed",
+      "deleting": "Deleting..."
+    },
+    "messages": {
+      "loading": "Loading images...",
+      "load_failed": "Load failed",
+      "no_images": "Unable to load image data for part number {partNumber}",
+      "min_classification": "Please classify at least one image",
+      "partial_classification": "You have only classified {classified}/{total} images. Unclassified images will be ignored. Do you want to continue?",
+      "classification_success": "Classification completed",
+      "classification_failed": "Classification failed",
+      "back_to_home": "Back"
+    }
+  },
   "footer": {
     "powered_by": "Powered by",
     "ai_system": "AI Automated Training System",

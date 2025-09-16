@@ -15,7 +15,8 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Save
+  Save,
+  Trash2
 } from 'lucide-react';
 import { ApiClient } from '@/lib/api-client';
 import { PartImageList, ImageInfo } from '@/lib/types';
@@ -33,18 +34,22 @@ export default function ClassifyPage() {
   const [partImages, setPartImages] = useState<PartImageList | null>(null);
   const [imageClassifications, setImageClassifications] = useState<Record<string, 'OK' | 'NG'>>({});
   const [classifyingImages, setClassifyingImages] = useState(false);
+  const [deletedImages, setDeletedImages] = useState<Set<string>>(new Set());
+  const [deletingImages, setDeletingImages] = useState<Set<string>>(new Set());
 
   // 分頁狀態
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = partImages ? Math.ceil(partImages.total_images / ITEMS_PER_PAGE) : 0;
+  // 過濾掉已刪除的影像
+  const availableImages = partImages?.images.filter(img => !deletedImages.has(img.filename)) || [];
+  const totalPages = Math.ceil(availableImages.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, partImages?.total_images || 0);
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, availableImages.length);
   // 客戶端分頁: 只顯示當前頁面的影像
-  const currentImages = partImages?.images.slice(startIndex, endIndex) || [];
+  const currentImages = availableImages.slice(startIndex, endIndex);
 
   // 進度統計
   const classifiedCount = Object.keys(imageClassifications).length;
-  const totalCount = partImages?.total_images || 0;
+  const totalCount = availableImages.length;
   const progressPercentage = totalCount > 0 ? (classifiedCount / totalCount) * 100 : 0;
 
   useEffect(() => {
@@ -68,10 +73,10 @@ export default function ClassifyPage() {
 
           // 後續可以考慮分批載入其他影像的base64數據
         } else {
-          toast.error(`載入影像失敗: ${result.error}`);
+          toast.error(`${t('classify.messages.load_failed')}: ${result.error}`);
         }
       } catch (error) {
-        toast.error(`載入影像失敗: ${error}`);
+        toast.error(`${t('classify.messages.load_failed')}: ${error}`);
       } finally {
         setLoading(false);
       }
@@ -90,15 +95,45 @@ export default function ClassifyPage() {
     }));
   };
 
+  const handleDeleteImage = async (filename: string) => {
+    const confirmed = window.confirm(t('classify.delete.confirm', { filename }));
+    if (!confirmed) return;
+
+    setDeletingImages(prev => new Set(prev).add(filename));
+    try {
+      const result = await ApiClient.deleteImage(partNumber, filename);
+      if (result.data) {
+        setDeletedImages(prev => new Set(prev).add(filename));
+        // 移除已刪除影像的分類記錄
+        setImageClassifications(prev => {
+          const updated = { ...prev };
+          delete updated[filename];
+          return updated;
+        });
+        toast.success(t('classify.delete.success'));
+      } else {
+        toast.error(`${t('classify.delete.failed')}: ${result.error}`);
+      }
+    } catch (error) {
+      toast.error(`${t('classify.delete.failed')}: ${error}`);
+    } finally {
+      setDeletingImages(prev => {
+        const updated = new Set(prev);
+        updated.delete(filename);
+        return updated;
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (classifiedCount === 0) {
-      toast.error('請至少分類一張影像');
+      toast.error(t('classify.messages.min_classification'));
       return;
     }
 
     if (classifiedCount < totalCount) {
       const confirmed = window.confirm(
-        `您只分類了 ${classifiedCount}/${totalCount} 張影像。未分類的影像將被忽略。確定要繼續嗎？`
+        t('classify.messages.partial_classification', { classified: classifiedCount, total: totalCount })
       );
       if (!confirmed) return;
     }
@@ -114,10 +149,10 @@ export default function ClassifyPage() {
         toast.success(result.data.message);
         router.push('/zh'); // 返回主頁面
       } else {
-        toast.error(`分類失敗: ${result.error}`);
+        toast.error(`${t('classify.messages.classification_failed')}: ${result.error}`);
       }
     } catch (error) {
-      toast.error(`分類失敗: ${error}`);
+      toast.error(`${t('classify.messages.classification_failed')}: ${error}`);
     } finally {
       setClassifyingImages(false);
     }
@@ -134,7 +169,7 @@ export default function ClassifyPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">載入影像中...</p>
+          <p className="text-gray-600">{t('classify.messages.loading')}</p>
         </div>
       </div>
     );
@@ -145,9 +180,9 @@ export default function ClassifyPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Alert className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>載入失敗</AlertTitle>
+          <AlertTitle>{t('classify.messages.load_failed')}</AlertTitle>
           <AlertDescription>
-            無法載入料號 {partNumber} 的影像資料
+            {t('classify.messages.no_images', { partNumber })}
           </AlertDescription>
         </Alert>
       </div>
@@ -166,12 +201,12 @@ export default function ClassifyPage() {
               className="flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>返回</span>
+              <span>{t('classify.messages.back_to_home')}</span>
             </Button>
             <div className="flex items-center space-x-2">
               <Target className="w-8 h-8 text-purple-600" />
               <h1 className="text-3xl font-bold text-gray-900">
-                影像分類 - {partNumber}
+                {t('classify.title')} - {partNumber}
               </h1>
             </div>
           </div>
@@ -180,7 +215,7 @@ export default function ClassifyPage() {
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                分類進度: {classifiedCount} / {totalCount}
+                {t('classify.progress.title')}: {classifiedCount} / {totalCount}
               </span>
               <span className="text-sm text-gray-500">
                 {progressPercentage.toFixed(1)}%
@@ -207,10 +242,10 @@ export default function ClassifyPage() {
                   disabled={currentPage <= 1}
                 >
                   <ChevronLeft className="w-4 h-4" />
-                  上一頁
+                  {t('classify.pagination.previous')}
                 </Button>
                 <span className="text-sm text-gray-600">
-                  第 {currentPage} 頁，共 {totalPages} 頁
+                  {t('classify.pagination.page_info', { current: currentPage, total: totalPages })}
                 </span>
                 <Button
                   variant="outline"
@@ -218,12 +253,12 @@ export default function ClassifyPage() {
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage >= totalPages}
                 >
-                  下一頁
+                  {t('classify.pagination.next')}
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
               <div className="text-sm text-gray-500">
-                顯示 {startIndex + 1}-{Math.min(endIndex, totalCount)} 項，共 {totalCount} 項
+                {t('classify.pagination.item_range', { start: startIndex + 1, end: endIndex, total: totalCount })}
               </div>
             </div>
 
@@ -235,20 +270,35 @@ export default function ClassifyPage() {
           {currentImages.map((image, index) => (
             <Card key={image.filename} className="overflow-hidden">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-bold text-blue-600">
                         {startIndex + index + 1}
                       </span>
                     </div>
-                    <CardTitle className="text-sm truncate">
-                      {image.filename}
-                    </CardTitle>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="text-sm leading-tight break-all" title={image.filename}>
+                        {image.filename}
+                      </CardTitle>
+                    </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteImage(image.filename)}
+                    disabled={deletingImages.has(image.filename)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0 flex-shrink-0"
+                  >
+                    {deletingImages.has(image.filename) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
                 <CardDescription className="text-xs">
-                  大小: {(image.size / 1024).toFixed(1)} KB
+                  {t('classify.image_info.size')}: {(image.size / 1024).toFixed(1)} KB
                 </CardDescription>
               </CardHeader>
 
@@ -290,7 +340,7 @@ export default function ClassifyPage() {
                         : 'hover:bg-green-50 hover:text-green-600 hover:border-green-600'
                     }`}
                   >
-                    OK
+                    {t('classify.classification.ok')}
                   </Button>
                   <Button
                     variant={imageClassifications[image.filename] === 'NG' ? 'default' : 'outline'}
@@ -302,7 +352,7 @@ export default function ClassifyPage() {
                         : 'hover:bg-red-50 hover:text-red-600 hover:border-red-600'
                     }`}
                   >
-                    NG
+                    {t('classify.classification.ng')}
                   </Button>
                 </div>
               </CardContent>
@@ -318,7 +368,7 @@ export default function ClassifyPage() {
               onClick={() => goToPage(1)}
               disabled={currentPage <= 1}
             >
-              首頁
+              {t('classify.pagination.first')}
             </Button>
             <Button
               variant="outline"
@@ -357,7 +407,7 @@ export default function ClassifyPage() {
               onClick={() => goToPage(totalPages)}
               disabled={currentPage >= totalPages}
             >
-              末頁
+              {t('classify.pagination.last')}
             </Button>
           </div>
         )}
@@ -373,12 +423,12 @@ export default function ClassifyPage() {
             {classifyingImages ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                分類中...
+                {t('classify.classification.classifying')}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4 mr-2" />
-                確認分類 ({classifiedCount})
+                {t('classify.classification.confirm_count', { count: classifiedCount })}
               </>
             )}
           </Button>

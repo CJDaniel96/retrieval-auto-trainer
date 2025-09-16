@@ -156,6 +156,97 @@
     "creating_module": "創建模組中...",
     "module_created_successfully": "模組創建成功"
   },
+  "download": {
+    "title": "下載原始資料",
+    "description": "從資料庫下載符合條件的影像資料",
+    "tab_name": "下載資料",
+    "form": {
+      "site": "工廠",
+      "line_id": "線別",
+      "part_number": "料號",
+      "start_date": "開始日期",
+      "end_date": "結束日期",
+      "limit": "限制數量 (可選)",
+      "estimate_count": "估計數量",
+      "start_download": "開始下載",
+      "downloading": "下載中...",
+      "download_all": "開始下載 (全部 {count} 張)",
+      "download_limited": "開始下載 ({limit} 張)",
+      "cancel": "取消",
+      "back": "返回"
+    },
+    "downloaded_parts": {
+      "title": "已下載的料號",
+      "description": "已下載的料號列表，可進行影像分類",
+      "no_data": "尚未下載任何資料",
+      "download_time": "下載時間",
+      "image_count": "影像數量",
+      "actions": "操作",
+      "use_for_training": "用於訓練",
+      "classify_images": "分類影像",
+      "refresh": "重新整理"
+    },
+    "messages": {
+      "missing_fields": "請填入所有必要欄位",
+      "estimate_success": "預估數量載入成功",
+      "estimate_failed": "無法取得預估數量",
+      "download_success": "下載成功",
+      "download_failed": "下載失敗",
+      "estimating": "預估數量中...",
+      "loading_parts": "載入料號列表中..."
+    },
+    "info": {
+      "rawdata_usage": "使用已下載並分類的資料進行訓練",
+      "rawdata_description": "使用已下載並分類為 OK/NG 的資料進行訓練。請先到「下載資料」頁面下載並分類資料。",
+      "select_part": "選擇已下載的料號"
+    }
+  },
+  "classify": {
+    "title": "影像分類",
+    "description": "為影像進行 OK/NG 分類",
+    "image_info": {
+      "size": "大小",
+      "filename": "檔案名稱",
+      "number": "編號"
+    },
+    "classification": {
+      "ok": "OK",
+      "ng": "NG",
+      "confirm": "確認分類",
+      "confirm_count": "確認分類 ({count})",
+      "classifying": "分類中..."
+    },
+    "progress": {
+      "title": "分類進度",
+      "classified": "已分類",
+      "total": "總計",
+      "percentage": "完成率"
+    },
+    "pagination": {
+      "previous": "上一頁",
+      "next": "下一頁",
+      "first": "首頁",
+      "last": "末頁",
+      "page_info": "第 {current} 頁，共 {total} 頁",
+      "item_range": "顯示 {start}-{end} 項，共 {total} 項"
+    },
+    "delete": {
+      "confirm": "確定要刪除影像 \"{filename}\" 嗎？此操作無法復原。",
+      "success": "影像已成功刪除",
+      "failed": "刪除失敗",
+      "deleting": "刪除中..."
+    },
+    "messages": {
+      "loading": "載入影像中...",
+      "load_failed": "載入失敗",
+      "no_images": "無法載入料號 {partNumber} 的影像資料",
+      "min_classification": "請至少分類一張影像",
+      "partial_classification": "您只分類了 {classified}/{total} 張影像。未分類的影像將被忽略。確定要繼續嗎？",
+      "classification_success": "分類完成",
+      "classification_failed": "分類失敗",
+      "back_to_home": "返回"
+    }
+  },
   "footer": {
     "powered_by": "由",
     "ai_system": "AI 自動化訓練系統",

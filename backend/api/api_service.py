@@ -1133,6 +1133,59 @@ async def classify_images(part_number: str, request: ClassifyRequest):
         raise HTTPException(status_code=500, detail=f"分類失敗: {str(e)}")
 
 
+@app.delete("/download/images/{part_number}/{filename}", tags=["Download"])
+async def delete_image(part_number: str, filename: str):
+    """
+    刪除指定的影像檔案
+
+    Args:
+        part_number: 料號
+        filename: 影像檔名
+
+    Returns:
+        刪除結果
+    """
+    try:
+        # 檢查料號是否存在
+        download_service = ImageDownloadService()
+        part_info = download_service.get_part_info(part_number)
+
+        if not part_info:
+            raise HTTPException(status_code=404, detail=f"找不到料號: {part_number}")
+
+        # 構建影像檔案路徑
+        rawdata_path = Path("rawdata") / part_number
+
+        # 搜尋檔案在rawdata資料夾中的位置
+        target_file = None
+        for file_path in rawdata_path.rglob("*"):
+            if file_path.is_file() and file_path.name == filename:
+                target_file = file_path
+                break
+
+        if not target_file:
+            raise HTTPException(status_code=404, detail=f"找不到影像檔案: {filename}")
+
+        if not target_file.exists():
+            raise HTTPException(status_code=404, detail=f"影像檔案不存在: {filename}")
+
+        # 刪除檔案
+        target_file.unlink()
+        logging.info(f"成功刪除影像檔案: {target_file}")
+
+        return {
+            "success": True,
+            "message": f"成功刪除影像 {filename}",
+            "deleted_file": str(target_file)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"刪除影像失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"刪除失敗: {str(e)}")
+
+
 @app.get("/download/images/{part_number}", tags=["Download"])
 async def list_part_images(part_number: str, page: int = 1, page_size: int = 50):
     """

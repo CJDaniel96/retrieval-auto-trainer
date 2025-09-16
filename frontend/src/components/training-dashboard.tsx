@@ -463,7 +463,7 @@ export function TrainingDashboard() {
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
                 <Database className="w-4 h-4 mr-2" />
-                下載資料
+                {t("download.tab_name")}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
@@ -510,14 +510,14 @@ export function TrainingDashboard() {
                         onCheckedChange={setUseExistingData}
                       />
                       <Label htmlFor="use-existing-data" className="text-sm font-medium">
-                        使用已下載並分類的資料進行訓練
+                        {t("download.info.rawdata_usage")}
                       </Label>
                     </div>
                     {useExistingData && (
                       <Alert className="border-green-200 bg-green-50/80">
                         <Database className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800">
-                          使用已下載並分類為 OK/NG 的資料進行訓練。請先到「下載資料」頁面下載並分類資料。
+                          {t("download.info.rawdata_description")}
                         </AlertDescription>
                       </Alert>
                     )}
@@ -1556,16 +1556,16 @@ export function TrainingDashboard() {
                 <CardHeader>
                   <div className="flex items-center space-x-2">
                     <Database className="w-6 h-6 text-blue-600" />
-                    <CardTitle className="text-2xl">下載原始資料</CardTitle>
+                    <CardTitle className="text-2xl">{t("download.title")}</CardTitle>
                   </div>
                   <CardDescription>
-                    從資料庫下載符合條件的影像資料
+                    {t("download.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="download_site">工廠</Label>
+                      <Label htmlFor="download_site">{t("download.form.site")}</Label>
                       <Select
                         value={downloadFormData.site}
                         onValueChange={(value) =>
@@ -1573,7 +1573,7 @@ export function TrainingDashboard() {
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="選擇工廠" />
+                          <SelectValue placeholder={t("download.form.site")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="HPH">HPH</SelectItem>
@@ -1583,7 +1583,7 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_line_id">線別</Label>
+                      <Label htmlFor="download_line_id">{t("download.form.line_id")}</Label>
                       <Select
                         value={downloadFormData.line_id}
                         onValueChange={(value) =>
@@ -1591,7 +1591,7 @@ export function TrainingDashboard() {
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="選擇線別" />
+                          <SelectValue placeholder={t("download.form.line_id")} />
                         </SelectTrigger>
                         <SelectContent>
                           {downloadFormData.site === "HPH" && (
@@ -1615,7 +1615,7 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_part_number">料號</Label>
+                      <Label htmlFor="download_part_number">{t("download.form.part_number")}</Label>
                       <Input
                         id="download_part_number"
                         value={downloadFormData.part_number}
@@ -1627,7 +1627,7 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_start_date">開始日期</Label>
+                      <Label htmlFor="download_start_date">{t("download.form.start_date")}</Label>
                       <Input
                         id="download_start_date"
                         type="date"
@@ -1639,7 +1639,7 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_end_date">結束日期</Label>
+                      <Label htmlFor="download_end_date">{t("download.form.end_date")}</Label>
                       <Input
                         id="download_end_date"
                         type="date"
@@ -1713,7 +1713,7 @@ export function TrainingDashboard() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="download_limit">限制數量 (可選)</Label>
+                          <Label htmlFor="download_limit">{t("download.form.limit")}</Label>
                           <Input
                             id="download_limit"
                             type="number"
@@ -1802,7 +1802,7 @@ export function TrainingDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Database className="w-6 h-6 text-green-600" />
-                      <CardTitle className="text-2xl">已下載的料號</CardTitle>
+                      <CardTitle className="text-2xl">{t("download.downloaded_parts.title")}</CardTitle>
                     </div>
                     <Button
                       variant="outline"
@@ -1821,7 +1821,7 @@ export function TrainingDashboard() {
                     </Button>
                   </div>
                   <CardDescription>
-                    已下載的料號列表，可進行影像分類
+                    {t("download.downloaded_parts.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

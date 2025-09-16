@@ -201,4 +201,13 @@ export class ApiClient {
       return { error: error.response?.data?.detail || error.message };
     }
   }
+
+  static async deleteImage(partNumber: string, filename: string): Promise<ApiResponse<{ message: string }>> {
+    try {
+      const response = await api.delete(`/download/images/${partNumber}/${filename}`);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
 }
