@@ -140,6 +140,7 @@ export interface ImageInfo {
   filename: string;
   path: string;
   size: number;
+  base64_data?: string;
 }
 
 export interface PartImageList {

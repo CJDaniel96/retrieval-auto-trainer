@@ -154,13 +154,15 @@ export default function OrientationPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {sample.sample_images.map((imagePath, index) => (
                       <div key={index} className="border rounded-lg overflow-hidden bg-card shadow-sm hover:shadow-md transition-shadow">
-                        <Image
-                          src={`http://localhost:8000${imagePath}`}
-                          alt={`Sample ${index + 1} for ${sample.class_name}`}
-                          width={300}
-                          height={200}
-                          className="w-full h-48 object-cover"
-                        />
+                        <div className="flex items-center justify-center p-4 min-h-48 bg-gray-50">
+                          <Image
+                            src={`http://localhost:8000${imagePath}`}
+                            alt={`Sample ${index + 1} for ${sample.class_name}`}
+                            width={300}
+                            height={200}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

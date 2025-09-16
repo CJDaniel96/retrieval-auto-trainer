@@ -99,8 +99,8 @@ class DownloadRequest(BaseModel):
     """下載請求模型"""
     site: str = Field(..., description="工廠名稱", pattern="^(HPH|JQ|ZJ|NK|HZ)$")
     line_id: str = Field(..., description="線別ID")
-    start_date: str = Field(..., description="開始日期", pattern="^\d{4}-\d{2}-\d{2}$")
-    end_date: str = Field(..., description="結束日期", pattern="^\d{4}-\d{2}-\d{2}$")
+    start_date: str = Field(..., description="開始日期", pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end_date: str = Field(..., description="結束日期", pattern=r"^\d{4}-\d{2}-\d{2}$")
     part_number: str = Field(..., description="料號")
     limit: Optional[int] = Field(None, description="限制數量", ge=1, le=10000)
 
@@ -1155,15 +1155,36 @@ async def list_part_images(part_number: str):
         image_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
 
         images = []
+        image_count = 0
+        max_base64_images = 50  # 限制 base64 編碼的影像數量
+
         for file_path in rawdata_path.rglob("*"):
             if file_path.is_file() and file_path.suffix.lower() in image_extensions:
                 # 計算相對路徑
                 relative_path = file_path.relative_to(rawdata_path)
+
+                # 只為前面的影像加入 base64 數據，避免響應過大
+                base64_data = None
+                if image_count < max_base64_images:
+                    try:
+                        import base64
+                        with open(file_path, 'rb') as img_file:
+                            img_data = img_file.read()
+                            base64_encoded = base64.b64encode(img_data).decode('utf-8')
+                            base64_data = f"data:image/jpeg;base64,{base64_encoded}"
+                        logging.info(f"成功編碼影像: {file_path.name}, 大小: {len(base64_data)}")
+                    except Exception as e:
+                        logging.error(f"編碼影像失敗 {file_path.name}: {str(e)}")
+                        base64_data = None
+
                 images.append({
                     "filename": file_path.name,
                     "path": str(relative_path),
-                    "size": file_path.stat().st_size
+                    "size": file_path.stat().st_size,
+                    "base64_data": base64_data
                 })
+
+                image_count += 1
 
         return {
             "part_number": part_number,
@@ -1176,6 +1197,55 @@ async def list_part_images(part_number: str):
     except Exception as e:
         logging.error(f"列出影像失敗: {str(e)}")
         raise HTTPException(status_code=500, detail=f"列出影像失敗: {str(e)}")
+
+
+@app.get("/rawdata/images/{part_number}/{image_path:path}", tags=["Static"])
+async def serve_rawdata_image(part_number: str, image_path: str):
+    """
+    提供rawdata影像檔案
+
+    Args:
+        part_number: 料號
+        image_path: 影像相對路徑
+
+    Returns:
+        影像檔案
+    """
+    try:
+        from fastapi.responses import FileResponse
+        import os
+        from urllib.parse import unquote
+
+        # URL解碼檔案路徑
+        decoded_image_path = unquote(image_path)
+
+        # 構建完整檔案路徑
+        full_path = Path("rawdata") / part_number / decoded_image_path
+
+        # 安全檢查 - 確保路徑在rawdata目錄內
+        if not str(full_path.resolve()).startswith(str(Path("rawdata").resolve())):
+            raise HTTPException(status_code=403, detail="無效的檔案路徑")
+
+        # 檢查檔案是否存在
+        if not full_path.exists() or not full_path.is_file():
+            raise HTTPException(status_code=404, detail="找不到影像檔案")
+
+        # 檢查是否為支援的影像格式
+        image_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
+        if full_path.suffix.lower() not in image_extensions:
+            raise HTTPException(status_code=400, detail="不支援的影像格式")
+
+        return FileResponse(
+            path=str(full_path),
+            media_type="image/*",
+            filename=full_path.name
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"提供影像檔案失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"提供影像檔案失敗: {str(e)}")
 
 
 # 錯誤處理

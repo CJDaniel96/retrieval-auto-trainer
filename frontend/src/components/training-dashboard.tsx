@@ -53,7 +53,7 @@ import {
   X,
 } from "lucide-react";
 import { ApiClient } from "@/lib/api-client";
-import { TrainingStatus, TrainingRequest, DownloadRequest, PartInfo, PartImageList } from "@/lib/types";
+import { TrainingStatus, TrainingRequest, DownloadRequest, PartInfo } from "@/lib/types";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/routing";
@@ -89,10 +89,6 @@ export function TrainingDashboard() {
   const [loadingEstimate, setLoadingEstimate] = useState(false);
   const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
   const [showDownloadSection, setShowDownloadSection] = useState(false);
-  const [selectedPart, setSelectedPart] = useState<string | null>(null);
-  const [partImages, setPartImages] = useState<PartImageList | null>(null);
-  const [imageClassifications, setImageClassifications] = useState<Record<string, 'OK' | 'NG'>>({});
-  const [classifyingImages, setClassifyingImages] = useState(false);
   const [useExistingData, setUseExistingData] = useState(false);
   const [selectedRawdataPart, setSelectedRawdataPart] = useState<string>("");
 
@@ -1858,18 +1854,8 @@ export function TrainingDashboard() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={async () => {
-                                setSelectedPart(part.part_number);
-                                const result = await ApiClient.listPartImages(part.part_number);
-                                if (result.data) {
-                                  setPartImages(result.data);
-                                  // Initialize all images as unclassified
-                                  const initialClassifications: Record<string, 'OK' | 'NG'> = {};
-                                  result.data.images.forEach(img => {
-                                    initialClassifications[img.filename] = 'OK';
-                                  });
-                                  setImageClassifications(initialClassifications);
-                                }
+                              onClick={() => {
+                                router.push(`/classify/${part.part_number}`);
                               }}
                             >
                               分類影像
@@ -1899,123 +1885,6 @@ export function TrainingDashboard() {
                 </CardContent>
               </Card>
 
-              {/* Image Classification Modal */}
-              {selectedPart && partImages && (
-                <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Target className="w-6 h-6 text-purple-600" />
-                        <CardTitle className="text-2xl">分類影像 - {selectedPart}</CardTitle>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedPart(null);
-                          setPartImages(null);
-                          setImageClassifications({});
-                        }}
-                      >
-                        <X className="w-4 h-4" />
-                        關閉
-                      </Button>
-                    </div>
-                    <CardDescription>
-                      將影像分類為 OK 或 NG
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-600">
-                        總計 {partImages.total_images} 張影像
-                      </div>
-                      <Button
-                        onClick={async () => {
-                          setClassifyingImages(true);
-                          const result = await ApiClient.classifyImages(selectedPart, {
-                            part_number: selectedPart,
-                            classifications: imageClassifications
-                          });
-
-                          if (result.error) {
-                            toast.error(`分類失敗: ${result.error}`);
-                          } else if (result.data) {
-                            toast.success(result.data.message);
-                            setSelectedPart(null);
-                            setPartImages(null);
-                            setImageClassifications({});
-                          }
-                          setClassifyingImages(false);
-                        }}
-                        disabled={classifyingImages}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {classifyingImages ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            分類中...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            確認分類
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    <div className="max-h-96 overflow-y-auto space-y-2">
-                      {partImages.images.slice(0, 50).map((image) => (
-                        <div
-                          key={image.filename}
-                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200"
-                        >
-                          <div className="flex-1">
-                            <span className="text-sm font-mono">{image.filename}</span>
-                            <div className="text-xs text-gray-500">
-                              大小: {(image.size / 1024).toFixed(1)} KB
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant={imageClassifications[image.filename] === 'OK' ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                setImageClassifications(prev => ({
-                                  ...prev,
-                                  [image.filename]: 'OK'
-                                }));
-                              }}
-                              className={imageClassifications[image.filename] === 'OK' ? 'bg-green-600 hover:bg-green-700' : ''}
-                            >
-                              OK
-                            </Button>
-                            <Button
-                              variant={imageClassifications[image.filename] === 'NG' ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                setImageClassifications(prev => ({
-                                  ...prev,
-                                  [image.filename]: 'NG'
-                                }));
-                              }}
-                              className={imageClassifications[image.filename] === 'NG' ? 'bg-red-600 hover:bg-red-700' : ''}
-                            >
-                              NG
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      {partImages.images.length > 50 && (
-                        <div className="text-center py-4 text-gray-500">
-                          僅顯示前 50 張影像，其餘影像將使用相同分類方式處理
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
             </motion.div>
           </TabsContent>
 
