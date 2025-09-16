@@ -143,6 +143,15 @@ export class ApiClient {
   }
 
   // Download endpoints
+  static async estimateDataCount(request: Omit<DownloadRequest, 'limit'>): Promise<ApiResponse<{ success: boolean; message: string; estimated_count: number }>> {
+    try {
+      const response = await api.post('/download/estimate', request);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
   static async downloadRawdata(request: DownloadRequest): Promise<ApiResponse<{ success: boolean; message: string; path?: string; image_count?: number }>> {
     try {
       const response = await api.post('/download/rawdata', request);

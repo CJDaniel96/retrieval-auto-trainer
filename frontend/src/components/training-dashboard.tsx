@@ -86,6 +86,9 @@ export function TrainingDashboard() {
   const [downloadedParts, setDownloadedParts] = useState<PartInfo[]>([]);
   const [loadingDownload, setLoadingDownload] = useState(false);
   const [loadingParts, setLoadingParts] = useState(false);
+  const [loadingEstimate, setLoadingEstimate] = useState(false);
+  const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
+  const [showDownloadSection, setShowDownloadSection] = useState(false);
   const [selectedPart, setSelectedPart] = useState<string | null>(null);
   const [partImages, setPartImages] = useState<PartImageList | null>(null);
   const [imageClassifications, setImageClassifications] = useState<Record<string, 'OK' | 'NG'>>({});
@@ -1651,66 +1654,149 @@ export function TrainingDashboard() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="download_limit">限制數量 (可選)</Label>
-                      <Input
-                        id="download_limit"
-                        type="number"
-                        min="1"
-                        max="10000"
-                        value={downloadFormData.limit || ""}
-                        onChange={(e) =>
-                          setDownloadFormData((prev) => ({
-                            ...prev,
-                            limit: e.target.value ? parseInt(e.target.value) : undefined
-                          }))
-                        }
-                        placeholder="不限制"
-                      />
-                    </div>
                   </div>
 
-                  <Button
-                    onClick={async () => {
-                      if (!downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date) {
-                        toast.error("請填寫必要欄位");
-                        return;
-                      }
-
-                      setLoadingDownload(true);
-                      const result = await ApiClient.downloadRawdata(downloadFormData);
-
-                      if (result.error) {
-                        toast.error(`下載失敗: ${result.error}`);
-                      } else if (result.data) {
-                        if (result.data.success) {
-                          toast.success(result.data.message);
-                          // Refresh downloaded parts list
-                          const partsResult = await ApiClient.listDownloadedParts();
-                          if (partsResult.data) {
-                            setDownloadedParts(partsResult.data);
-                          }
-                        } else {
-                          toast.error(result.data.message);
+                  {/* Step 1: Estimate Data Count */}
+                  {!showDownloadSection && (
+                    <Button
+                      onClick={async () => {
+                        if (!downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date) {
+                          toast.error("請填寫必要欄位");
+                          return;
                         }
-                      }
-                      setLoadingDownload(false);
-                    }}
-                    disabled={loadingDownload || !downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {loadingDownload ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        下載中...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4 mr-2" />
-                        開始下載
-                      </>
-                    )}
-                  </Button>
+
+                        setLoadingEstimate(true);
+                        const { site, line_id, start_date, end_date, part_number } = downloadFormData;
+                        const result = await ApiClient.estimateDataCount({
+                          site,
+                          line_id,
+                          start_date,
+                          end_date,
+                          part_number
+                        });
+
+                        if (result.error) {
+                          toast.error(`預估失敗: ${result.error}`);
+                        } else if (result.data) {
+                          if (result.data.success) {
+                            setEstimatedCount(result.data.estimated_count);
+                            setShowDownloadSection(true);
+                            toast.success(result.data.message);
+                          } else {
+                            toast.error(result.data.message);
+                          }
+                        }
+                        setLoadingEstimate(false);
+                      }}
+                      disabled={loadingEstimate || !downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {loadingEstimate ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          預估中...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          預估資料量
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Step 2: Show Estimated Count and Download Options */}
+                  {showDownloadSection && estimatedCount !== null && (
+                    <div className="space-y-4">
+                      <Alert className="border-green-200 bg-green-50/80">
+                        <AlertCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          找到 <span className="font-bold">{estimatedCount}</span> 張符合條件的影像
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="download_limit">限制數量 (可選)</Label>
+                          <Input
+                            id="download_limit"
+                            type="number"
+                            min="1"
+                            max={estimatedCount}
+                            value={downloadFormData.limit || ""}
+                            onChange={(e) =>
+                              setDownloadFormData((prev) => ({
+                                ...prev,
+                                limit: e.target.value ? parseInt(e.target.value) : undefined
+                              }))
+                            }
+                            placeholder={`不限制 (最多 ${estimatedCount} 張)`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowDownloadSection(false);
+                            setEstimatedCount(null);
+                            setDownloadFormData(prev => ({ ...prev, limit: undefined }));
+                          }}
+                        >
+                          重新預估
+                        </Button>
+
+                        <Button
+                          onClick={async () => {
+                            setLoadingDownload(true);
+                            const result = await ApiClient.downloadRawdata(downloadFormData);
+
+                            if (result.error) {
+                              toast.error(`下載失敗: ${result.error}`);
+                            } else if (result.data) {
+                              if (result.data.success) {
+                                toast.success(result.data.message);
+                                // Refresh downloaded parts list
+                                const partsResult = await ApiClient.listDownloadedParts();
+                                if (partsResult.data) {
+                                  setDownloadedParts(partsResult.data);
+                                }
+                                // Reset the form
+                                setShowDownloadSection(false);
+                                setEstimatedCount(null);
+                                setDownloadFormData({
+                                  site: "HPH",
+                                  line_id: "V31",
+                                  start_date: "",
+                                  end_date: "",
+                                  part_number: "",
+                                  limit: undefined,
+                                });
+                              } else {
+                                toast.error(result.data.message);
+                              }
+                            }
+                            setLoadingDownload(false);
+                          }}
+                          disabled={loadingDownload}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {loadingDownload ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              下載中...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              開始下載 {downloadFormData.limit ? `(${downloadFormData.limit} 張)` : `(全部 ${estimatedCount} 張)`}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

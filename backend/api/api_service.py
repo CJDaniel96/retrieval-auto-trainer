@@ -962,6 +962,32 @@ async def get_current_config():
 
 
 # 下載相關端點
+@app.post("/download/estimate", tags=["Download"])
+async def estimate_data_count(request: DownloadRequest):
+    """
+    預估資料數量
+
+    Args:
+        request: 下載請求參數（不含 limit）
+
+    Returns:
+        預估結果
+    """
+    try:
+        download_service = ImageDownloadService()
+        result = download_service.estimate_data_count(
+            site=request.site,
+            line_id=request.line_id,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            part_number=request.part_number
+        )
+        return result
+    except Exception as e:
+        logging.error(f"預估資料數量失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"預估失敗: {str(e)}")
+
+
 @app.post("/download/rawdata", tags=["Download"])
 async def download_rawdata(request: DownloadRequest):
     """

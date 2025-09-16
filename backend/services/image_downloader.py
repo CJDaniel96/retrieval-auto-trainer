@@ -92,6 +92,80 @@ class ImageDownloadService:
 
         return images_list
 
+    def estimate_data_count(
+        self,
+        site: str,
+        line_id: str,
+        start_date: str,
+        end_date: str,
+        part_number: str
+    ) -> Dict[str, Any]:
+        """
+        預估資料數量
+
+        Args:
+            site: 工廠名稱 (HPH, JQ 等)
+            line_id: 線別 ID
+            start_date: 開始日期 (YYYY-MM-DD)
+            end_date: 結束日期 (YYYY-MM-DD)
+            part_number: 料號
+
+        Returns:
+            dict: 包含估計數量和狀態
+        """
+        try:
+            configs = self._get_configs()
+
+            # 檢查 site 是否存在
+            if site not in configs:
+                return {
+                    "success": False,
+                    "message": f"不支援的工廠: {site}",
+                    "estimated_count": 0
+                }
+
+            ssh_tunnel = self._get_ssh_tunnel_settings(configs, site)
+            database = self._get_database_settings(configs, site)
+            image_pools = configs[site]['image_pool']
+
+            # 檢查 line_id 是否存在
+            if line_id not in image_pools:
+                return {
+                    "success": False,
+                    "message": f"不支援的線別: {line_id}",
+                    "estimated_count": 0
+                }
+
+            # 計算資料數量
+            with create_session(ssh_tunnel, database) as session:
+                count = session.query(AmrRawData).filter(
+                    AmrRawData.create_time.between(start_date, end_date),
+                    AmrRawData.part_number == part_number,
+                    AmrRawData.line_id == line_id
+                ).count()
+
+                self.logger.info(f'預估 {site} site {line_id} line 有 {count} 張影像')
+
+            return {
+                "success": True,
+                "message": f"找到 {count} 張符合條件的影像",
+                "estimated_count": count
+            }
+
+        except Exception as e:
+            self.logger.error(f"預估資料數量時發生錯誤: {str(e)}", exc_info=True)
+            return {
+                "success": False,
+                "message": f"預估過程中發生錯誤: {str(e)}",
+                "estimated_count": 0
+            }
+
+        finally:
+            # 關閉 SSH tunnel（如果有的話）
+            if hasattr(self, 'server') and self.server:
+                self.server.stop()
+                self.server = None
+
     def _download_images(
         self,
         image_list: List[str],
