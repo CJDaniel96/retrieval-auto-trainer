@@ -1134,7 +1134,7 @@ async def classify_images(part_number: str, request: ClassifyRequest):
 
 
 @app.get("/download/images/{part_number}", tags=["Download"])
-async def list_part_images(part_number: str):
+async def list_part_images(part_number: str, page: int = 1, page_size: int = 50):
     """
     列出料號下的所有影像
 
@@ -1154,41 +1154,68 @@ async def list_part_images(part_number: str):
         rawdata_path = Path("rawdata") / part_number
         image_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
 
-        images = []
-        image_count = 0
-        max_base64_images = 50  # 限制 base64 編碼的影像數量
-
+        # 首先收集所有影像檔案
+        all_images = []
         for file_path in rawdata_path.rglob("*"):
             if file_path.is_file() and file_path.suffix.lower() in image_extensions:
-                # 計算相對路徑
                 relative_path = file_path.relative_to(rawdata_path)
-
-                # 只為前面的影像加入 base64 數據，避免響應過大
-                base64_data = None
-                if image_count < max_base64_images:
-                    try:
-                        import base64
-                        with open(file_path, 'rb') as img_file:
-                            img_data = img_file.read()
-                            base64_encoded = base64.b64encode(img_data).decode('utf-8')
-                            base64_data = f"data:image/jpeg;base64,{base64_encoded}"
-                        logging.info(f"成功編碼影像: {file_path.name}, 大小: {len(base64_data)}")
-                    except Exception as e:
-                        logging.error(f"編碼影像失敗 {file_path.name}: {str(e)}")
-                        base64_data = None
-
-                images.append({
+                all_images.append({
                     "filename": file_path.name,
                     "path": str(relative_path),
                     "size": file_path.stat().st_size,
-                    "base64_data": base64_data
+                    "file_path": file_path
                 })
 
-                image_count += 1
+        # 計算分頁
+        total_images = len(all_images)
+        start_idx = (page - 1) * page_size
+        end_idx = min(start_idx + page_size, total_images)
+
+        # 如果請求大的page_size（如10000），為所有影像生成base64
+        # 否則只處理當前頁面的影像
+        if page_size >= 1000:  # 當請求大量影像時，處理所有影像
+            images_to_process = all_images
+            logging.info(f"處理所有 {len(all_images)} 張影像的base64編碼（大批次請求）")
+        else:
+            images_to_process = all_images[start_idx:end_idx]
+            logging.info(f"處理第 {page} 頁的 {len(images_to_process)} 張影像")
+
+        images = []
+        import base64
+
+        for i, img_info in enumerate(images_to_process):
+            try:
+                with open(img_info["file_path"], 'rb') as img_file:
+                    img_data = img_file.read()
+                    base64_encoded = base64.b64encode(img_data).decode('utf-8')
+                    base64_data = f"data:image/jpeg;base64,{base64_encoded}"
+
+                if page_size >= 1000:
+                    # 大批次請求：處理所有影像
+                    actual_position = i + 1
+                else:
+                    # 正常分頁：計算在全部影像中的實際位置
+                    actual_position = start_idx + i + 1
+
+                if i % 100 == 0:  # 每100張影像記錄一次進度
+                    logging.info(f"已編碼 {i+1}/{len(images_to_process)} 張影像")
+
+            except Exception as e:
+                logging.error(f"編碼影像失敗 {img_info['filename']}: {str(e)}")
+                base64_data = None
+
+            images.append({
+                "filename": img_info["filename"],
+                "path": img_info["path"],
+                "size": img_info["size"],
+                "base64_data": base64_data
+            })
+
+        logging.info(f"完成base64編碼，共處理 {len(images)} 張影像")
 
         return {
             "part_number": part_number,
-            "total_images": len(images),
+            "total_images": total_images,
             "images": images
         }
 

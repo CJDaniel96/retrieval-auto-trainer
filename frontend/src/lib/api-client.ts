@@ -188,9 +188,14 @@ export class ApiClient {
     }
   }
 
-  static async listPartImages(partNumber: string): Promise<ApiResponse<PartImageList>> {
+  static async listPartImages(partNumber: string, page: number = 1, pageSize: number = 50): Promise<ApiResponse<PartImageList>> {
     try {
-      const response = await api.get(`/download/images/${partNumber}`);
+      const response = await api.get(`/download/images/${partNumber}`, {
+        params: {
+          page,
+          page_size: pageSize
+        }
+      });
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };

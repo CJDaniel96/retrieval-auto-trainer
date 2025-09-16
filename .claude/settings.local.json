@@ -6,7 +6,9 @@
       "Bash(npm install:*)",
       "Bash(python:*)",
       "Bash(rm:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(source:*)"
     ],
     "deny": [],
     "ask": []

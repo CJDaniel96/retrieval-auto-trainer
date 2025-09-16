@@ -21,7 +21,7 @@ import { ApiClient } from '@/lib/api-client';
 import { PartImageList, ImageInfo } from '@/lib/types';
 import { toast } from 'sonner';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 50;
 
 export default function ClassifyPage() {
   const t = useTranslations();
@@ -36,9 +36,10 @@ export default function ClassifyPage() {
 
   // 分頁狀態
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = partImages ? Math.ceil(partImages.images.length / ITEMS_PER_PAGE) : 0;
+  const totalPages = partImages ? Math.ceil(partImages.total_images / ITEMS_PER_PAGE) : 0;
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, partImages?.total_images || 0);
+  // 客戶端分頁: 只顯示當前頁面的影像
   const currentImages = partImages?.images.slice(startIndex, endIndex) || [];
 
   // 進度統計
@@ -50,9 +51,22 @@ export default function ClassifyPage() {
     const loadImages = async () => {
       setLoading(true);
       try {
-        const result = await ApiClient.listPartImages(partNumber);
+        // 載入所有影像資料，但只有第一頁的50張有base64數據
+        const result = await ApiClient.listPartImages(partNumber, 1, 10000);
         if (result.data) {
-          setPartImages(result.data);
+          // 對於沒有base64_data的影像，我們需要逐批次載入
+          const imagesWithBase64 = result.data.images.filter(img => img.base64_data);
+          const imagesWithoutBase64 = result.data.images.filter(img => !img.base64_data);
+
+          console.log(`載入了 ${imagesWithBase64.length} 張有base64的影像，${imagesWithoutBase64.length} 張需要額外載入`);
+
+          // 先設置已有base64的影像
+          setPartImages({
+            ...result.data,
+            images: result.data.images // 保持所有影像，但某些沒有base64_data
+          });
+
+          // 後續可以考慮分批載入其他影像的base64數據
         } else {
           toast.error(`載入影像失敗: ${result.error}`);
         }
@@ -67,6 +81,7 @@ export default function ClassifyPage() {
       loadImages();
     }
   }, [partNumber]);
+
 
   const handleClassifyImage = (filename: string, classification: 'OK' | 'NG') => {
     setImageClassifications(prev => ({
@@ -182,33 +197,36 @@ export default function ClassifyPage() {
 
         {/* 分頁控制 - 頂部 */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mb-6 bg-white rounded-lg p-4 shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage <= 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                上一頁
-              </Button>
-              <span className="text-sm text-gray-600">
-                第 {currentPage} 頁，共 {totalPages} 頁
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-              >
-                下一頁
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  上一頁
+                </Button>
+                <span className="text-sm text-gray-600">
+                  第 {currentPage} 頁，共 {totalPages} 頁
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages}
+                >
+                  下一頁
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="text-sm text-gray-500">
+                顯示 {startIndex + 1}-{Math.min(endIndex, totalCount)} 項，共 {totalCount} 項
+              </div>
             </div>
-            <div className="text-sm text-gray-500">
-              顯示 {startIndex + 1}-{Math.min(endIndex, totalCount)} 項，共 {totalCount} 項
-            </div>
+
           </div>
         )}
 
@@ -245,7 +263,17 @@ export default function ClassifyPage() {
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-500 text-sm">載入中...</span>
+                      <div className="text-center p-4">
+                        <div className="w-16 h-16 bg-gray-300 rounded-lg mx-auto mb-3 flex items-center justify-center">
+                          <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium">{image.filename}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {(image.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
