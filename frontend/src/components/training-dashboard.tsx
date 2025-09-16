@@ -53,7 +53,12 @@ import {
   X,
 } from "lucide-react";
 import { ApiClient } from "@/lib/api-client";
-import { TrainingStatus, TrainingRequest, DownloadRequest, PartInfo } from "@/lib/types";
+import {
+  TrainingStatus,
+  TrainingRequest,
+  DownloadRequest,
+  PartInfo,
+} from "@/lib/types";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/routing";
@@ -69,9 +74,11 @@ export function TrainingDashboard() {
   const [activeTab, setActiveTab] = useState("new-training");
   const [showAdvancedConfig, setShowAdvancedConfig] = useState(false);
   const [showCreateModuleDialog, setShowCreateModuleDialog] = useState(false);
-  const [createModuleTaskId, setCreateModuleTaskId] = useState<string | null>(null);
-  const [moduleName, setModuleName] = useState('');
-  const [partNumber, setPartNumber] = useState('');
+  const [createModuleTaskId, setCreateModuleTaskId] = useState<string | null>(
+    null
+  );
+  const [moduleName, setModuleName] = useState("");
+  const [partNumber, setPartNumber] = useState("");
   const [creatingModule, setCreatingModule] = useState(false);
 
   // Download related states
@@ -267,18 +274,22 @@ export function TrainingDashboard() {
 
     setCreatingModule(true);
     try {
-      const response = await ApiClient.createModule(createModuleTaskId, moduleName.trim(), partNumber.trim());
+      const response = await ApiClient.createModule(
+        createModuleTaskId,
+        moduleName.trim(),
+        partNumber.trim()
+      );
       if (response.data) {
-        toast.success(t('messages.module_created_successfully'));
+        toast.success(t("messages.module_created_successfully"));
         setShowCreateModuleDialog(false);
-        setModuleName('');
-        setPartNumber('');
+        setModuleName("");
+        setPartNumber("");
         setCreateModuleTaskId(null);
       } else if (response.error) {
-        toast.error(`${t('messages.error_occurred')}: ${response.error}`);
+        toast.error(`${t("messages.error_occurred")}: ${response.error}`);
       }
     } catch (error: any) {
-      toast.error(`${t('messages.error_occurred')}: ${error.message}`);
+      toast.error(`${t("messages.error_occurred")}: ${error.message}`);
     } finally {
       setCreatingModule(false);
     }
@@ -286,8 +297,8 @@ export function TrainingDashboard() {
 
   const handleCreateModuleCancel = () => {
     setShowCreateModuleDialog(false);
-    setModuleName('');
-    setPartNumber('');
+    setModuleName("");
+    setPartNumber("");
     setCreateModuleTaskId(null);
   };
 
@@ -509,7 +520,10 @@ export function TrainingDashboard() {
                         checked={useExistingData}
                         onCheckedChange={setUseExistingData}
                       />
-                      <Label htmlFor="use-existing-data" className="text-sm font-medium">
+                      <Label
+                        htmlFor="use-existing-data"
+                        className="text-sm font-medium"
+                      >
                         {t("download.info.rawdata_usage")}
                       </Label>
                     </div>
@@ -547,7 +561,10 @@ export function TrainingDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Label htmlFor="rawdata_part" className="text-sm font-medium">
+                        <Label
+                          htmlFor="rawdata_part"
+                          className="text-sm font-medium"
+                        >
                           {t("download.info.select_part")}
                         </Label>
                         <Select
@@ -562,12 +579,18 @@ export function TrainingDashboard() {
                           }}
                         >
                           <SelectTrigger className="bg-white/70">
-                            <SelectValue placeholder={t("download.info.select_part")} />
+                            <SelectValue
+                              placeholder={t("download.info.select_part")}
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {downloadedParts.map((part) => (
-                              <SelectItem key={part.part_number} value={part.part_number}>
-                                {part.part_number} ({part.image_count} {t("download.messages.image_count_suffix")})
+                              <SelectItem
+                                key={part.part_number}
+                                value={part.part_number}
+                              >
+                                {part.part_number} ({part.image_count}{" "}
+                                {t("download.messages.image_count_suffix")})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1412,7 +1435,12 @@ export function TrainingDashboard() {
                               <div className="flex items-center space-x-3">
                                 {getStatusIcon(task.status)}
                                 <span className="font-semibold text-lg">
-                                  {task.task_id} {task.input_dir ? `(${task.input_dir.split(/[\/\\]/).pop()})` : ''}
+                                  {task.task_id}{" "}
+                                  {task.input_dir
+                                    ? `(${task.input_dir
+                                        .split(/[\/\\]/)
+                                        .pop()})`
+                                    : ""}
                                 </span>
                                 <Badge className={getStatusColor(task.status)}>
                                   {t(`training.${task.status}`)}
@@ -1441,7 +1469,9 @@ export function TrainingDashboard() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleCreateModule(task.task_id)}
+                                      onClick={() =>
+                                        handleCreateModule(task.task_id)
+                                      }
                                       className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
                                     >
                                       <Package className="w-4 h-4 mr-2" />
@@ -1556,20 +1586,25 @@ export function TrainingDashboard() {
                 <CardHeader>
                   <div className="flex items-center space-x-2">
                     <Database className="w-6 h-6 text-blue-600" />
-                    <CardTitle className="text-2xl">{t("download.title")}</CardTitle>
+                    <CardTitle className="text-2xl">
+                      {t("download.title")}
+                    </CardTitle>
                   </div>
-                  <CardDescription>
-                    {t("download.description")}
-                  </CardDescription>
+                  <CardDescription>{t("download.description")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="download_site">{t("download.form.site")}</Label>
+                      <Label htmlFor="download_site">
+                        {t("download.form.site")}
+                      </Label>
                       <Select
                         value={downloadFormData.site}
                         onValueChange={(value) =>
-                          setDownloadFormData((prev) => ({ ...prev, site: value }))
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            site: value,
+                          }))
                         }
                       >
                         <SelectTrigger>
@@ -1583,15 +1618,22 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_line_id">{t("download.form.line_id")}</Label>
+                      <Label htmlFor="download_line_id">
+                        {t("download.form.line_id")}
+                      </Label>
                       <Select
                         value={downloadFormData.line_id}
                         onValueChange={(value) =>
-                          setDownloadFormData((prev) => ({ ...prev, line_id: value }))
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            line_id: value,
+                          }))
                         }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t("download.form.line_id")} />
+                          <SelectValue
+                            placeholder={t("download.form.line_id")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {downloadFormData.site === "HPH" && (
@@ -1615,64 +1657,92 @@ export function TrainingDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_part_number">{t("download.form.part_number")}</Label>
+                      <Label htmlFor="download_part_number">
+                        {t("download.form.part_number")}
+                      </Label>
                       <Input
                         id="download_part_number"
                         value={downloadFormData.part_number}
                         onChange={(e) =>
-                          setDownloadFormData((prev) => ({ ...prev, part_number: e.target.value }))
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            part_number: e.target.value,
+                          }))
                         }
                         placeholder="例如: 32-500020-01"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_start_date">{t("download.form.start_date")}</Label>
+                      <Label htmlFor="download_start_date">
+                        {t("download.form.start_date")}
+                      </Label>
                       <Input
                         id="download_start_date"
                         type="date"
                         value={downloadFormData.start_date}
                         onChange={(e) =>
-                          setDownloadFormData((prev) => ({ ...prev, start_date: e.target.value }))
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            start_date: e.target.value,
+                          }))
                         }
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="download_end_date">{t("download.form.end_date")}</Label>
+                      <Label htmlFor="download_end_date">
+                        {t("download.form.end_date")}
+                      </Label>
                       <Input
                         id="download_end_date"
                         type="date"
                         value={downloadFormData.end_date}
                         onChange={(e) =>
-                          setDownloadFormData((prev) => ({ ...prev, end_date: e.target.value }))
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            end_date: e.target.value,
+                          }))
                         }
                       />
                     </div>
-
                   </div>
 
                   {/* Step 1: Estimate Data Count */}
                   {!showDownloadSection && (
                     <Button
                       onClick={async () => {
-                        if (!downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date) {
+                        if (
+                          !downloadFormData.part_number ||
+                          !downloadFormData.start_date ||
+                          !downloadFormData.end_date
+                        ) {
                           toast.error(t("download.messages.missing_fields"));
                           return;
                         }
 
                         setLoadingEstimate(true);
-                        const { site, line_id, start_date, end_date, part_number } = downloadFormData;
+                        const {
+                          site,
+                          line_id,
+                          start_date,
+                          end_date,
+                          part_number,
+                        } = downloadFormData;
                         const result = await ApiClient.estimateDataCount({
                           site,
                           line_id,
                           start_date,
                           end_date,
-                          part_number
+                          part_number,
                         });
 
                         if (result.error) {
-                          toast.error(`${t("download.messages.estimate_failed")}: ${result.error}`);
+                          toast.error(
+                            `${t("download.messages.estimate_failed")}: ${
+                              result.error
+                            }`
+                          );
                         } else if (result.data) {
                           if (result.data.success) {
                             setEstimatedCount(result.data.estimated_count);
@@ -1684,7 +1754,12 @@ export function TrainingDashboard() {
                         }
                         setLoadingEstimate(false);
                       }}
-                      disabled={loadingEstimate || !downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date}
+                      disabled={
+                        loadingEstimate ||
+                        !downloadFormData.part_number ||
+                        !downloadFormData.start_date ||
+                        !downloadFormData.end_date
+                      }
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       {loadingEstimate ? (
@@ -1707,13 +1782,17 @@ export function TrainingDashboard() {
                       <Alert className="border-green-200 bg-green-50/80">
                         <AlertCircle className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800">
-                          {t("download.messages.found_images", { count: estimatedCount })}
+                          {t("download.messages.found_images", {
+                            count: estimatedCount,
+                          })}
                         </AlertDescription>
                       </Alert>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="download_limit">{t("download.form.limit")}</Label>
+                          <Label htmlFor="download_limit">
+                            {t("download.form.limit")}
+                          </Label>
                           <Input
                             id="download_limit"
                             type="number"
@@ -1723,7 +1802,9 @@ export function TrainingDashboard() {
                             onChange={(e) =>
                               setDownloadFormData((prev) => ({
                                 ...prev,
-                                limit: e.target.value ? parseInt(e.target.value) : undefined
+                                limit: e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined,
                               }))
                             }
                             placeholder={`不限制 (最多 ${estimatedCount} 張)`}
@@ -1737,7 +1818,10 @@ export function TrainingDashboard() {
                           onClick={() => {
                             setShowDownloadSection(false);
                             setEstimatedCount(null);
-                            setDownloadFormData(prev => ({ ...prev, limit: undefined }));
+                            setDownloadFormData((prev) => ({
+                              ...prev,
+                              limit: undefined,
+                            }));
                           }}
                         >
                           {t("download.form.re_estimate")}
@@ -1746,7 +1830,9 @@ export function TrainingDashboard() {
                         <Button
                           onClick={async () => {
                             setLoadingDownload(true);
-                            const result = await ApiClient.downloadRawdata(downloadFormData);
+                            const result = await ApiClient.downloadRawdata(
+                              downloadFormData
+                            );
 
                             if (result.error) {
                               toast.error(`下載失敗: ${result.error}`);
@@ -1754,7 +1840,8 @@ export function TrainingDashboard() {
                               if (result.data.success) {
                                 toast.success(result.data.message);
                                 // Refresh downloaded parts list
-                                const partsResult = await ApiClient.listDownloadedParts();
+                                const partsResult =
+                                  await ApiClient.listDownloadedParts();
                                 if (partsResult.data) {
                                   setDownloadedParts(partsResult.data);
                                 }
@@ -1786,7 +1873,13 @@ export function TrainingDashboard() {
                           ) : (
                             <>
                               <Download className="w-4 h-4 mr-2" />
-                              {downloadFormData.limit ? t("download.form.download_limited", { limit: downloadFormData.limit }) : t("download.form.download_all", { count: estimatedCount })}
+                              {downloadFormData.limit
+                                ? t("download.form.download_limited", {
+                                    limit: downloadFormData.limit,
+                                  })
+                                : t("download.form.download_all", {
+                                    count: estimatedCount,
+                                  })}
                             </>
                           )}
                         </Button>
@@ -1802,7 +1895,9 @@ export function TrainingDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Database className="w-6 h-6 text-green-600" />
-                      <CardTitle className="text-2xl">{t("download.downloaded_parts.title")}</CardTitle>
+                      <CardTitle className="text-2xl">
+                        {t("download.downloaded_parts.title")}
+                      </CardTitle>
                     </div>
                     <Button
                       variant="outline"
@@ -1842,12 +1937,17 @@ export function TrainingDashboard() {
                           className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50"
                         >
                           <div className="space-y-1">
-                            <h3 className="font-semibold text-lg">{part.part_number}</h3>
+                            <h3 className="font-semibold text-lg">
+                              {part.part_number}
+                            </h3>
                             <p className="text-sm text-gray-600">
-                              {t("download.downloaded_parts.image_count")}: {part.image_count} {t("download.messages.image_count_suffix")}
+                              {t("download.downloaded_parts.image_count")}:{" "}
+                              {part.image_count}{" "}
+                              {t("download.messages.image_count_suffix")}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {t("download.downloaded_parts.download_time")}: {new Date(part.download_time).toLocaleString()}
+                              {t("download.downloaded_parts.download_time")}:{" "}
+                              {new Date(part.download_time).toLocaleString()}
                             </p>
                           </div>
                           <div className="flex space-x-2">
@@ -1872,7 +1972,11 @@ export function TrainingDashboard() {
                                   input_dir: `rawdata/${part.part_number}`,
                                 });
                                 setActiveTab("new-training");
-                                toast.success(t("download.messages.switch_training", { partNumber: part.part_number }));
+                                toast.success(
+                                  t("download.messages.switch_training", {
+                                    partNumber: part.part_number,
+                                  })
+                                );
                               }}
                             >
                               {t("download.downloaded_parts.use_for_training")}
@@ -1884,7 +1988,6 @@ export function TrainingDashboard() {
                   )}
                 </CardContent>
               </Card>
-
             </motion.div>
           </TabsContent>
 
@@ -2150,7 +2253,8 @@ export function TrainingDashboard() {
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                   <span className="text-xs text-slate-400 font-mono">
-                    {t("footer.build")} #{Math.floor(Math.random() * 1000) + 1000}
+                    {t("footer.build")} #
+                    {Math.floor(Math.random() * 1000) + 1000}
                   </span>
                 </div>
               </div>
@@ -2228,7 +2332,9 @@ export function TrainingDashboard() {
               </Button>
               <Button
                 onClick={handleCreateModuleConfirm}
-                disabled={!moduleName.trim() || !partNumber.trim() || creatingModule}
+                disabled={
+                  !moduleName.trim() || !partNumber.trim() || creatingModule
+                }
                 className="bg-green-600 hover:bg-green-700"
               >
                 {creatingModule ? (
