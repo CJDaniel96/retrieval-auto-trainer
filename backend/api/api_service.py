@@ -28,6 +28,7 @@ import uvicorn
 
 from ..core.auto_training_system import AutoTrainingSystem
 from ..database.task_manager import get_task_manager, TrainingStatus as ManagedTrainingStatus
+from ..services.image_downloader import ImageDownloadService
 
 
 # Pydantic模型定義
@@ -92,7 +93,31 @@ class TrainingResult(BaseModel):
     model_path: str
     evaluation_csv: str
     confusion_matrix: str
-    
+
+
+class DownloadRequest(BaseModel):
+    """下載請求模型"""
+    site: str = Field(..., description="工廠名稱", pattern="^(HPH|JQ|ZJ|NK|HZ)$")
+    line_id: str = Field(..., description="線別ID")
+    start_date: str = Field(..., description="開始日期", pattern="^\d{4}-\d{2}-\d{2}$")
+    end_date: str = Field(..., description="結束日期", pattern="^\d{4}-\d{2}-\d{2}$")
+    part_number: str = Field(..., description="料號")
+    limit: Optional[int] = Field(None, description="限制數量", ge=1, le=10000)
+
+
+class PartInfo(BaseModel):
+    """料號資訊模型"""
+    part_number: str
+    path: str
+    image_count: int
+    download_time: str
+
+
+class ClassifyRequest(BaseModel):
+    """分類請求模型"""
+    part_number: str = Field(..., description="料號")
+    classifications: Dict[str, str] = Field(..., description="影像分類結果 {filename: 'OK'|'NG'}")
+
 
 # 全域變數
 executor = ThreadPoolExecutor(max_workers=2)  # 限制同時訓練的任務數
@@ -934,6 +959,197 @@ async def get_current_config():
     """
     system = AutoTrainingSystem()
     return system.train_config
+
+
+# 下載相關端點
+@app.post("/download/rawdata", tags=["Download"])
+async def download_rawdata(request: DownloadRequest):
+    """
+    下載原始資料
+
+    Args:
+        request: 下載請求參數
+
+    Returns:
+        下載結果
+    """
+    try:
+        download_service = ImageDownloadService()
+        result = download_service.download_rawdata(
+            site=request.site,
+            line_id=request.line_id,
+            start_date=request.start_date,
+            end_date=request.end_date,
+            part_number=request.part_number,
+            limit=request.limit
+        )
+        return result
+    except Exception as e:
+        logging.error(f"下載原始資料失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"下載失敗: {str(e)}")
+
+
+@app.get("/download/parts", response_model=List[PartInfo], tags=["Download"])
+async def list_downloaded_parts():
+    """
+    列出已下載的料號
+
+    Returns:
+        料號列表及詳細資訊
+    """
+    try:
+        download_service = ImageDownloadService()
+        part_numbers = download_service.list_downloaded_parts()
+
+        parts_info = []
+        for part_number in part_numbers:
+            part_info = download_service.get_part_info(part_number)
+            if part_info:
+                parts_info.append(PartInfo(**part_info))
+
+        return parts_info
+    except Exception as e:
+        logging.error(f"列出下載資料失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"列出資料失敗: {str(e)}")
+
+
+@app.get("/download/parts/{part_number}", response_model=PartInfo, tags=["Download"])
+async def get_part_info(part_number: str):
+    """
+    取得特定料號資訊
+
+    Args:
+        part_number: 料號
+
+    Returns:
+        料號詳細資訊
+    """
+    try:
+        download_service = ImageDownloadService()
+        part_info = download_service.get_part_info(part_number)
+
+        if not part_info:
+            raise HTTPException(status_code=404, detail=f"找不到料號: {part_number}")
+
+        return PartInfo(**part_info)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"取得料號資訊失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"取得資訊失敗: {str(e)}")
+
+
+@app.post("/download/classify/{part_number}", tags=["Download"])
+async def classify_images(part_number: str, request: ClassifyRequest):
+    """
+    分類影像為 OK/NG
+
+    Args:
+        part_number: 料號
+        request: 分類請求
+
+    Returns:
+        分類結果
+    """
+    try:
+        # 檢查料號是否存在
+        download_service = ImageDownloadService()
+        part_info = download_service.get_part_info(part_number)
+
+        if not part_info:
+            raise HTTPException(status_code=404, detail=f"找不到料號: {part_number}")
+
+        # 建立分類資料夾結構
+        rawdata_path = Path("rawdata") / part_number
+        ok_path = rawdata_path / "OK"
+        ng_path = rawdata_path / "NG"
+
+        ok_path.mkdir(exist_ok=True)
+        ng_path.mkdir(exist_ok=True)
+
+        # 移動影像到對應資料夾
+        classification_results = {"moved": 0, "errors": []}
+
+        for filename, classification in request.classifications.items():
+            try:
+                source_file = rawdata_path / filename
+
+                if not source_file.exists():
+                    classification_results["errors"].append(f"檔案不存在: {filename}")
+                    continue
+
+                if classification.upper() == "OK":
+                    dest_file = ok_path / filename
+                elif classification.upper() == "NG":
+                    dest_file = ng_path / filename
+                else:
+                    classification_results["errors"].append(f"無效分類 '{classification}' for {filename}")
+                    continue
+
+                # 移動檔案
+                shutil.move(str(source_file), str(dest_file))
+                classification_results["moved"] += 1
+
+            except Exception as file_error:
+                classification_results["errors"].append(f"處理 {filename} 時發生錯誤: {str(file_error)}")
+
+        return {
+            "success": True,
+            "message": f"成功分類 {classification_results['moved']} 張影像",
+            "moved_count": classification_results["moved"],
+            "errors": classification_results["errors"]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"影像分類失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"分類失敗: {str(e)}")
+
+
+@app.get("/download/images/{part_number}", tags=["Download"])
+async def list_part_images(part_number: str):
+    """
+    列出料號下的所有影像
+
+    Args:
+        part_number: 料號
+
+    Returns:
+        影像檔案列表
+    """
+    try:
+        download_service = ImageDownloadService()
+        part_info = download_service.get_part_info(part_number)
+
+        if not part_info:
+            raise HTTPException(status_code=404, detail=f"找不到料號: {part_number}")
+
+        rawdata_path = Path("rawdata") / part_number
+        image_extensions = ['.jpg', '.jpeg', '.png', '.bmp']
+
+        images = []
+        for file_path in rawdata_path.rglob("*"):
+            if file_path.is_file() and file_path.suffix.lower() in image_extensions:
+                # 計算相對路徑
+                relative_path = file_path.relative_to(rawdata_path)
+                images.append({
+                    "filename": file_path.name,
+                    "path": str(relative_path),
+                    "size": file_path.stat().st_size
+                })
+
+        return {
+            "part_number": part_number,
+            "total_images": len(images),
+            "images": images
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"列出影像失敗: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"列出影像失敗: {str(e)}")
 
 
 # 錯誤處理

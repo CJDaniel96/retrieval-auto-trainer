@@ -1,0 +1,76 @@
+{
+    "HPH": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "10.52.1.26",
+            "ssh_username": "Administrator",
+            "ssh_password": "Pb08!@)(UsiVN"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr",
+            "USER": "postgres",
+            "PASSWORD": "postgres",
+            "HOST": "10.5.1.154",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "V31": {
+                "ip": "10.5.15.14",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V28": {
+                "ip": "10.5.24.82",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V27": {
+                "ip": "10.5.25.115",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V22": {
+                "ip": "10.5.25.95",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "V20": {
+                "ip": "10.5.24.37",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    },
+    "JQ": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "192.168.150.192",
+            "ssh_username": "Administrator",
+            "ssh_password": "SMDi4.0AP"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr_info",
+            "USER": "amr",
+            "PASSWORD": "smdamr",
+            "HOST": "10.5.1.150",
+            "PORT": 9999
+        },
+        "image_pool": {
+            "J12": {
+                "ip": "10.5.30.128",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "J13": {
+                "ip": "10.5.31.12",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            },
+            "J15": {
+                "ip": "10.5.30.186",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    }
+}

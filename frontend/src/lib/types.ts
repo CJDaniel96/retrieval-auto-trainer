@@ -113,3 +113,37 @@ export interface ConfigUpdateRequest {
   loss?: Partial<LossConfig>;
   knn?: Partial<KnnConfig>;
 }
+
+// 下載相關類型
+export interface DownloadRequest {
+  site: string;
+  line_id: string;
+  start_date: string;
+  end_date: string;
+  part_number: string;
+  limit?: number;
+}
+
+export interface PartInfo {
+  part_number: string;
+  path: string;
+  image_count: number;
+  download_time: string;
+}
+
+export interface ClassifyRequest {
+  part_number: string;
+  classifications: Record<string, 'OK' | 'NG'>;
+}
+
+export interface ImageInfo {
+  filename: string;
+  path: string;
+  size: number;
+}
+
+export interface PartImageList {
+  part_number: string;
+  total_images: number;
+  images: ImageInfo[];
+}

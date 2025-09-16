@@ -53,7 +53,7 @@ import {
   X,
 } from "lucide-react";
 import { ApiClient } from "@/lib/api-client";
-import { TrainingStatus, TrainingRequest } from "@/lib/types";
+import { TrainingStatus, TrainingRequest, DownloadRequest, PartInfo, PartImageList } from "@/lib/types";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/routing";
@@ -73,6 +73,25 @@ export function TrainingDashboard() {
   const [moduleName, setModuleName] = useState('');
   const [partNumber, setPartNumber] = useState('');
   const [creatingModule, setCreatingModule] = useState(false);
+
+  // Download related states
+  const [downloadFormData, setDownloadFormData] = useState<DownloadRequest>({
+    site: "HPH",
+    line_id: "V31",
+    start_date: "",
+    end_date: "",
+    part_number: "",
+    limit: undefined,
+  });
+  const [downloadedParts, setDownloadedParts] = useState<PartInfo[]>([]);
+  const [loadingDownload, setLoadingDownload] = useState(false);
+  const [loadingParts, setLoadingParts] = useState(false);
+  const [selectedPart, setSelectedPart] = useState<string | null>(null);
+  const [partImages, setPartImages] = useState<PartImageList | null>(null);
+  const [imageClassifications, setImageClassifications] = useState<Record<string, 'OK' | 'NG'>>({});
+  const [classifyingImages, setClassifyingImages] = useState(false);
+  const [useExistingData, setUseExistingData] = useState(false);
+  const [selectedRawdataPart, setSelectedRawdataPart] = useState<string>("");
 
   const [formData, setFormData] = useState<TrainingRequest>({
     input_dir: "",
@@ -141,6 +160,21 @@ export function TrainingDashboard() {
 
     return () => clearTimeout(failsafeTimeout);
   }, [loading, initialLoad]);
+
+  // Load downloaded parts when download tab or new-training tab is accessed
+  useEffect(() => {
+    if (activeTab === "download" || activeTab === "new-training") {
+      const loadDownloadedParts = async () => {
+        setLoadingParts(true);
+        const result = await ApiClient.listDownloadedParts();
+        if (result.data) {
+          setDownloadedParts(result.data);
+        }
+        setLoadingParts(false);
+      };
+      loadDownloadedParts();
+    }
+  }, [activeTab]);
 
   const fetchTasks = async () => {
     console.log("開始獲取任務...");
@@ -426,6 +460,13 @@ export function TrainingDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger
+                value="download"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
+              >
+                <Database className="w-4 h-4 mr-2" />
+                下載資料
+              </TabsTrigger>
+              <TabsTrigger
                 value="settings"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
@@ -461,27 +502,79 @@ export function TrainingDashboard() {
                     </AlertDescription>
                   </Alert>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="input_dir"
-                        className="text-sm font-medium"
-                      >
-                        {t("training.input_directory")}
-                      </Label>
-                      <Input
-                        id="input_dir"
-                        value={formData.input_dir}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            input_dir: e.target.value,
-                          })
-                        }
-                        placeholder={t("form.input_placeholder")}
-                        className="bg-white/70"
+                  {/* Data Source Selection */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <Switch
+                        id="use-existing-data"
+                        checked={useExistingData}
+                        onCheckedChange={setUseExistingData}
                       />
+                      <Label htmlFor="use-existing-data" className="text-sm font-medium">
+                        使用已下載並分類的資料進行訓練
+                      </Label>
                     </div>
+                    {useExistingData && (
+                      <Alert className="border-green-200 bg-green-50/80">
+                        <Database className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          使用已下載並分類為 OK/NG 的資料進行訓練。請先到「下載資料」頁面下載並分類資料。
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {!useExistingData ? (
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="input_dir"
+                          className="text-sm font-medium"
+                        >
+                          {t("training.input_directory")}
+                        </Label>
+                        <Input
+                          id="input_dir"
+                          value={formData.input_dir}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              input_dir: e.target.value,
+                            })
+                          }
+                          placeholder={t("form.input_placeholder")}
+                          className="bg-white/70"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="rawdata_part" className="text-sm font-medium">
+                          選擇已分類的料號
+                        </Label>
+                        <Select
+                          value={selectedRawdataPart}
+                          onValueChange={(value) => {
+                            setSelectedRawdataPart(value);
+                            // Update input_dir to use the rawdata path
+                            setFormData({
+                              ...formData,
+                              input_dir: `rawdata/${value}`,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="bg-white/70">
+                            <SelectValue placeholder="選擇料號" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {downloadedParts.map((part) => (
+                              <SelectItem key={part.part_number} value={part.part_number}>
+                                {part.part_number} ({part.image_count} 張影像)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                     <div className="space-y-2">
                       <Label htmlFor="site" className="text-sm font-medium">
@@ -1448,6 +1541,395 @@ export function TrainingDashboard() {
                   )}
                 </CardContent>
               </Card>
+            </motion.div>
+          </TabsContent>
+
+          {/* Download Tab */}
+          <TabsContent value="download" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-6"
+            >
+              {/* Download Form */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Database className="w-6 h-6 text-blue-600" />
+                    <CardTitle className="text-2xl">下載原始資料</CardTitle>
+                  </div>
+                  <CardDescription>
+                    從資料庫下載符合條件的影像資料
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="download_site">工廠</Label>
+                      <Select
+                        value={downloadFormData.site}
+                        onValueChange={(value) =>
+                          setDownloadFormData((prev) => ({ ...prev, site: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="選擇工廠" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HPH">HPH</SelectItem>
+                          <SelectItem value="JQ">JQ</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_line_id">線別</Label>
+                      <Select
+                        value={downloadFormData.line_id}
+                        onValueChange={(value) =>
+                          setDownloadFormData((prev) => ({ ...prev, line_id: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="選擇線別" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {downloadFormData.site === "HPH" && (
+                            <>
+                              <SelectItem value="V31">V31</SelectItem>
+                              <SelectItem value="V28">V28</SelectItem>
+                              <SelectItem value="V27">V27</SelectItem>
+                              <SelectItem value="V22">V22</SelectItem>
+                              <SelectItem value="V20">V20</SelectItem>
+                            </>
+                          )}
+                          {downloadFormData.site === "JQ" && (
+                            <>
+                              <SelectItem value="J12">J12</SelectItem>
+                              <SelectItem value="J13">J13</SelectItem>
+                              <SelectItem value="J15">J15</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_part_number">料號</Label>
+                      <Input
+                        id="download_part_number"
+                        value={downloadFormData.part_number}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({ ...prev, part_number: e.target.value }))
+                        }
+                        placeholder="例如: 32-500020-01"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_start_date">開始日期</Label>
+                      <Input
+                        id="download_start_date"
+                        type="date"
+                        value={downloadFormData.start_date}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({ ...prev, start_date: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_end_date">結束日期</Label>
+                      <Input
+                        id="download_end_date"
+                        type="date"
+                        value={downloadFormData.end_date}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({ ...prev, end_date: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_limit">限制數量 (可選)</Label>
+                      <Input
+                        id="download_limit"
+                        type="number"
+                        min="1"
+                        max="10000"
+                        value={downloadFormData.limit || ""}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            limit: e.target.value ? parseInt(e.target.value) : undefined
+                          }))
+                        }
+                        placeholder="不限制"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={async () => {
+                      if (!downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date) {
+                        toast.error("請填寫必要欄位");
+                        return;
+                      }
+
+                      setLoadingDownload(true);
+                      const result = await ApiClient.downloadRawdata(downloadFormData);
+
+                      if (result.error) {
+                        toast.error(`下載失敗: ${result.error}`);
+                      } else if (result.data) {
+                        if (result.data.success) {
+                          toast.success(result.data.message);
+                          // Refresh downloaded parts list
+                          const partsResult = await ApiClient.listDownloadedParts();
+                          if (partsResult.data) {
+                            setDownloadedParts(partsResult.data);
+                          }
+                        } else {
+                          toast.error(result.data.message);
+                        }
+                      }
+                      setLoadingDownload(false);
+                    }}
+                    disabled={loadingDownload || !downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {loadingDownload ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        下載中...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        開始下載
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Downloaded Parts List */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Database className="w-6 h-6 text-green-600" />
+                      <CardTitle className="text-2xl">已下載的料號</CardTitle>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        setLoadingParts(true);
+                        const result = await ApiClient.listDownloadedParts();
+                        if (result.data) {
+                          setDownloadedParts(result.data);
+                        }
+                        setLoadingParts(false);
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      重新整理
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    已下載的料號列表，可進行影像分類
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingParts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                      載入中...
+                    </div>
+                  ) : downloadedParts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      尚未下載任何資料
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {downloadedParts.map((part) => (
+                        <div
+                          key={part.part_number}
+                          className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50"
+                        >
+                          <div className="space-y-1">
+                            <h3 className="font-semibold text-lg">{part.part_number}</h3>
+                            <p className="text-sm text-gray-600">
+                              影像數量: {part.image_count} 張
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              下載時間: {new Date(part.download_time).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                setSelectedPart(part.part_number);
+                                const result = await ApiClient.listPartImages(part.part_number);
+                                if (result.data) {
+                                  setPartImages(result.data);
+                                  // Initialize all images as unclassified
+                                  const initialClassifications: Record<string, 'OK' | 'NG'> = {};
+                                  result.data.images.forEach(img => {
+                                    initialClassifications[img.filename] = 'OK';
+                                  });
+                                  setImageClassifications(initialClassifications);
+                                }
+                              }}
+                            >
+                              分類影像
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Switch to training tab and pre-fill with this part
+                                setUseExistingData(true);
+                                setSelectedRawdataPart(part.part_number);
+                                setFormData({
+                                  ...formData,
+                                  input_dir: `rawdata/${part.part_number}`,
+                                });
+                                setActiveTab("new-training");
+                                toast.success(`已切換到訓練頁面，將使用料號 ${part.part_number} 的資料`);
+                              }}
+                            >
+                              開始訓練
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Image Classification Modal */}
+              {selectedPart && partImages && (
+                <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-6 h-6 text-purple-600" />
+                        <CardTitle className="text-2xl">分類影像 - {selectedPart}</CardTitle>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPart(null);
+                          setPartImages(null);
+                          setImageClassifications({});
+                        }}
+                      >
+                        <X className="w-4 h-4" />
+                        關閉
+                      </Button>
+                    </div>
+                    <CardDescription>
+                      將影像分類為 OK 或 NG
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-gray-600">
+                        總計 {partImages.total_images} 張影像
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          setClassifyingImages(true);
+                          const result = await ApiClient.classifyImages(selectedPart, {
+                            part_number: selectedPart,
+                            classifications: imageClassifications
+                          });
+
+                          if (result.error) {
+                            toast.error(`分類失敗: ${result.error}`);
+                          } else if (result.data) {
+                            toast.success(result.data.message);
+                            setSelectedPart(null);
+                            setPartImages(null);
+                            setImageClassifications({});
+                          }
+                          setClassifyingImages(false);
+                        }}
+                        disabled={classifyingImages}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {classifyingImages ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            分類中...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            確認分類
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {partImages.images.slice(0, 50).map((image) => (
+                        <div
+                          key={image.filename}
+                          className="flex items-center justify-between p-3 rounded-lg border border-gray-200"
+                        >
+                          <div className="flex-1">
+                            <span className="text-sm font-mono">{image.filename}</span>
+                            <div className="text-xs text-gray-500">
+                              大小: {(image.size / 1024).toFixed(1)} KB
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant={imageClassifications[image.filename] === 'OK' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setImageClassifications(prev => ({
+                                  ...prev,
+                                  [image.filename]: 'OK'
+                                }));
+                              }}
+                              className={imageClassifications[image.filename] === 'OK' ? 'bg-green-600 hover:bg-green-700' : ''}
+                            >
+                              OK
+                            </Button>
+                            <Button
+                              variant={imageClassifications[image.filename] === 'NG' ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => {
+                                setImageClassifications(prev => ({
+                                  ...prev,
+                                  [image.filename]: 'NG'
+                                }));
+                              }}
+                              className={imageClassifications[image.filename] === 'NG' ? 'bg-red-600 hover:bg-red-700' : ''}
+                            >
+                              NG
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {partImages.images.length > 50 && (
+                        <div className="text-center py-4 text-gray-500">
+                          僅顯示前 50 張影像，其餘影像將使用相同分類方式處理
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           </TabsContent>
 

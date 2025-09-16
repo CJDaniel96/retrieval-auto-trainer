@@ -7,7 +7,11 @@ import {
   TrainingResult,
   ApiResponse,
   FullConfig,
-  ConfigUpdateRequest
+  ConfigUpdateRequest,
+  DownloadRequest,
+  PartInfo,
+  ClassifyRequest,
+  PartImageList
 } from './types';
 
 export class ApiClient {
@@ -135,6 +139,52 @@ export class ApiClient {
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.message || error.message };
+    }
+  }
+
+  // Download endpoints
+  static async downloadRawdata(request: DownloadRequest): Promise<ApiResponse<{ success: boolean; message: string; path?: string; image_count?: number }>> {
+    try {
+      const response = await api.post('/download/rawdata', request);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async listDownloadedParts(): Promise<ApiResponse<PartInfo[]>> {
+    try {
+      const response = await api.get('/download/parts');
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async getPartInfo(partNumber: string): Promise<ApiResponse<PartInfo>> {
+    try {
+      const response = await api.get(`/download/parts/${partNumber}`);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async classifyImages(partNumber: string, request: ClassifyRequest): Promise<ApiResponse<{ success: boolean; message: string; moved_count: number; errors: string[] }>> {
+    try {
+      const response = await api.post(`/download/classify/${partNumber}`, request);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async listPartImages(partNumber: string): Promise<ApiResponse<PartImageList>> {
+    try {
+      const response = await api.get(`/download/images/${partNumber}`);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
     }
   }
 }
