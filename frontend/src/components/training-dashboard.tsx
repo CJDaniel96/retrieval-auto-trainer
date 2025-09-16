@@ -548,7 +548,7 @@ export function TrainingDashboard() {
                     ) : (
                       <div className="space-y-2">
                         <Label htmlFor="rawdata_part" className="text-sm font-medium">
-                          選擇已分類的料號
+                          {t("download.info.select_part")}
                         </Label>
                         <Select
                           value={selectedRawdataPart}
@@ -562,12 +562,12 @@ export function TrainingDashboard() {
                           }}
                         >
                           <SelectTrigger className="bg-white/70">
-                            <SelectValue placeholder="選擇料號" />
+                            <SelectValue placeholder={t("download.info.select_part")} />
                           </SelectTrigger>
                           <SelectContent>
                             {downloadedParts.map((part) => (
                               <SelectItem key={part.part_number} value={part.part_number}>
-                                {part.part_number} ({part.image_count} 張影像)
+                                {part.part_number} ({part.image_count} {t("download.messages.image_count_suffix")})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1657,7 +1657,7 @@ export function TrainingDashboard() {
                     <Button
                       onClick={async () => {
                         if (!downloadFormData.part_number || !downloadFormData.start_date || !downloadFormData.end_date) {
-                          toast.error("請填寫必要欄位");
+                          toast.error(t("download.messages.missing_fields"));
                           return;
                         }
 
@@ -1672,7 +1672,7 @@ export function TrainingDashboard() {
                         });
 
                         if (result.error) {
-                          toast.error(`預估失敗: ${result.error}`);
+                          toast.error(`${t("download.messages.estimate_failed")}: ${result.error}`);
                         } else if (result.data) {
                           if (result.data.success) {
                             setEstimatedCount(result.data.estimated_count);
@@ -1690,12 +1690,12 @@ export function TrainingDashboard() {
                       {loadingEstimate ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          預估中...
+                          {t("download.messages.estimating")}
                         </>
                       ) : (
                         <>
                           <Search className="w-4 h-4 mr-2" />
-                          預估資料量
+                          {t("download.form.estimate_button")}
                         </>
                       )}
                     </Button>
@@ -1707,7 +1707,7 @@ export function TrainingDashboard() {
                       <Alert className="border-green-200 bg-green-50/80">
                         <AlertCircle className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800">
-                          找到 <span className="font-bold">{estimatedCount}</span> 張符合條件的影像
+                          {t("download.messages.found_images", { count: estimatedCount })}
                         </AlertDescription>
                       </Alert>
 
@@ -1740,7 +1740,7 @@ export function TrainingDashboard() {
                             setDownloadFormData(prev => ({ ...prev, limit: undefined }));
                           }}
                         >
-                          重新預估
+                          {t("download.form.re_estimate")}
                         </Button>
 
                         <Button
@@ -1781,12 +1781,12 @@ export function TrainingDashboard() {
                           {loadingDownload ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              下載中...
+                              {t("download.form.downloading")}
                             </>
                           ) : (
                             <>
                               <Download className="w-4 h-4 mr-2" />
-                              開始下載 {downloadFormData.limit ? `(${downloadFormData.limit} 張)` : `(全部 ${estimatedCount} 張)`}
+                              {downloadFormData.limit ? t("download.form.download_limited", { limit: downloadFormData.limit }) : t("download.form.download_all", { count: estimatedCount })}
                             </>
                           )}
                         </Button>
@@ -1817,7 +1817,7 @@ export function TrainingDashboard() {
                       }}
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
-                      重新整理
+                      {t("download.downloaded_parts.refresh")}
                     </Button>
                   </div>
                   <CardDescription>
@@ -1832,7 +1832,7 @@ export function TrainingDashboard() {
                     </div>
                   ) : downloadedParts.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
-                      尚未下載任何資料
+                      {t("download.downloaded_parts.no_data")}
                     </div>
                   ) : (
                     <div className="grid gap-4">
@@ -1844,10 +1844,10 @@ export function TrainingDashboard() {
                           <div className="space-y-1">
                             <h3 className="font-semibold text-lg">{part.part_number}</h3>
                             <p className="text-sm text-gray-600">
-                              影像數量: {part.image_count} 張
+                              {t("download.downloaded_parts.image_count")}: {part.image_count} {t("download.messages.image_count_suffix")}
                             </p>
                             <p className="text-xs text-gray-500">
-                              下載時間: {new Date(part.download_time).toLocaleString()}
+                              {t("download.downloaded_parts.download_time")}: {new Date(part.download_time).toLocaleString()}
                             </p>
                           </div>
                           <div className="flex space-x-2">
@@ -1858,7 +1858,7 @@ export function TrainingDashboard() {
                                 router.push(`/classify/${part.part_number}`);
                               }}
                             >
-                              分類影像
+                              {t("download.downloaded_parts.classify_images")}
                             </Button>
                             <Button
                               variant="outline"
@@ -1872,10 +1872,10 @@ export function TrainingDashboard() {
                                   input_dir: `rawdata/${part.part_number}`,
                                 });
                                 setActiveTab("new-training");
-                                toast.success(`已切換到訓練頁面，將使用料號 ${part.part_number} 的資料`);
+                                toast.success(t("download.messages.switch_training", { partNumber: part.part_number }));
                               }}
                             >
-                              開始訓練
+                              {t("download.downloaded_parts.use_for_training")}
                             </Button>
                           </div>
                         </div>

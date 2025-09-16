@@ -173,7 +173,9 @@
       "download_all": "開始下載 (全部 {count} 張)",
       "download_limited": "開始下載 ({limit} 張)",
       "cancel": "取消",
-      "back": "返回"
+      "back": "返回",
+      "estimate_button": "預估數量",
+      "re_estimate": "重新預估"
     },
     "downloaded_parts": {
       "title": "已下載的料號",
@@ -189,11 +191,14 @@
     "messages": {
       "missing_fields": "請填入所有必要欄位",
       "estimate_success": "預估數量載入成功",
-      "estimate_failed": "無法取得預估數量",
+      "estimate_failed": "預估失敗",
       "download_success": "下載成功",
       "download_failed": "下載失敗",
       "estimating": "預估數量中...",
-      "loading_parts": "載入料號列表中..."
+      "loading_parts": "載入料號列表中...",
+      "switch_training": "已切換到訓練頁面，將使用料號 {partNumber} 的資料",
+      "found_images": "找到 {count} 張符合條件的影像",
+      "image_count_suffix": "張影像"
     },
     "info": {
       "rawdata_usage": "使用已下載並分類的資料進行訓練",

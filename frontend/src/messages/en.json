@@ -173,7 +173,9 @@
       "download_all": "Start Download (All {count} images)",
       "download_limited": "Start Download ({limit} images)",
       "cancel": "Cancel",
-      "back": "Back"
+      "back": "Back",
+      "estimate_button": "Estimate Count",
+      "re_estimate": "Re-estimate"
     },
     "downloaded_parts": {
       "title": "Downloaded Parts",
@@ -189,11 +191,14 @@
     "messages": {
       "missing_fields": "Please fill in all required fields",
       "estimate_success": "Estimated count loaded successfully",
-      "estimate_failed": "Unable to get estimated count",
+      "estimate_failed": "Estimation failed",
       "download_success": "Download successful",
       "download_failed": "Download failed",
       "estimating": "Estimating count...",
-      "loading_parts": "Loading parts list..."
+      "loading_parts": "Loading parts list...",
+      "switch_training": "Switched to training page, will use data from part number {partNumber}",
+      "found_images": "Found {count} matching images",
+      "image_count_suffix": "images"
     },
     "info": {
       "rawdata_usage": "Use downloaded and classified data for training",
