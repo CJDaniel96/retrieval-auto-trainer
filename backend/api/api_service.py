@@ -28,6 +28,7 @@ import uvicorn
 
 from ..core.auto_training_system import AutoTrainingSystem
 from ..database.task_manager import get_task_manager, TrainingStatus as ManagedTrainingStatus
+from ..services.image_metadata_manager import ImageMetadataManager
 from ..services.image_downloader import ImageDownloadService
 
 
@@ -125,12 +126,20 @@ class OrientationSample(BaseModel):
     """方向確認樣本模型"""
     class_name: str
     sample_images: List[str]  # 3張樣本影像的路徑
+    current_orientation: Optional[str] = None  # 當前已保存的方向選擇
 
 
 class OrientationConfirmation(BaseModel):
     """方向確認請求模型"""
     task_id: str
     orientations: Dict[str, str]  # class_name -> orientation (Up, Down, Left, Right)
+
+
+class PartialOrientationSave(BaseModel):
+    """部分方向保存請求模型"""
+    task_id: str
+    class_name: str
+    orientation: str  # Up, Down, Left, Right
     
 
 class TrainingResult(BaseModel):
@@ -173,6 +182,9 @@ executor = ThreadPoolExecutor(max_workers=2)  # 限制同時訓練的任務數
 
 # 獲取任務管理器實例
 task_manager = get_task_manager()
+
+# 初始化影像元資料管理器
+image_metadata_manager = ImageMetadataManager("tasks.db")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -536,33 +548,50 @@ async def get_orientation_samples(task_id: str):
     raw_data_dir = Path(task.output_dir) / 'raw_data'
     if not raw_data_dir.exists():
         raise HTTPException(status_code=500, detail="找不到已分類的影像資料")
-    
+
+    # 從資料庫載入任務相關的影像和已分類狀態
+    try:
+        db_images = image_metadata_manager.get_images_by_task(task_id)
+        # 建立類別名稱到方向的映射
+        class_orientation_map = {}
+        for image in db_images:
+            class_key = f"{image.get('product_name', '')}_{image.get('component_name', '')}"
+            if image.get('classification_label') and image.get('classification_label') in ['Up', 'Down', 'Left', 'Right']:
+                class_orientation_map[class_key] = image['classification_label']
+    except Exception as e:
+        logging.error(f"從資料庫載入分類狀態失敗: {e}")
+        class_orientation_map = {}
+
     samples = []
     for class_dir in raw_data_dir.iterdir():
         if not class_dir.is_dir() or class_dir.name == 'NG':
             continue
-            
+
         # 隨機選取3張影像作為樣本
         images = list(class_dir.glob('*.jp*'))
         if len(images) >= 3:
             sample_images = random.sample(images, 3)
         else:
             sample_images = images
-            
+
         # 將影像複製到臨時資料夾供web顯示
         temp_dir = Path("temp_uploads") / task_id / class_dir.name
         temp_dir.mkdir(parents=True, exist_ok=True)
-        
+
         sample_paths = []
         for i, img in enumerate(sample_images):
             temp_path = temp_dir / f"sample_{i}_{img.name}"
             shutil.copy2(str(img), str(temp_path))
             # 返回相對路徑用於web顯示
             sample_paths.append(f"/temp/{task_id}/{class_dir.name}/sample_{i}_{img.name}")
-            
+
+        # 檢查是否已有保存的方向選擇
+        current_orientation = class_orientation_map.get(class_dir.name)
+
         samples.append(OrientationSample(
             class_name=class_dir.name,
-            sample_images=sample_paths
+            sample_images=sample_paths,
+            current_orientation=current_orientation
         ))
     
     return samples
@@ -594,6 +623,30 @@ async def confirm_orientations(
     orientation_file = Path("temp_uploads") / task_id / "orientations.json"
     with open(orientation_file, 'w', encoding='utf-8') as f:
         json.dump(confirmation.orientations, f, ensure_ascii=False, indent=2)
+
+    # 更新資料庫中的影像分類資訊
+    try:
+        # 獲取任務相關的影像
+        images = image_metadata_manager.get_images_by_task(task_id)
+
+        # 根據方向確認結果更新影像分類
+        for image in images:
+            # 從影像的產品+元件名稱找到對應的分類
+            class_key = f"{image.get('product_name', '')}_{image.get('component_name', '')}"
+            if class_key in confirmation.orientations:
+                orientation = confirmation.orientations[class_key]
+                # 更新影像分類為選定的方向
+                image_metadata_manager.classify_image(
+                    image_id=image['image_id'],
+                    classification_label=orientation,
+                    confidence=1.0,
+                    is_manual=True,
+                    notes=f"用戶確認方向: {orientation}"
+                )
+
+        logging.info(f"任務 {task_id} 的影像分類已更新到資料庫")
+    except Exception as e:
+        logging.error(f"更新影像分類到資料庫時發生錯誤: {e}")
     
     # 繼續執行訓練流程
     background_tasks.add_task(
@@ -607,6 +660,119 @@ async def confirm_orientations(
     task.progress = 0.3
     
     return {"message": "方向確認已收到，繼續訓練流程"}
+
+
+@app.post("/orientation/save/{task_id}", tags=["Orientation"])
+async def save_partial_orientation(
+    task_id: str,
+    save_request: PartialOrientationSave
+):
+    """
+    部分保存方向選擇
+
+    Args:
+        task_id: 任務ID
+        save_request: 部分保存請求
+
+    Returns:
+        保存結果
+    """
+    task = task_manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
+    if task.status != "pending_orientation":
+        raise HTTPException(status_code=400, detail=f"任務狀態錯誤，期望 pending_orientation，實際: {task.status}")
+
+    try:
+        # 獲取任務相關的影像
+        images = image_metadata_manager.get_images_by_task(task_id)
+
+        # 找到匹配的影像並更新分類
+        updated_count = 0
+        for image in images:
+            # 從影像的產品+元件名稱找到對應的分類
+            class_key = f"{image.get('product_name', '')}_{image.get('component_name', '')}"
+            if class_key == save_request.class_name:
+                # 更新影像分類為選定的方向
+                success = image_metadata_manager.classify_image(
+                    image_id=image['image_id'],
+                    classification_label=save_request.orientation,
+                    confidence=1.0,
+                    is_manual=True,
+                    notes=f"用戶部分保存方向: {save_request.orientation}"
+                )
+                if success:
+                    updated_count += 1
+
+        if updated_count > 0:
+            logging.info(f"任務 {task_id} 的類別 {save_request.class_name} 已更新為 {save_request.orientation}，共更新 {updated_count} 張影像")
+            return {
+                "message": f"已保存類別 {save_request.class_name} 的方向選擇: {save_request.orientation}",
+                "updated_count": updated_count
+            }
+        else:
+            return {
+                "message": f"未找到類別 {save_request.class_name} 的影像",
+                "updated_count": 0
+            }
+
+    except Exception as e:
+        logging.error(f"部分保存方向選擇時發生錯誤: {e}")
+        raise HTTPException(status_code=500, detail=f"保存失敗: {str(e)}")
+
+
+@app.get("/orientation/status/{task_id}", tags=["Orientation"])
+async def get_orientation_status(task_id: str):
+    """
+    獲取方向確認狀態
+
+    Args:
+        task_id: 任務ID
+
+    Returns:
+        各類別的方向確認狀態
+    """
+    task = task_manager.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"找不到任務: {task_id}")
+
+    try:
+        # 從資料庫載入任務相關的影像和已分類狀態
+        db_images = image_metadata_manager.get_images_by_task(task_id)
+
+        # 建立類別名稱到方向的映射和統計
+        class_status = {}
+        for image in db_images:
+            class_key = f"{image.get('product_name', '')}_{image.get('component_name', '')}"
+            if class_key not in class_status:
+                class_status[class_key] = {
+                    'orientation': None,
+                    'total_images': 0,
+                    'classified_images': 0
+                }
+
+            class_status[class_key]['total_images'] += 1
+
+            if image.get('classification_label') and image.get('classification_label') in ['Up', 'Down', 'Left', 'Right']:
+                class_status[class_key]['orientation'] = image['classification_label']
+                class_status[class_key]['classified_images'] += 1
+
+        # 計算完成進度
+        total_classes = len(class_status)
+        completed_classes = sum(1 for status in class_status.values() if status['orientation'] is not None)
+        completion_rate = completed_classes / total_classes if total_classes > 0 else 0
+
+        return {
+            "task_id": task_id,
+            "total_classes": total_classes,
+            "completed_classes": completed_classes,
+            "completion_rate": completion_rate,
+            "class_status": class_status
+        }
+
+    except Exception as e:
+        logging.error(f"獲取方向確認狀態時發生錯誤: {e}")
+        raise HTTPException(status_code=500, detail=f"獲取狀態失敗: {str(e)}")
 
 
 @app.get("/temp/{task_id}/{class_name}/{filename}", tags=["Static"])
