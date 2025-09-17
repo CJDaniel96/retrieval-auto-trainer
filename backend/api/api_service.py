@@ -82,7 +82,7 @@ class TrainingRequest(BaseModel):
     # 完整的配置覆蓋支持
     experiment_config: Optional[ExperimentConfig] = Field(None, description="實驗配置")
     training_config: Optional[TrainingConfigFields] = Field(None, description="訓練配置")
-    model_config: Optional[ModelConfig] = Field(None, description="模型配置")
+    model_config_override: Optional[ModelConfig] = Field(None, description="模型配置")
     data_config: Optional[DataConfig] = Field(None, description="數據配置")
     loss_config: Optional[LossConfig] = Field(None, description="損失函數配置")
     knn_config: Optional[KnnConfig] = Field(None, description="KNN配置")
@@ -656,8 +656,8 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
                 logging.info(f"更新訓練配置: {training_dict}")
 
         # 模型配置
-        if request.model_config:
-            model_dict = request.model_config.dict(exclude_none=True)
+        if request.model_config_override:
+            model_dict = request.model_config_override.dict(exclude_none=True)
             if model_dict:
                 system.train_config['model'].update(model_dict)
                 logging.info(f"更新模型配置: {model_dict}")

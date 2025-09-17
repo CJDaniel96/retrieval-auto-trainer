@@ -52,10 +52,83 @@ class TaskDatabase:
                 )
             """)
 
+            # 創建影像元資料表
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS image_metadata (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+                    -- 影像基本信息
+                    image_id TEXT UNIQUE NOT NULL,
+                    original_filename TEXT NOT NULL,
+                    local_file_path TEXT NOT NULL,
+                    file_size INTEGER,
+                    file_hash TEXT,
+
+                    -- 來源信息
+                    source_site TEXT NOT NULL,
+                    source_line_id TEXT NOT NULL,
+                    remote_image_path TEXT,
+                    download_url TEXT,
+
+                    -- 產品信息 (從遠端資料庫查詢得到)
+                    product_name TEXT,
+                    component_name TEXT,
+                    board_info TEXT,
+                    light_condition TEXT,
+
+                    -- 分類信息
+                    classification_label TEXT,
+                    classification_confidence REAL,
+                    is_manually_classified BOOLEAN DEFAULT FALSE,
+                    classification_notes TEXT,
+
+                    -- 影像屬性
+                    image_width INTEGER,
+                    image_height INTEGER,
+                    image_format TEXT,
+                    capture_timestamp DATETIME,
+
+                    -- 任務關聯
+                    related_task_id TEXT,
+                    processing_stage TEXT DEFAULT 'downloaded',
+
+                    -- 質量控制
+                    is_corrupted BOOLEAN DEFAULT FALSE,
+                    quality_score REAL,
+                    has_annotation BOOLEAN DEFAULT FALSE,
+
+                    -- 時間戳記
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+                    -- 外鍵約束
+                    FOREIGN KEY (related_task_id) REFERENCES training_tasks(task_id) ON DELETE SET NULL
+                )
+            """)
+
             # 創建索引以提高查詢性能
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON training_tasks(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON training_tasks(created_at)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_site_line ON training_tasks(site, line_id)")
+
+            # 影像元資料表索引
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_image_id ON image_metadata(image_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_classification_label ON image_metadata(classification_label)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_site_line ON image_metadata(source_site, source_line_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_product_component ON image_metadata(product_name, component_name)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_related_task ON image_metadata(related_task_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_processing_stage ON image_metadata(processing_stage)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_img_created_at ON image_metadata(created_at)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_path ON image_metadata(local_file_path)")
+
+            # 創建觸發器以自動更新 updated_at 欄位
+            cursor.execute("""
+                CREATE TRIGGER IF NOT EXISTS update_image_metadata_timestamp
+                    AFTER UPDATE ON image_metadata
+                BEGIN
+                    UPDATE image_metadata SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+                END
+            """)
 
             conn.commit()
             self.logger.info("數據庫初始化完成")
@@ -312,4 +385,287 @@ class TaskDatabase:
 
         except Exception as e:
             self.logger.error(f"獲取統計信息失敗: {e}")
+            return {}
+
+    def save_image_metadata(self, image_data: Dict[str, Any]) -> bool:
+        """
+        保存影像元資料
+
+        Args:
+            image_data: 影像元資料字典
+
+        Returns:
+            bool: 操作是否成功
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # 檢查影像是否已存在
+                cursor.execute("SELECT image_id FROM image_metadata WHERE image_id = ?", (image_data['image_id'],))
+                exists = cursor.fetchone() is not None
+
+                if exists:
+                    # 更新現有影像資料
+                    cursor.execute("""
+                        UPDATE image_metadata SET
+                            classification_label = ?,
+                            classification_confidence = ?,
+                            is_manually_classified = ?,
+                            classification_notes = ?,
+                            processing_stage = ?,
+                            is_corrupted = ?,
+                            quality_score = ?,
+                            has_annotation = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE image_id = ?
+                    """, (
+                        image_data.get('classification_label'),
+                        image_data.get('classification_confidence'),
+                        image_data.get('is_manually_classified', False),
+                        image_data.get('classification_notes'),
+                        image_data.get('processing_stage', 'downloaded'),
+                        image_data.get('is_corrupted', False),
+                        image_data.get('quality_score'),
+                        image_data.get('has_annotation', False),
+                        image_data['image_id']
+                    ))
+                else:
+                    # 插入新影像資料
+                    cursor.execute("""
+                        INSERT INTO image_metadata (
+                            image_id, original_filename, local_file_path, file_size, file_hash,
+                            source_site, source_line_id, remote_image_path, download_url,
+                            product_name, component_name, board_info, light_condition,
+                            classification_label, classification_confidence, is_manually_classified, classification_notes,
+                            image_width, image_height, image_format, capture_timestamp,
+                            related_task_id, processing_stage,
+                            is_corrupted, quality_score, has_annotation
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        image_data['image_id'],
+                        image_data['original_filename'],
+                        image_data['local_file_path'],
+                        image_data.get('file_size'),
+                        image_data.get('file_hash'),
+                        image_data['source_site'],
+                        image_data['source_line_id'],
+                        image_data.get('remote_image_path'),
+                        image_data.get('download_url'),
+                        image_data.get('product_name'),
+                        image_data.get('component_name'),
+                        image_data.get('board_info'),
+                        image_data.get('light_condition'),
+                        image_data.get('classification_label'),
+                        image_data.get('classification_confidence'),
+                        image_data.get('is_manually_classified', False),
+                        image_data.get('classification_notes'),
+                        image_data.get('image_width'),
+                        image_data.get('image_height'),
+                        image_data.get('image_format'),
+                        image_data.get('capture_timestamp'),
+                        image_data.get('related_task_id'),
+                        image_data.get('processing_stage', 'downloaded'),
+                        image_data.get('is_corrupted', False),
+                        image_data.get('quality_score'),
+                        image_data.get('has_annotation', False)
+                    ))
+
+                conn.commit()
+                return True
+
+        except Exception as e:
+            self.logger.error(f"保存影像元資料失敗: {e}")
+            return False
+
+    def get_image_metadata(self, image_id: str) -> Optional[Dict[str, Any]]:
+        """
+        獲取指定影像元資料
+
+        Args:
+            image_id: 影像ID
+
+        Returns:
+            影像元資料字典，如果不存在則返回 None
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM image_metadata WHERE image_id = ?", (image_id,))
+                row = cursor.fetchone()
+
+                if row:
+                    return dict(row)
+                return None
+
+        except Exception as e:
+            self.logger.error(f"獲取影像元資料失敗: {e}")
+            return None
+
+    def get_images_by_task(self, task_id: str) -> List[Dict[str, Any]]:
+        """
+        根據任務ID獲取影像列表
+
+        Args:
+            task_id: 任務ID
+
+        Returns:
+            影像列表
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM image_metadata WHERE related_task_id = ? ORDER BY created_at DESC", (task_id,))
+                rows = cursor.fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as e:
+            self.logger.error(f"獲取任務影像失敗: {e}")
+            return []
+
+    def get_images_by_classification(self, classification_label: str, site: str = None, line_id: str = None) -> List[Dict[str, Any]]:
+        """
+        根據分類標籤獲取影像列表
+
+        Args:
+            classification_label: 分類標籤
+            site: 可選的站點過濾
+            line_id: 可選的產線過濾
+
+        Returns:
+            影像列表
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                query = "SELECT * FROM image_metadata WHERE classification_label = ?"
+                params = [classification_label]
+
+                if site:
+                    query += " AND source_site = ?"
+                    params.append(site)
+
+                if line_id:
+                    query += " AND source_line_id = ?"
+                    params.append(line_id)
+
+                query += " ORDER BY created_at DESC"
+
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as e:
+            self.logger.error(f"獲取分類影像失敗: {e}")
+            return []
+
+    def update_image_classification(self, image_id: str, classification_label: str,
+                                  confidence: float = None, is_manual: bool = True,
+                                  notes: str = None) -> bool:
+        """
+        更新影像分類
+
+        Args:
+            image_id: 影像ID
+            classification_label: 分類標籤
+            confidence: 分類信心度
+            is_manual: 是否為手動分類
+            notes: 分類備註
+
+        Returns:
+            bool: 操作是否成功
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE image_metadata SET
+                        classification_label = ?,
+                        classification_confidence = ?,
+                        is_manually_classified = ?,
+                        classification_notes = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE image_id = ?
+                """, (classification_label, confidence, is_manual, notes, image_id))
+
+                conn.commit()
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"更新影像分類失敗: {e}")
+            return False
+
+    def delete_image_metadata(self, image_id: str) -> bool:
+        """
+        刪除影像元資料
+
+        Args:
+            image_id: 影像ID
+
+        Returns:
+            bool: 操作是否成功
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM image_metadata WHERE image_id = ?", (image_id,))
+                conn.commit()
+                return cursor.rowcount > 0
+
+        except Exception as e:
+            self.logger.error(f"刪除影像元資料失敗: {e}")
+            return False
+
+    def get_image_statistics(self) -> Dict[str, Any]:
+        """
+        獲取影像統計信息
+
+        Returns:
+            統計信息字典
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # 總影像數
+                cursor.execute("SELECT COUNT(*) as total FROM image_metadata")
+                total = cursor.fetchone()['total']
+
+                # 各分類統計
+                cursor.execute("""
+                    SELECT classification_label, COUNT(*) as count
+                    FROM image_metadata
+                    WHERE classification_label IS NOT NULL
+                    GROUP BY classification_label
+                """)
+                classification_stats = {row['classification_label']: row['count'] for row in cursor.fetchall()}
+
+                # 各站點統計
+                cursor.execute("""
+                    SELECT source_site, COUNT(*) as count
+                    FROM image_metadata
+                    GROUP BY source_site
+                """)
+                site_stats = {row['source_site']: row['count'] for row in cursor.fetchall()}
+
+                # 處理階段統計
+                cursor.execute("""
+                    SELECT processing_stage, COUNT(*) as count
+                    FROM image_metadata
+                    GROUP BY processing_stage
+                """)
+                stage_stats = {row['processing_stage']: row['count'] for row in cursor.fetchall()}
+
+                return {
+                    'total_images': total,
+                    'classification_distribution': classification_stats,
+                    'site_distribution': site_stats,
+                    'processing_stage_distribution': stage_stats
+                }
+
+        except Exception as e:
+            self.logger.error(f"獲取影像統計信息失敗: {e}")
             return {}
