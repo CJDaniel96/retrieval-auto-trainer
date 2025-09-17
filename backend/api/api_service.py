@@ -31,14 +31,63 @@ from ..database.task_manager import get_task_manager, TrainingStatus as ManagedT
 from ..services.image_downloader import ImageDownloadService
 
 
+# 配置模型定義
+class ExperimentConfig(BaseModel):
+    name: Optional[str] = None
+
+class TrainingConfigFields(BaseModel):
+    min_epochs: Optional[int] = None
+    max_epochs: Optional[int] = None
+    lr: Optional[float] = None
+    weight_decay: Optional[float] = None
+    batch_size: Optional[int] = None
+    freeze_backbone_epochs: Optional[int] = None
+    patience: Optional[int] = None
+    enable_early_stopping: Optional[bool] = None
+    checkpoint_dir: Optional[str] = None
+
+class ModelConfig(BaseModel):
+    structure: Optional[str] = None
+    backbone: Optional[str] = None
+    pretrained: Optional[bool] = None
+    embedding_size: Optional[int] = None
+
+class DataConfig(BaseModel):
+    data_dir: Optional[str] = None
+    image_size: Optional[int] = None
+    num_workers: Optional[int] = None
+    test_split: Optional[float] = None
+
+class LossConfig(BaseModel):
+    type: Optional[str] = None
+    subcenter_margin: Optional[float] = None
+    subcenter_scale: Optional[float] = None
+    sub_centers: Optional[int] = None
+    triplet_margin: Optional[float] = None
+    center_loss_weight: Optional[float] = None
+
+class KnnConfig(BaseModel):
+    enable: Optional[bool] = None
+    threshold: Optional[float] = None
+    index_path: Optional[str] = None
+    dataset_pkl: Optional[str] = None
+
 # Pydantic模型定義
 class TrainingRequest(BaseModel):
     """訓練請求模型"""
     input_dir: str = Field(..., description="輸入資料夾路徑")
     site: str = Field(default="HPH", description="地區名稱")
     line_id: str = Field(default="V31", description="產線ID")
-    
-    # 可選的訓練配置覆蓋
+
+    # 完整的配置覆蓋支持
+    experiment_config: Optional[ExperimentConfig] = Field(None, description="實驗配置")
+    training_config: Optional[TrainingConfigFields] = Field(None, description="訓練配置")
+    model_config: Optional[ModelConfig] = Field(None, description="模型配置")
+    data_config: Optional[DataConfig] = Field(None, description="數據配置")
+    loss_config: Optional[LossConfig] = Field(None, description="損失函數配置")
+    knn_config: Optional[KnnConfig] = Field(None, description="KNN配置")
+
+    # 保持向後兼容性的舊字段
     max_epochs: Optional[int] = Field(None, description="最大訓練輪數")
     batch_size: Optional[int] = Field(None, description="批次大小")
     learning_rate: Optional[float] = Field(None, description="學習率")
@@ -588,18 +637,71 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         
         # 建立訓練系統實例
         system = AutoTrainingSystem()
-        
-        # 覆蓋配置（如果有提供）
+
+        # 處理配置覆蓋
+        logging.info(f"開始處理配置覆蓋...")
+
+        # 實驗配置
+        if request.experiment_config:
+            experiment_dict = request.experiment_config.dict(exclude_none=True)
+            if experiment_dict:
+                system.train_config['experiment'].update(experiment_dict)
+                logging.info(f"更新實驗配置: {experiment_dict}")
+
+        # 訓練配置
+        if request.training_config:
+            training_dict = request.training_config.dict(exclude_none=True)
+            if training_dict:
+                system.train_config['training'].update(training_dict)
+                logging.info(f"更新訓練配置: {training_dict}")
+
+        # 模型配置
+        if request.model_config:
+            model_dict = request.model_config.dict(exclude_none=True)
+            if model_dict:
+                system.train_config['model'].update(model_dict)
+                logging.info(f"更新模型配置: {model_dict}")
+
+        # 數據配置
+        if request.data_config:
+            data_dict = request.data_config.dict(exclude_none=True)
+            if data_dict:
+                system.train_config['data'].update(data_dict)
+                logging.info(f"更新數據配置: {data_dict}")
+
+        # 損失函數配置
+        if request.loss_config:
+            loss_dict = request.loss_config.dict(exclude_none=True)
+            if loss_dict:
+                system.train_config['loss'].update(loss_dict)
+                logging.info(f"更新損失函數配置: {loss_dict}")
+
+        # KNN配置
+        if request.knn_config:
+            knn_dict = request.knn_config.dict(exclude_none=True)
+            if knn_dict:
+                system.train_config['knn'].update(knn_dict)
+                logging.info(f"更新KNN配置: {knn_dict}")
+
+        # 保持向後兼容性的舊字段處理
         if request.max_epochs:
             system.train_config['training']['max_epochs'] = request.max_epochs
+            logging.info(f"向後兼容：設定max_epochs = {request.max_epochs}")
         if request.batch_size:
             system.train_config['training']['batch_size'] = request.batch_size
+            logging.info(f"向後兼容：設定batch_size = {request.batch_size}")
         if request.learning_rate:
             system.train_config['training']['lr'] = request.learning_rate
+            logging.info(f"向後兼容：設定learning_rate = {request.learning_rate}")
         if request.patience is not None:
             system.train_config['training']['patience'] = request.patience
+            logging.info(f"向後兼容：設定patience = {request.patience}")
         if request.enable_early_stopping is not None:
             system.train_config['training']['enable_early_stopping'] = request.enable_early_stopping
+            logging.info(f"向後兼容：設定enable_early_stopping = {request.enable_early_stopping}")
+
+        # 記錄最終的配置
+        logging.info(f"最終配置: {system.train_config}")
             
         # 複製輸入資料夾到 datasets/ 目錄下
         import shutil
@@ -641,6 +743,12 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         task.progress = 0.1
         system.process_raw_images(str(copied_input_dir), str(raw_data_dir), request.site, request.line_id)
         
+        # 保存訓練配置供後續使用
+        config_file = output_dir / "training_request_config.json"
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(system.train_config, f, ensure_ascii=False, indent=2, default=str)
+        logging.info(f"已保存訓練配置到: {config_file}")
+
         # 更新狀態等待方向確認
         task.status = "pending_orientation"
         task.current_step = "等待方向確認"
@@ -669,10 +777,20 @@ def run_orientation_and_training_task(task_id: str):
         orientation_file = Path("temp_uploads") / task_id / "orientations.json"
         with open(orientation_file, 'r', encoding='utf-8') as f:
             orientations = json.load(f)
-        
+
         # 建立訓練系統實例
         system = AutoTrainingSystem()
-        
+
+        # 載入保存的訓練配置
+        config_file = Path(task.output_dir) / "training_request_config.json"
+        if config_file.exists():
+            with open(config_file, 'r', encoding='utf-8') as f:
+                saved_config = json.load(f)
+                system.train_config = saved_config
+                logging.info(f"已載入保存的訓練配置")
+        else:
+            logging.warning(f"找不到保存的配置文件: {config_file}")
+
         # 更新進度的回調函數
         def update_progress(step: str, progress: float):
             task.current_step = step
