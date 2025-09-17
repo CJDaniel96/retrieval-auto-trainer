@@ -22,7 +22,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from tqdm import tqdm
 
 import torch
@@ -183,7 +183,122 @@ class AutoTrainingSystem:
         logger.info(f"類別統計: {json.dumps(stats, indent=2)}")
         
         return stats
-        
+
+    def process_database_classified_images(self, input_dir: str, output_dir: str, site: str, line_id: str,
+                                         part_numbers: List[str] = None) -> Dict[str, int]:
+        """
+        處理資料庫中已分類的影像，組織為OK/NG資料夾結構
+
+        這個方法會創建與傳統模式相同的輸入結構，讓後續流程（包括方向確認）保持一致
+
+        Args:
+            input_dir: 模擬的輸入目錄（會在此建立OK/NG子資料夾）
+            output_dir: 輸出分類後的資料夾路徑（raw_data目錄）
+            site: 地區名稱
+            line_id: 產線ID
+            part_numbers: 料號列表，如果提供則只處理這些料號的影像
+
+        Returns:
+            Dict[str, int]: 各類別的影像數量統計
+        """
+        logger.info(f"開始處理資料庫已分類影像，創建OK/NG資料夾結構")
+        logger.info(f"site: {site}, line_id: {line_id}, part_numbers: {part_numbers}")
+
+        # 導入影像元資料管理器
+        from ..services.image_metadata_manager import ImageMetadataManager
+
+        # 初始化影像元資料管理器
+        metadata_manager = ImageMetadataManager("tasks.db")
+
+        # 獲取已分類的影像
+        if part_numbers:
+            all_images = metadata_manager.db.get_images_by_part_numbers(site, line_id, part_numbers)
+        else:
+            all_images = metadata_manager.db.get_images_by_site_and_line(site, line_id)
+
+        logger.info(f"找到 {len(all_images)} 張已分類影像")
+
+        # 建立模擬的輸入目錄結構（OK/NG）
+        input_path = Path(input_dir)
+        input_path.mkdir(parents=True, exist_ok=True)
+
+        ok_input_dir = input_path / 'OK'
+        ng_input_dir = input_path / 'NG'
+        ok_input_dir.mkdir(exist_ok=True)
+        ng_input_dir.mkdir(exist_ok=True)
+
+        stats = {}
+        processed_count = 0
+        error_count = 0
+
+        # 第一步：將資料庫中的影像按分類複製到OK/NG資料夾
+        for image in tqdm(all_images, desc="組織影像到OK/NG資料夾"):
+            try:
+                classification_label = image.get('classification_label')
+                local_file_path = image.get('local_file_path')
+
+                # 檢查檔案是否存在
+                if not local_file_path or not Path(local_file_path).exists():
+                    logger.warning(f"影像檔案不存在: {local_file_path}")
+                    error_count += 1
+                    continue
+
+                # 根據分類標籤決定目標資料夾
+                if classification_label in ['Up', 'Down', 'Left', 'Right', 'OK']:
+                    # 所有OK相關分類都放到OK資料夾
+                    target_dir = ok_input_dir
+                    target_category = 'OK'
+                elif classification_label == 'NG':
+                    target_dir = ng_input_dir
+                    target_category = 'NG'
+                else:
+                    # 未分類或其他分類，預設為OK
+                    logger.warning(f"未知分類標籤 {classification_label}，預設為OK")
+                    target_dir = ok_input_dir
+                    target_category = 'OK'
+
+                # 複製影像到目標資料夾
+                source_path = Path(local_file_path)
+                target_path = target_dir / source_path.name
+
+                # 避免檔名衝突
+                counter = 1
+                while target_path.exists():
+                    name_parts = source_path.stem, counter, source_path.suffix
+                    target_path = target_dir / f"{name_parts[0]}_{name_parts[1]}{name_parts[2]}"
+                    counter += 1
+
+                shutil.copy2(str(source_path), str(target_path))
+
+                # 更新統計
+                stats[target_category] = stats.get(target_category, 0) + 1
+                processed_count += 1
+
+            except Exception as e:
+                logger.error(f"處理影像時發生錯誤 {image.get('original_filename', 'unknown')}: {str(e)}")
+                error_count += 1
+
+        logger.info(f"資料庫影像組織完成: 成功 {processed_count}, 錯誤 {error_count}")
+        logger.info(f"建立OK/NG資料夾結構: {stats}")
+
+        # 第二步：使用傳統的 process_raw_images 處理OK資料夾中的影像
+        if stats.get('OK', 0) > 0:
+            logger.info("開始處理OK資料夾中的影像（查詢資料庫獲取產品資訊）")
+            traditional_stats = self.process_raw_images(str(input_path), output_dir, site, line_id)
+
+            # 合併統計資訊
+            for key, value in traditional_stats.items():
+                if key == 'NG':
+                    # NG統計來自第一步
+                    continue
+                else:
+                    # 產品分類統計來自第二步
+                    stats[key] = value
+
+        logger.info(f"最終統計: {json.dumps(stats, indent=2)}")
+        return stats
+
+
     def _parse_image_filename(self, filename: str) -> Optional[Dict[str, str]]:
         """解析影像檔名，提取timestamp、comp_name和light資訊"""
         import re

@@ -80,6 +80,10 @@ class TrainingRequest(BaseModel):
     site: str = Field(default="HPH", description="地區名稱")
     line_id: str = Field(default="V31", description="產線ID")
 
+    # 新增：支援從資料庫分類的影像
+    use_database_classification: bool = Field(default=False, description="是否使用資料庫中已分類的影像")
+    part_numbers: Optional[List[str]] = Field(None, description="使用資料庫分類時的料號列表")
+
     # 完整的配置覆蓋支持
     experiment_config: Optional[ExperimentConfig] = Field(None, description="實驗配置")
     training_config: Optional[TrainingConfigFields] = Field(None, description="訓練配置")
@@ -280,9 +284,27 @@ async def start_training(
     # 生成任務ID
     task_id = f"task_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{len(task_manager.get_all_tasks())}"
     
-    # 驗證輸入目錄
-    if not Path(request.input_dir).exists():
-        raise HTTPException(status_code=400, detail=f"輸入目錄不存在: {request.input_dir}")
+    # 驗證輸入（根據模式不同）
+    if request.use_database_classification:
+        # 資料庫分類模式：檢查是否提供了料號
+        if not request.part_numbers or len(request.part_numbers) == 0:
+            raise HTTPException(status_code=400, detail="使用資料庫分類模式時必須提供料號列表")
+
+        # 檢查資料庫中是否有對應的影像
+        available_images = image_metadata_manager.db.get_images_by_part_numbers(
+            request.site, request.line_id, request.part_numbers
+        )
+        if len(available_images) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"在資料庫中找不到指定料號 {request.part_numbers} 的影像"
+            )
+
+        logging.info(f"資料庫分類模式：找到 {len(available_images)} 張影像")
+    else:
+        # 傳統模式：驗證輸入目錄
+        if not Path(request.input_dir).exists():
+            raise HTTPException(status_code=400, detail=f"輸入目錄不存在: {request.input_dir}")
     
     # 初始化任務狀態
     task_manager.create_task(
@@ -775,6 +797,71 @@ async def get_orientation_status(task_id: str):
         raise HTTPException(status_code=500, detail=f"獲取狀態失敗: {str(e)}")
 
 
+@app.get("/database/part_numbers", tags=["Database"])
+async def get_available_part_numbers(site: str = "HPH", line_id: str = "V31"):
+    """
+    獲取可用的料號列表
+
+    Args:
+        site: 站點名稱
+        line_id: 產線ID
+
+    Returns:
+        可用的料號列表及統計資訊
+    """
+    try:
+        # 從資料庫獲取所有影像的產品名稱
+        images = image_metadata_manager.db.get_images_by_site_and_line(site, line_id)
+
+        # 統計各料號的影像數量和分類狀態
+        part_number_stats = {}
+        for image in images:
+            product_name = image.get('product_name', '')
+            if product_name:
+                if product_name not in part_number_stats:
+                    part_number_stats[product_name] = {
+                        'total_images': 0,
+                        'classified_images': 0,
+                        'ok_images': 0,
+                        'ng_images': 0,
+                        'unclassified_images': 0
+                    }
+
+                part_number_stats[product_name]['total_images'] += 1
+
+                classification = image.get('classification_label', '')
+                if classification:
+                    part_number_stats[product_name]['classified_images'] += 1
+                    if classification in ['Up', 'Down', 'Left', 'Right', 'OK']:
+                        part_number_stats[product_name]['ok_images'] += 1
+                    elif classification == 'NG':
+                        part_number_stats[product_name]['ng_images'] += 1
+                else:
+                    part_number_stats[product_name]['unclassified_images'] += 1
+
+        # 計算分類完成率
+        for stats in part_number_stats.values():
+            stats['classification_rate'] = (
+                stats['classified_images'] / stats['total_images']
+                if stats['total_images'] > 0 else 0
+            )
+
+        return {
+            'site': site,
+            'line_id': line_id,
+            'part_numbers': part_number_stats,
+            'summary': {
+                'total_part_numbers': len(part_number_stats),
+                'total_images': sum(stats['total_images'] for stats in part_number_stats.values()),
+                'total_classified': sum(stats['classified_images'] for stats in part_number_stats.values())
+            }
+        }
+
+    except Exception as e:
+        logging.error(f"獲取料號列表時發生錯誤: {e}")
+        raise HTTPException(status_code=500, detail=f"獲取料號列表失敗: {str(e)}")
+
+
 @app.get("/temp/{task_id}/{class_name}/{filename}", tags=["Static"])
 async def serve_temp_file(task_id: str, class_name: str, filename: str):
     """提供臨時影像檔案"""
@@ -904,10 +991,23 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         raw_data_dir = output_dir / 'raw_data'
         raw_data_dir.mkdir(exist_ok=True)
         
-        # 執行前處理（使用複製後的資料夾）
-        task.current_step = "處理原始影像資料"
-        task.progress = 0.1
-        system.process_raw_images(str(copied_input_dir), str(raw_data_dir), request.site, request.line_id)
+        # 執行前處理（根據模式選擇處理方式）
+        if request.use_database_classification:
+            # 使用資料庫分類模式：創建OK/NG結構後使用傳統流程
+            task.current_step = "處理資料庫已分類影像"
+            task.progress = 0.1
+            system.process_database_classified_images(
+                str(copied_input_dir),  # 模擬輸入目錄，會在此建立OK/NG結構
+                str(raw_data_dir),      # 輸出目錄
+                request.site,
+                request.line_id,
+                request.part_numbers
+            )
+        else:
+            # 傳統模式：處理原始影像資料（使用複製後的資料夾）
+            task.current_step = "處理原始影像資料"
+            task.progress = 0.1
+            system.process_raw_images(str(copied_input_dir), str(raw_data_dir), request.site, request.line_id)
         
         # 保存訓練配置供後續使用
         config_file = output_dir / "training_request_config.json"
@@ -915,7 +1015,7 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
             json.dump(system.train_config, f, ensure_ascii=False, indent=2, default=str)
         logging.info(f"已保存訓練配置到: {config_file}")
 
-        # 更新狀態等待方向確認
+        # 兩種模式都需要方向確認
         task.status = "pending_orientation"
         task.current_step = "等待方向確認"
         task.progress = 0.2
@@ -927,6 +1027,7 @@ def run_preprocessing_task(task_id: str, request: TrainingRequest):
         task.error_message = str(e)
         task.current_step = "前處理失敗"
         logging.error(f"前處理任務 {task_id} 失敗: {str(e)}", exc_info=True)
+
 
 
 def run_orientation_and_training_task(task_id: str):

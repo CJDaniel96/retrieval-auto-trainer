@@ -669,3 +669,86 @@ class TaskDatabase:
         except Exception as e:
             self.logger.error(f"獲取影像統計信息失敗: {e}")
             return {}
+
+    def get_all_images(self) -> List[Dict[str, Any]]:
+        """
+        獲取所有影像元資料
+
+        Returns:
+            影像列表
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM image_metadata ORDER BY created_at DESC")
+                rows = cursor.fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as e:
+            self.logger.error(f"獲取所有影像失敗: {e}")
+            return []
+
+    def get_images_by_site_and_line(self, site: str, line_id: str) -> List[Dict[str, Any]]:
+        """
+        根據站點和產線獲取影像列表
+
+        Args:
+            site: 站點名稱
+            line_id: 產線ID
+
+        Returns:
+            影像列表
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT * FROM image_metadata
+                    WHERE source_site = ? AND source_line_id = ?
+                    ORDER BY created_at DESC
+                """, (site, line_id))
+                rows = cursor.fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as e:
+            self.logger.error(f"獲取站點產線影像失敗: {e}")
+            return []
+
+    def get_images_by_part_numbers(self, site: str, line_id: str, part_numbers: List[str]) -> List[Dict[str, Any]]:
+        """
+        根據料號列表獲取影像
+
+        Args:
+            site: 站點名稱
+            line_id: 產線ID
+            part_numbers: 料號列表
+
+        Returns:
+            影像列表
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # 構建SQL查詢
+                placeholders = ','.join(['?' for _ in part_numbers])
+                query = f"""
+                    SELECT * FROM image_metadata
+                    WHERE source_site = ? AND source_line_id = ?
+                    AND (product_name IN ({placeholders}) OR {' OR '.join(['product_name LIKE ?' for _ in part_numbers])})
+                    ORDER BY created_at DESC
+                """
+
+                # 構建參數列表
+                params = [site, line_id] + part_numbers + [f'%{pn}%' for pn in part_numbers]
+
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+
+                return [dict(row) for row in rows]
+
+        except Exception as e:
+            self.logger.error(f"根據料號獲取影像失敗: {e}")
+            return []
