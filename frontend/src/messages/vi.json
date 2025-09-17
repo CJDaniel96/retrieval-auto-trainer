@@ -15,6 +15,8 @@
     "browse": "Duyệt",
     "save": "Lưu",
     "reset": "Đặt lại",
+    "create": "Tạo",
+    "create_module": "Tạo Module",
     "back": "Quay lại",
     "next": "Tiếp theo",
     "previous": "Trước",
@@ -70,7 +72,11 @@
     "monitor_tasks": "Giám sát và quản lý tác vụ huấn luyện",
     "error_title": "Lỗi",
     "missing_orientation": "Vui lòng chọn hướng cho tất cả các lớp",
-    "folder_management_info": "Thư mục đầu vào sẽ được sao chép vào thư mục datasets/. Đầu ra sẽ tự động lưu vào outputs/địa_điểm/dây_chuyền/tên_thư_mục/"
+    "folder_management_info": "Thư mục đầu vào sẽ được sao chép vào thư mục datasets/. Đầu ra sẽ tự động lưu vào outputs/địa_điểm/dây_chuyền/tên_thư_mục/",
+    "module_creation_info": "Tạo module có thể triển khai chứa mô hình đã huấn luyện, file cấu hình và mẫu vàng.",
+    "module_name": "Tên Module",
+    "module_name_placeholder": "Nhập tên module, ví dụ: M32_973604_01",
+    "module_name_example": "Ví dụ: M32_973604_01, M33_875432_02"
   },
   "results": {
     "title": "Kết quả Huấn luyện",
@@ -82,5 +88,202 @@
     "download_results": "Tải xuống Kết quả",
     "confusion_matrix": "Ma trận Nhầm lẫn",
     "evaluation_report": "Báo cáo Đánh giá"
+  },
+  "config": {
+    "title": "Cài đặt Nâng cao",
+    "experiment": {
+      "title": "Cài đặt Thí nghiệm",
+      "name": "Tên Thí nghiệm"
+    },
+    "training": {
+      "title": "Tham số Huấn luyện",
+      "min_epochs": "Số Epoch Tối thiểu",
+      "max_epochs": "Số Epoch Tối đa",
+      "learning_rate": "Tỷ lệ Học",
+      "weight_decay": "Suy giảm Trọng số",
+      "batch_size": "Kích thước Batch",
+      "freeze_backbone_epochs": "Freeze Backbone Epochs",
+      "patience": "Patience Dừng sớm",
+      "enable_early_stopping": "Bật Dừng sớm",
+      "checkpoint_dir": "Thư mục Checkpoint"
+    },
+    "model": {
+      "title": "Cài đặt Mô hình",
+      "structure": "Cấu trúc Mô hình",
+      "backbone": "Mạng Backbone",
+      "pretrained": "Sử dụng Pretrained",
+      "embedding_size": "Kích thước Embedding"
+    },
+    "data": {
+      "title": "Cài đặt Dữ liệu",
+      "image_size": "Kích thước Hình ảnh",
+      "num_workers": "Số Workers",
+      "test_split": "Tỷ lệ Test Split"
+    },
+    "loss": {
+      "title": "Cài đặt Hàm Loss",
+      "type": "Loại Hàm Loss",
+      "subcenter_margin": "Subcenter Margin",
+      "subcenter_scale": "Subcenter Scale",
+      "sub_centers": "Số Sub Centers",
+      "triplet_margin": "Triplet Margin",
+      "center_loss_weight": "Trọng số Center Loss"
+    },
+    "knn": {
+      "title": "Cài đặt KNN",
+      "enable": "Bật KNN",
+      "threshold": "Ngưỡng",
+      "index_path": "Đường dẫn Index",
+      "dataset_pkl": "Dataset PKL"
+    }
+  },
+  "messages": {
+    "config_updated": "Cập nhật cấu hình thành công",
+    "config_reset": "Đặt lại cấu hình thành công",
+    "invalid_task_id": "ID tác vụ không hợp lệ",
+    "orientation_confirmed": "Xác nhận hướng thành công, bắt đầu huấn luyện",
+    "training_started": "Bắt đầu huấn luyện thành công",
+    "task_cancelled": "Hủy tác vụ thành công",
+    "error_occurred": "Đã xảy ra lỗi",
+    "loading_config": "Đang tải cấu hình...",
+    "loading_tasks": "Đang tải tác vụ...",
+    "refreshing_tasks": "Đang làm mới tác vụ...",
+    "starting_training": "Đang bắt đầu huấn luyện...",
+    "confirming_orientation": "Đang xác nhận hướng...",
+    "cancelling_task": "Đang hủy tác vụ...",
+    "updating_config": "Đang cập nhật cấu hình...",
+    "resetting_config": "Đang đặt lại cấu hình...",
+    "creating_module": "Đang tạo module...",
+    "module_created_successfully": "Tạo module thành công"
+  },
+  "download": {
+    "title": "Tải xuống Dữ liệu Thô",
+    "description": "Tải xuống dữ liệu hình ảnh từ cơ sở dữ liệu phù hợp với tiêu chí đã chỉ định",
+    "tab_name": "Tải xuống Dữ liệu",
+    "form": {
+      "site": "Địa điểm",
+      "line_id": "ID Dây chuyền",
+      "part_number": "Số Phần",
+      "start_date": "Ngày Bắt đầu",
+      "end_date": "Ngày Kết thúc",
+      "limit": "Giới hạn Số lượng (Tùy chọn)",
+      "estimate_count": "Ước tính Số lượng",
+      "start_download": "Bắt đầu Tải xuống",
+      "downloading": "Đang tải xuống...",
+      "download_all": "Bắt đầu Tải xuống (Tất cả {count} hình ảnh)",
+      "download_limited": "Bắt đầu Tải xuống ({limit} hình ảnh)",
+      "cancel": "Hủy",
+      "back": "Quay lại",
+      "estimate_button": "Ước tính Số lượng",
+      "re_estimate": "Ước tính lại"
+    },
+    "downloaded_parts": {
+      "title": "Phần đã Tải xuống",
+      "description": "Danh sách các phần đã tải xuống có sẵn để phân loại hình ảnh",
+      "no_data": "Chưa tải xuống dữ liệu nào",
+      "download_time": "Thời gian Tải xuống",
+      "image_count": "Số lượng Hình ảnh",
+      "actions": "Hành động",
+      "use_for_training": "Sử dụng để Huấn luyện",
+      "classify_images": "Phân loại Hình ảnh",
+      "refresh": "Làm mới"
+    },
+    "messages": {
+      "missing_fields": "Vui lòng điền tất cả các trường bắt buộc",
+      "estimate_success": "Tải số lượng ước tính thành công",
+      "estimate_failed": "Ước tính thất bại",
+      "download_success": "Tải xuống thành công",
+      "download_failed": "Tải xuống thất bại",
+      "estimating": "Đang ước tính số lượng...",
+      "loading_parts": "Đang tải danh sách phần...",
+      "switch_training": "Đã chuyển sang trang huấn luyện, sẽ sử dụng dữ liệu từ số phần {partNumber}",
+      "found_images": "Tìm thấy {count} hình ảnh phù hợp",
+      "image_count_suffix": "hình ảnh"
+    },
+    "info": {
+      "rawdata_usage": "Sử dụng dữ liệu đã tải xuống và phân loại để huấn luyện",
+      "rawdata_description": "Sử dụng dữ liệu đã tải xuống đã được phân loại là OK/NG để huấn luyện. Vui lòng vào trang 'Tải xuống Dữ liệu' trước để tải xuống và phân loại dữ liệu.",
+      "select_part": "Chọn phần đã tải xuống"
+    }
+  },
+  "classify": {
+    "title": "Phân loại Hình ảnh",
+    "description": "Phân loại hình ảnh là OK/NG",
+    "image_info": {
+      "size": "Kích thước",
+      "filename": "Tên file",
+      "number": "Số"
+    },
+    "classification": {
+      "ok": "OK",
+      "ng": "NG",
+      "confirm": "Xác nhận Phân loại",
+      "confirm_count": "Xác nhận Phân loại ({count})",
+      "classifying": "Đang phân loại..."
+    },
+    "progress": {
+      "title": "Tiến độ Phân loại",
+      "classified": "Đã phân loại",
+      "total": "Tổng cộng",
+      "percentage": "Tỷ lệ Hoàn thành"
+    },
+    "pagination": {
+      "previous": "Trước",
+      "next": "Tiếp",
+      "first": "Đầu",
+      "last": "Cuối",
+      "page_info": "Trang {current} của {total}",
+      "item_range": "Hiển thị {start}-{end} của {total} mục"
+    },
+    "delete": {
+      "confirm": "Bạn có chắc muốn xóa hình ảnh \"{filename}\"? Hành động này không thể hoàn tác.",
+      "success": "Xóa hình ảnh thành công",
+      "failed": "Xóa thất bại",
+      "deleting": "Đang xóa..."
+    },
+    "messages": {
+      "loading": "Đang tải hình ảnh...",
+      "load_failed": "Tải thất bại",
+      "no_images": "Không thể tải dữ liệu hình ảnh cho số phần {partNumber}",
+      "min_classification": "Vui lòng phân loại ít nhất một hình ảnh",
+      "partial_classification": "Bạn chỉ đã phân loại {classified}/{total} hình ảnh. Những hình ảnh chưa phân loại sẽ bị bỏ qua. Bạn có muốn tiếp tục?",
+      "classification_success": "Hoàn thành phân loại",
+      "classification_failed": "Phân loại thất bại",
+      "back_to_home": "Quay lại"
+    }
+  },
+  "footer": {
+    "powered_by": "Được hỗ trợ bởi",
+    "ai_system": "Hệ thống Huấn luyện Tự động AI",
+    "powered": "",
+    "description": "Nền tảng huấn luyện tự động cấp doanh nghiệp được thiết kế cho các mô hình truy xuất hình ảnh, tích hợp công nghệ học sâu tiên tiến với các giải pháp kiểm tra chất lượng công nghiệp.",
+    "platform_version": "Nền tảng Huấn luyện AI v2.0",
+    "architecture": "Kiến trúc",
+    "capabilities": "Khả năng",
+    "auto_training": "Huấn luyện Tự động",
+    "image_retrieval": "Truy xuất Hình ảnh",
+    "quality_inspection": "Kiểm tra Chất lượng",
+    "system_status": "TRẠNG THÁI HỆ THỐNG",
+    "tech_stack": "NGĂN XẾP CÔNG NGHỆ",
+    "api_gateway": "API Gateway",
+    "frontend_ui": "Giao diện Frontend",
+    "gpu_cluster": "Cụm GPU",
+    "active_tasks": "Tác vụ Hoạt động",
+    "status_online": "TRỰC TUYẾN",
+    "status_active": "HOẠT ĐỘNG",
+    "status_ready": "SẴN SÀNG",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "ml_framework": "Framework ML",
+    "database": "Cơ sở dữ liệu",
+    "frontend_tech": "Next.js 14 + TypeScript",
+    "backend_tech": "FastAPI + Python 3.10",
+    "ml_tech": "PyTorch Lightning",
+    "database_tech": "PostgreSQL + SSH",
+    "company_name": "Hệ thống Huấn luyện Truy xuất Tự động",
+    "company_subtitle": "Giải pháp AI Công nghiệp",
+    "specialization": "Chuyên về kiểm tra chất lượng hình ảnh và huấn luyện mô hình truy xuất",
+    "version": "Phiên bản",
+    "build": "Build"
   }
 }

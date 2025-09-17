@@ -589,8 +589,17 @@ export function TrainingDashboard() {
                                 key={part.part_number}
                                 value={part.part_number}
                               >
-                                {part.part_number} ({part.image_count}{" "}
-                                {t("download.messages.image_count_suffix")})
+                                <div className="flex items-center justify-between w-full">
+                                  <span>
+                                    {part.part_number} ({part.image_count}{" "}
+                                    {t("download.messages.image_count_suffix")})
+                                  </span>
+                                  {part.is_classified && (
+                                    <Badge className="ml-2 text-xs bg-green-500 text-white">
+                                      Classified ({part.classified_count})
+                                    </Badge>
+                                  )}
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>

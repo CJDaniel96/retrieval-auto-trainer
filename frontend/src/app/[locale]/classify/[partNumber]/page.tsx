@@ -146,8 +146,9 @@ export default function ClassifyPage() {
       });
 
       if (result.data) {
-        toast.success(result.data.message);
-        router.push('/zh'); // 返回主頁面
+        toast.success(`${result.data.message} - ${t('classify.messages.classification_success')}`);
+        // 清空分類狀態，讓用戶可以繼續分類其他圖片
+        setImageClassifications({});
       } else {
         toast.error(`${t('classify.messages.classification_failed')}: ${result.error}`);
       }

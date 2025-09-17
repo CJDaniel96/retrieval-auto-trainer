@@ -129,6 +129,8 @@ export interface PartInfo {
   path: string;
   image_count: number;
   download_time: string;
+  is_classified?: boolean;
+  classified_count?: number;
 }
 
 export interface ClassifyRequest {

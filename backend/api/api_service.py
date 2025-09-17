@@ -1216,9 +1216,14 @@ async def classify_images(part_number: str, request: ClassifyRequest):
 
         for filename, classification in request.classifications.items():
             try:
-                source_file = rawdata_path / filename
+                # 遞迴搜尋檔案（因為可能在子目錄中）
+                source_file = None
+                for file_path in rawdata_path.rglob("*"):
+                    if file_path.is_file() and file_path.name == filename:
+                        source_file = file_path
+                        break
 
-                if not source_file.exists():
+                if not source_file or not source_file.exists():
                     classification_results["errors"].append(f"檔案不存在: {filename}")
                     continue
 

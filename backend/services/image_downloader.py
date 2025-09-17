@@ -350,9 +350,23 @@ class ImageDownloadService:
         for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
             image_count += len(list(rawdata_dir.rglob(ext)))
 
+        # 檢查是否已分類（是否有OK/NG資料夾）
+        ok_folder = rawdata_dir / "OK"
+        ng_folder = rawdata_dir / "NG"
+        is_classified = ok_folder.exists() and ng_folder.exists()
+
+        # 計算分類後的影像數量
+        classified_count = 0
+        if is_classified:
+            for folder in [ok_folder, ng_folder]:
+                for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
+                    classified_count += len(list(folder.rglob(ext)))
+
         return {
             "part_number": part_number,
             "path": str(rawdata_dir),
             "image_count": image_count,
-            "download_time": datetime.fromtimestamp(rawdata_dir.stat().st_mtime).isoformat()
+            "download_time": datetime.fromtimestamp(rawdata_dir.stat().st_mtime).isoformat(),
+            "is_classified": is_classified,
+            "classified_count": classified_count
         }
