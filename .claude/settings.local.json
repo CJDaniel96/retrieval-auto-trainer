@@ -8,7 +8,8 @@
       "Bash(rm:*)",
       "Bash(taskkill:*)",
       "Bash(tasklist:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
