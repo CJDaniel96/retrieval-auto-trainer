@@ -31,6 +31,8 @@ from ..database.task_manager import get_task_manager, TrainingStatus as ManagedT
 from ..services.image_metadata_manager import ImageMetadataManager
 from ..services.image_downloader import ImageDownloadService
 
+# 配置logging
+logger = logging.getLogger(__name__)
 
 # 配置模型定義
 class ExperimentConfig(BaseModel):
@@ -1138,7 +1140,6 @@ def create_module_task(task_id: str, module_name: str, part_number: str, output_
     import re
 
     try:
-        logger = logging.getLogger(__name__)
         logger.info(f"開始創建模組 {module_name} (part_number: {part_number}) for task {task_id}")
 
         output_path = Path(output_dir)
@@ -1273,7 +1274,6 @@ def create_module_task(task_id: str, module_name: str, part_number: str, output_
         logger.info(f"包含 {len(golden_sample_folders.get(part_number, {}))} 個產品的金樣本")
 
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.error(f"創建模組 {module_name} 失敗: {str(e)}", exc_info=True)
         raise
 
@@ -1737,7 +1737,6 @@ async def recover_running_tasks():
     應用啟動時恢復運行中的任務狀態
     """
     try:
-        logger = logging.getLogger(__name__)
         logger.info("開始恢復運行中的任務...")
 
         # 設置超時，避免初始化時卡住
