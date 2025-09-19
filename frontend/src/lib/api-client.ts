@@ -11,7 +11,10 @@ import {
   DownloadRequest,
   PartInfo,
   ClassifyRequest,
-  PartImageList
+  PartImageList,
+  DownloadEstimate,
+  DownloadStatus,
+  DownloadResult
 } from './types';
 
 export class ApiClient {
@@ -242,6 +245,34 @@ export class ApiClient {
   static async deleteImage(partNumber: string, filename: string): Promise<ApiResponse<{ message: string }>> {
     try {
       const response = await api.delete(`/download/images/${partNumber}/${filename}`);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  // New download estimate and status methods
+  static async estimateDownload(request: DownloadRequest): Promise<ApiResponse<DownloadEstimate>> {
+    try {
+      const response = await api.post('/download/estimate', request);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async downloadRawData(request: DownloadRequest): Promise<ApiResponse<DownloadResult>> {
+    try {
+      const response = await api.post('/download/rawdata', request);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async getDownloadStatus(downloadId: string): Promise<ApiResponse<DownloadStatus>> {
+    try {
+      const response = await api.get(`/download/status/${downloadId}`);
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };

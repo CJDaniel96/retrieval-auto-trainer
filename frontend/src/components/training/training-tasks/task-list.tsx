@@ -103,13 +103,13 @@ export function TaskList({
             <Loader2 className="w-6 h-6 animate-spin mr-2" />
             載入中...
           </div>
-        ) : tasks.length === 0 ? (
+        ) : !Array.isArray(tasks) || tasks.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             目前沒有訓練任務
           </div>
         ) : (
           <div className="space-y-4">
-            {tasks.map((task) => (
+            {Array.isArray(tasks) && tasks.map((task) => (
               <motion.div
                 key={task.task_id}
                 initial={{ opacity: 0, y: 20 }}

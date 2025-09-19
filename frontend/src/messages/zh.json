@@ -1,4 +1,5 @@
 {
+  "title": "AI 自動化訓練系統",
   "common": {
     "title": "AI 自動化訓練系統",
     "start": "開始",
@@ -25,8 +26,19 @@
   "navigation": {
     "home": "首頁",
     "training": "訓練管理",
+    "new_training": "開始新訓練",
+    "tasks": "任務列表",
+    "download": "下載資料",
     "history": "歷史記錄",
     "settings": "設定"
+  },
+  "status": {
+    "pending": "待處理",
+    "pending_orientation": "等待方向確認",
+    "running": "執行中",
+    "completed": "已完成",
+    "failed": "失敗",
+    "cancelled": "已取消"
   },
   "training": {
     "title": "訓練管理",
@@ -60,7 +72,14 @@
     "class_name": "類別：{name}"
   },
   "form": {
+    "title": "開始新訓練",
+    "submit": "開始訓練",
     "configure_task": "設定並啟動新的訓練任務",
+    "input_label": "輸入資料夾",
+    "output_label": "輸出資料夾",
+    "site_label": "站點",
+    "line_label": "產線ID",
+    "line_placeholder": "例如：V31",
     "input_placeholder": "/輸入/資料夾/路徑",
     "output_placeholder": "/輸出/資料夾/路徑",
     "select_site": "選擇地區",

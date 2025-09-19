@@ -1,14 +1,10 @@
 export interface TrainingRequest {
   input_dir: string;
-  site?: string;
-  line_id?: string;
-  // Optional task-specific configuration
-  experiment_config?: Partial<ExperimentConfig>;
-  training_config?: Partial<TrainingConfig>;
-  model_config?: Partial<ModelConfig>;
-  data_config?: Partial<DataConfig>;
-  loss_config?: Partial<LossConfig>;
-  knn_config?: Partial<KnnConfig>;
+  output_dir: string;
+  site: string;
+  line_id: string;
+  exclude_ng_from_ok?: boolean;
+  config_overrides?: any;
 }
 
 export interface TrainingStatus {
@@ -149,4 +145,28 @@ export interface PartImageList {
   part_number: string;
   total_images: number;
   images: ImageInfo[];
+}
+
+export interface DownloadEstimate {
+  estimated_count: number;
+  estimated_size_mb: number;
+  time_range: string;
+  site: string;
+  line_id: string;
+  part_number: string;
+}
+
+export interface DownloadStatus {
+  download_id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  progress: number;
+  downloaded_count: number;
+  total_count: number;
+  error_message?: string;
+}
+
+export interface DownloadResult {
+  download_id: string;
+  message: string;
+  success: boolean;
 }
