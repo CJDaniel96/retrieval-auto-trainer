@@ -4,6 +4,12 @@ import { useTranslations } from "next-intl";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Home,
   ListTodo,
@@ -11,7 +17,12 @@ import {
   Settings,
   Brain,
   Dumbbell,
-  Target
+  Target,
+  Search,
+  Download,
+  Loader2,
+  RefreshCw,
+  AlertCircle
 } from "lucide-react";
 
 import { ApiClient } from "@/lib/api-client";
@@ -24,7 +35,6 @@ import { useRouter } from "@/i18n/routing";
 import { SettingsPanel } from "./training/settings";
 import { TaskList } from "./training/training-tasks";
 import { TrainingForm } from "./training/new-training";
-import { DownloadPanel } from "./training/data-download";
 import { TrainingFormData } from "./training/shared/types";
 
 export function TrainingDashboard() {
@@ -56,6 +66,20 @@ export function TrainingDashboard() {
   const [useExistingData, setUseExistingData] = useState(false);
   const [selectedRawdataPart, setSelectedRawdataPart] = useState<string>("");
   const [loadingParts, setLoadingParts] = useState(false);
+
+  // Download form state
+  const [downloadFormData, setDownloadFormData] = useState<DownloadRequest>({
+    site: "HPH",
+    line_id: "V31",
+    start_date: "",
+    end_date: "",
+    part_number: "",
+    limit: undefined,
+  });
+  const [showDownloadSection, setShowDownloadSection] = useState(false);
+  const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
+  const [loadingEstimate, setLoadingEstimate] = useState(false);
+  const [loadingDownload, setLoadingDownload] = useState(false);
 
   // Module creation dialog state
   const [showCreateModuleDialog, setShowCreateModuleDialog] = useState(false);
@@ -104,7 +128,7 @@ export function TrainingDashboard() {
   // Load initial data
   useEffect(() => {
     loadTasks();
-    if (activeTab === "new-training") {
+    if (activeTab === "new-training" || activeTab === "download") {
       loadDownloadedParts();
     }
   }, [activeTab]);
@@ -335,13 +359,407 @@ export function TrainingDashboard() {
           </TabsContent>
 
           {/* Download Tab */}
-          <TabsContent value="download">
+          <TabsContent value="download" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
+              className="space-y-6"
             >
-              <DownloadPanel />
+              {/* Download Form */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <Database className="w-6 h-6 text-blue-600" />
+                    <CardTitle className="text-2xl">
+                      {t("download.title")}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>{t("download.description")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="download_site">
+                        {t("download.form.site")}
+                      </Label>
+                      <Select
+                        value={downloadFormData.site}
+                        onValueChange={(value) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            site: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("download.form.site")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="HPH">HPH</SelectItem>
+                          <SelectItem value="JQ">JQ</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_line_id">
+                        {t("download.form.line_id")}
+                      </Label>
+                      <Select
+                        value={downloadFormData.line_id}
+                        onValueChange={(value) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            line_id: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t("download.form.line_id")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {downloadFormData.site === "HPH" && (
+                            <>
+                              <SelectItem value="V31">V31</SelectItem>
+                              <SelectItem value="V28">V28</SelectItem>
+                              <SelectItem value="V27">V27</SelectItem>
+                              <SelectItem value="V22">V22</SelectItem>
+                              <SelectItem value="V20">V20</SelectItem>
+                            </>
+                          )}
+                          {downloadFormData.site === "JQ" && (
+                            <>
+                              <SelectItem value="J12">J12</SelectItem>
+                              <SelectItem value="J13">J13</SelectItem>
+                              <SelectItem value="J15">J15</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_part_number">
+                        {t("download.form.part_number")}
+                      </Label>
+                      <Input
+                        id="download_part_number"
+                        value={downloadFormData.part_number}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            part_number: e.target.value,
+                          }))
+                        }
+                        placeholder="例如: 32-500020-01"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_start_date">
+                        {t("download.form.start_date")}
+                      </Label>
+                      <Input
+                        id="download_start_date"
+                        type="date"
+                        value={downloadFormData.start_date}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            start_date: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="download_end_date">
+                        {t("download.form.end_date")}
+                      </Label>
+                      <Input
+                        id="download_end_date"
+                        type="date"
+                        value={downloadFormData.end_date}
+                        onChange={(e) =>
+                          setDownloadFormData((prev) => ({
+                            ...prev,
+                            end_date: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 1: Estimate Data Count */}
+                  {!showDownloadSection && (
+                    <Button
+                      onClick={async () => {
+                        if (
+                          !downloadFormData.part_number ||
+                          !downloadFormData.start_date ||
+                          !downloadFormData.end_date
+                        ) {
+                          toast.error(t("download.messages.missing_fields"));
+                          return;
+                        }
+
+                        setLoadingEstimate(true);
+                        const {
+                          site,
+                          line_id,
+                          start_date,
+                          end_date,
+                          part_number,
+                        } = downloadFormData;
+                        const result = await ApiClient.estimateDownload({
+                          site,
+                          line_id,
+                          start_date,
+                          end_date,
+                          part_number,
+                        });
+
+                        if (result.error) {
+                          toast.error(
+                            `${t("download.messages.estimate_failed")}: ${
+                              result.error
+                            }`
+                          );
+                        } else if (result.data) {
+                          setEstimatedCount(result.data.estimated_count);
+                          setShowDownloadSection(true);
+                          toast.success(t("download.messages.estimate_completed"));
+                        }
+                        setLoadingEstimate(false);
+                      }}
+                      disabled={
+                        loadingEstimate ||
+                        !downloadFormData.part_number ||
+                        !downloadFormData.start_date ||
+                        !downloadFormData.end_date
+                      }
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {loadingEstimate ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {t("download.messages.estimating")}
+                        </>
+                      ) : (
+                        <>
+                          <Search className="w-4 h-4 mr-2" />
+                          {t("download.form.estimate_button")}
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Step 2: Show Estimated Count and Download Options */}
+                  {showDownloadSection && estimatedCount !== null && (
+                    <div className="space-y-4">
+                      <Alert className="border-green-200 bg-green-50/80">
+                        <AlertCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          {t("download.messages.found_images", {
+                            count: estimatedCount,
+                          })}
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="download_limit">
+                            {t("download.form.limit")}
+                          </Label>
+                          <Input
+                            id="download_limit"
+                            type="number"
+                            min="1"
+                            max={estimatedCount}
+                            value={downloadFormData.limit || ""}
+                            onChange={(e) =>
+                              setDownloadFormData((prev) => ({
+                                ...prev,
+                                limit: e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined,
+                              }))
+                            }
+                            placeholder={`不限制 (最多 ${estimatedCount} 張)`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowDownloadSection(false);
+                            setEstimatedCount(null);
+                            setDownloadFormData((prev) => ({
+                              ...prev,
+                              limit: undefined,
+                            }));
+                          }}
+                        >
+                          {t("download.form.re_estimate")}
+                        </Button>
+
+                        <Button
+                          onClick={async () => {
+                            setLoadingDownload(true);
+                            const result = await ApiClient.downloadRawData(
+                              downloadFormData
+                            );
+
+                            if (result.error) {
+                              toast.error(`下載失敗: ${result.error}`);
+                            } else if (result.data) {
+                              if (result.data.success) {
+                                toast.success("下載成功完成");
+                                // Refresh downloaded parts list
+                                await loadDownloadedParts();
+                                // Reset the form
+                                setShowDownloadSection(false);
+                                setEstimatedCount(null);
+                                setDownloadFormData({
+                                  site: "HPH",
+                                  line_id: "V31",
+                                  start_date: "",
+                                  end_date: "",
+                                  part_number: "",
+                                  limit: undefined,
+                                });
+                              } else {
+                                toast.error("下載失敗");
+                              }
+                            }
+                            setLoadingDownload(false);
+                          }}
+                          disabled={loadingDownload}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {loadingDownload ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              {t("download.form.downloading")}
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              {downloadFormData.limit
+                                ? t("download.form.download_limited", {
+                                    limit: downloadFormData.limit,
+                                  })
+                                : t("download.form.download_all", {
+                                    count: estimatedCount,
+                                  })}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Downloaded Parts List */}
+              <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Database className="w-6 h-6 text-green-600" />
+                      <CardTitle className="text-2xl">
+                        {t("download.downloaded_parts.title")}
+                      </CardTitle>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        await loadDownloadedParts();
+                      }}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      {t("download.downloaded_parts.refresh")}
+                    </Button>
+                  </div>
+                  <CardDescription>
+                    {t("download.downloaded_parts.description")}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingParts ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                      載入中...
+                    </div>
+                  ) : !Array.isArray(downloadedParts) || downloadedParts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      {t("download.downloaded_parts.no_data")}
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {downloadedParts.map((part) => (
+                        <div
+                          key={part.part_number}
+                          className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50"
+                        >
+                          <div className="space-y-1">
+                            <h3 className="font-semibold text-lg">
+                              {part.part_number}
+                            </h3>
+                            <p className="text-sm text-gray-600">
+                              {t("download.downloaded_parts.image_count")}:{" "}
+                              {part.image_count}{" "}
+                              {t("download.messages.image_count_suffix")}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {t("download.downloaded_parts.download_time")}:{" "}
+                              {new Date(part.download_time).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                router.push(`/classify/${part.part_number}`);
+                              }}
+                            >
+                              {t("download.downloaded_parts.classify_images")}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Switch to training tab and pre-fill with this part
+                                setUseExistingData(true);
+                                setSelectedRawdataPart(part.part_number);
+                                setFormData({
+                                  ...formData,
+                                  input_dir: `rawdata/${part.part_number}`,
+                                });
+                                setActiveTab("new-training");
+                                toast.success(
+                                  t("download.messages.switch_training", {
+                                    partNumber: part.part_number,
+                                  })
+                                );
+                              }}
+                            >
+                              {t("download.downloaded_parts.use_for_training")}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </motion.div>
           </TabsContent>
 

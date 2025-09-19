@@ -30,7 +30,8 @@ class OrientationController(BaseController):
             try:
                 # 驗證任務存在
                 validation_error = self.validate_required_fields(
-                    {"task_id": task_id}
+                    {"task_id": task_id},
+                    ["task_id"]
                 )
                 if validation_error:
                     raise validation_error
@@ -71,7 +72,8 @@ class OrientationController(BaseController):
             try:
                 # 驗證請求
                 validation_error = self.validate_required_fields(
-                    {"task_id": task_id, "orientations": orientations}
+                    {"task_id": task_id, "orientations": orientations},
+                    ["task_id", "orientations"]
                 )
                 if validation_error:
                     raise validation_error

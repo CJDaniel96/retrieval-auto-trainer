@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from fastapi import APIRouter, HTTPException
 from ..controllers.base_controller import BaseController
 from ..services import get_download_service
-from ..models.schemas.download import DownloadRequest, DownloadResult
+from ..models.schemas.download import DownloadRequest, DownloadResult, DownloadEstimate
 from ..views.response_formatter import ResponseFormatter
 
 
@@ -24,17 +24,53 @@ class DownloadController(BaseController):
     def _setup_routes(self):
         """設置路由"""
 
+        @self.router.post("/estimate")
+        async def estimate_download(request: DownloadRequest):
+            """預估下載數量和大小"""
+            try:
+                # 驗證請求
+                validation_error = self.validate_required_fields(
+                    {
+                        "site": request.site,
+                        "line_id": request.line_id,
+                        "start_date": request.start_date,
+                        "end_date": request.end_date,
+                        "part_number": request.part_number
+                    },
+                    ["site", "line_id", "start_date", "end_date", "part_number"]
+                )
+                if validation_error:
+                    raise validation_error
+
+                estimate = await self.download_service.estimate_download(request)
+
+                return ResponseFormatter.success(
+                    data=estimate.dict(),
+                    message="下載預估完成"
+                )
+
+            except Exception as e:
+                return ResponseFormatter.error(
+                    message=str(e),
+                    error_code="ESTIMATE_ERROR",
+                    status_code=500
+                )
+
         @self.router.post("/rawdata")
         async def download_rawdata(request: DownloadRequest):
             """下載原始資料"""
             try:
                 # 驗證請求
-                validation_error = self.validate_required_fields({
-                    "site": request.site,
-                    "line_id": request.line_id,
-                    "part_numbers": request.part_numbers,
-                    "output_dir": request.output_dir
-                })
+                validation_error = self.validate_required_fields(
+                    {
+                        "site": request.site,
+                        "line_id": request.line_id,
+                        "start_date": request.start_date,
+                        "end_date": request.end_date,
+                        "part_number": request.part_number
+                    },
+                    ["site", "line_id", "start_date", "end_date", "part_number"]
+                )
                 if validation_error:
                     raise validation_error
 

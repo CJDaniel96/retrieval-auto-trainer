@@ -322,19 +322,19 @@ export function DownloadPanel(props: DownloadPanelProps) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{estimate.estimated_count.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-blue-600">{estimate.estimated_count?.toLocaleString() || '0'}</div>
                 <div className="text-sm text-gray-600">{t("download_panel.estimated_images")}</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{estimate.estimated_size_mb.toFixed(1)} MB</div>
+                <div className="text-2xl font-bold text-green-600">{estimate.estimated_size_mb?.toFixed(1) || '0.0'} MB</div>
                 <div className="text-sm text-gray-600">{t("download_panel.estimated_size")}</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-medium text-purple-600">{estimate.site}</div>
+                <div className="text-lg font-medium text-purple-600">{estimate.site || '-'}</div>
                 <div className="text-sm text-gray-600">{t("download_panel.factory")}</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-medium text-orange-600">{estimate.line_id}</div>
+                <div className="text-lg font-medium text-orange-600">{estimate.line_id || '-'}</div>
                 <div className="text-sm text-gray-600">{t("download_panel.production_line")}</div>
               </div>
             </div>

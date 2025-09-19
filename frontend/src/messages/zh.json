@@ -210,6 +210,7 @@
     "messages": {
       "missing_fields": "請填入所有必要欄位",
       "estimate_success": "預估數量載入成功",
+      "estimate_completed": "預估完成",
       "estimate_failed": "預估失敗",
       "download_success": "下載成功",
       "download_failed": "下載失敗",

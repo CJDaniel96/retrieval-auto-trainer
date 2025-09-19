@@ -255,7 +255,7 @@ export class ApiClient {
   static async estimateDownload(request: DownloadRequest): Promise<ApiResponse<DownloadEstimate>> {
     try {
       const response = await api.post('/download/estimate', request);
-      return { data: response.data };
+      return { data: response.data.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };
     }

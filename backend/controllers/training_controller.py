@@ -36,7 +36,8 @@ class TrainingController(BaseController):
             try:
                 # 驗證請求
                 validation_error = self.validate_required_fields(
-                    {"input_dir": request.input_dir}
+                    {"input_dir": request.input_dir},
+                    ["input_dir"]
                 )
                 if validation_error:
                     raise validation_error
