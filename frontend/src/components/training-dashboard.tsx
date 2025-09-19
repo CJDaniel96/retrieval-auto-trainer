@@ -45,7 +45,6 @@ export function TrainingDashboard() {
     line_id: "V31",
     input_dir: "",
     output_dir: "",
-    exclude_ng_from_ok: false,
   });
 
   // Advanced training config
@@ -132,7 +131,6 @@ export function TrainingDashboard() {
         line_id: formData.line_id,
         input_dir: formData.input_dir,
         output_dir: formData.output_dir,
-        exclude_ng_from_ok: formData.exclude_ng_from_ok,
         config_overrides: showAdvancedConfig ? trainingConfig : undefined
       };
 
@@ -148,7 +146,6 @@ export function TrainingDashboard() {
           line_id: "V31",
           input_dir: "",
           output_dir: "",
-          exclude_ng_from_ok: false,
         });
         setTrainingConfig({});
         setShowAdvancedConfig(false);
@@ -245,82 +242,52 @@ export function TrainingDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          {/* Enhanced Navigation Tabs */}
-          <div className="relative">
-            {/* Background Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 rounded-2xl blur-xl"></div>
-
-            {/* Tab List Container */}
-            <TabsList className="relative grid w-full grid-cols-4 bg-white/70 backdrop-blur-md border border-white/30 shadow-2xl rounded-2xl p-2 h-20">
+          {/* TypeScript Document-Style Tabs */}
+          <TabsList className="relative grid w-full max-w-4xl mx-auto grid-cols-4 bg-gradient-to-br from-white to-gray-50 border border-gray-200/80 shadow-2xl rounded-lg p-2 h-20">
               {/* New Training Tab */}
               <TabsTrigger
                 value="new-training"
-                className="group relative flex flex-col items-center justify-center space-y-1 h-full rounded-xl transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/25"
+                className="group relative flex flex-col items-center justify-center space-y-1 h-full"
               >
-                <div className="relative">
-                  <Brain className="w-5 h-5 transition-all duration-300 group-hover:scale-110 group-data-[state=active]:scale-110" />
-                  <div className="absolute inset-0 bg-white/20 rounded-full blur-sm opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                <span className="text-xs font-medium transition-all duration-300 group-hover:text-blue-700 group-data-[state=active]:text-white">
+                <Brain className="w-5 h-5" />
+                <span className="text-xs font-bold uppercase tracking-wide">
                   {t("navigation.new_training")}
                 </span>
-                {/* Active Indicator */}
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-white rounded-full opacity-0 group-data-[state=active]:opacity-100 group-data-[state=active]:w-8 transition-all duration-300"></div>
               </TabsTrigger>
 
               {/* Tasks Tab */}
               <TabsTrigger
                 value="tasks"
-                className="group relative flex flex-col items-center justify-center space-y-1 h-full rounded-xl transition-all duration-300 hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 data-[state=active]:bg-gradient-to-br data-[state=active]:from-green-500 data-[state=active]:to-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/25"
+                className="group relative flex flex-col items-center justify-center space-y-1 h-full"
               >
-                <div className="relative">
-                  <ListTodo className="w-5 h-5 transition-all duration-300 group-hover:scale-110 group-data-[state=active]:scale-110" />
-                  <div className="absolute inset-0 bg-white/20 rounded-full blur-sm opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                <span className="text-xs font-medium transition-all duration-300 group-hover:text-green-700 group-data-[state=active]:text-white">
+                <ListTodo className="w-5 h-5" />
+                <span className="text-xs font-bold uppercase tracking-wide">
                   {t("navigation.tasks")}
                 </span>
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-white rounded-full opacity-0 group-data-[state=active]:opacity-100 group-data-[state=active]:w-8 transition-all duration-300"></div>
               </TabsTrigger>
 
               {/* Download Tab */}
               <TabsTrigger
                 value="download"
-                className="group relative flex flex-col items-center justify-center space-y-1 h-full rounded-xl transition-all duration-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-violet-50 data-[state=active]:bg-gradient-to-br data-[state=active]:from-purple-500 data-[state=active]:to-violet-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/25"
+                className="group relative flex flex-col items-center justify-center space-y-1 h-full"
               >
-                <div className="relative">
-                  <Database className="w-5 h-5 transition-all duration-300 group-hover:scale-110 group-data-[state=active]:scale-110" />
-                  <div className="absolute inset-0 bg-white/20 rounded-full blur-sm opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                <span className="text-xs font-medium transition-all duration-300 group-hover:text-purple-700 group-data-[state=active]:text-white">
+                <Database className="w-5 h-5" />
+                <span className="text-xs font-bold uppercase tracking-wide">
                   {t("navigation.download")}
                 </span>
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-white rounded-full opacity-0 group-data-[state=active]:opacity-100 group-data-[state=active]:w-8 transition-all duration-300"></div>
               </TabsTrigger>
 
               {/* Settings Tab */}
               <TabsTrigger
                 value="settings"
-                className="group relative flex flex-col items-center justify-center space-y-1 h-full rounded-xl transition-all duration-300 hover:bg-gradient-to-br hover:from-slate-50 hover:to-gray-50 data-[state=active]:bg-gradient-to-br data-[state=active]:from-slate-500 data-[state=active]:to-gray-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-slate-500/25"
+                className="group relative flex flex-col items-center justify-center space-y-1 h-full"
               >
-                <div className="relative">
-                  <Settings className="w-5 h-5 transition-all duration-300 group-hover:scale-110 group-data-[state=active]:scale-110" />
-                  <div className="absolute inset-0 bg-white/20 rounded-full blur-sm opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                <span className="text-xs font-medium transition-all duration-300 group-hover:text-slate-700 group-data-[state=active]:text-white">
+                <Settings className="w-5 h-5" />
+                <span className="text-xs font-bold uppercase tracking-wide">
                   {t("navigation.settings")}
                 </span>
-                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-white rounded-full opacity-0 group-data-[state=active]:opacity-100 group-data-[state=active]:w-8 transition-all duration-300"></div>
               </TabsTrigger>
-            </TabsList>
-
-            {/* Floating Animation Dots */}
-            <div className="absolute -top-2 left-8 w-1 h-1 bg-blue-400 rounded-full tech-pulse opacity-60"></div>
-            <div className="absolute -top-1 right-12 w-1.5 h-1.5 bg-purple-400 rounded-full tech-pulse opacity-40 animation-delay-1000"></div>
-            <div className="absolute -bottom-2 right-8 w-1 h-1 bg-green-400 rounded-full tech-pulse opacity-50 animation-delay-2000"></div>
-            <div className="absolute top-2 left-1/4 w-0.5 h-0.5 bg-indigo-300 rounded-full tech-pulse opacity-30 animation-delay-1500"></div>
-            <div className="absolute bottom-2 right-1/4 w-0.5 h-0.5 bg-cyan-300 rounded-full tech-pulse opacity-40 animation-delay-500"></div>
-          </div>
+          </TabsList>
 
           {/* Tab Contents */}
 
@@ -391,11 +358,39 @@ export function TrainingDashboard() {
         </Tabs>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white/50 backdrop-blur-sm border-t border-white/20 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="text-center text-sm text-gray-600">
-            © 2024 Auto Training System. All rights reserved.
+      {/* Clean Technical Footer */}
+      <footer className="relative bg-white border-t border-gray-200 mt-16">
+        {/* Document corner fold */}
+        <div className="absolute top-0 right-0 w-8 h-8 bg-gray-100 transform rotate-45 translate-x-4 -translate-y-4 opacity-60"></div>
+        <div className="absolute top-0 right-0 w-6 h-6 border-l border-b border-gray-300/50 translate-x-1 -translate-y-1"></div>
+
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+            {/* Company Branding */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Auto Training System
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Industrial AI Quality Inspection
+                </p>
+              </div>
+            </div>
+
+            {/* Status & Copyright */}
+            <div className="flex items-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-600 font-medium">Online</span>
+              </div>
+              <span className="text-gray-500">
+                © 2024 Auto Training System
+              </span>
+            </div>
           </div>
         </div>
       </footer>

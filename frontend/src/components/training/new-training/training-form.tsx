@@ -174,15 +174,6 @@ export function TrainingForm({
           />
         </div>
 
-        {/* Exclude NG from OK Option */}
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="exclude_ng_from_ok"
-            checked={formData.exclude_ng_from_ok}
-            onCheckedChange={(checked) => handleInputChange("exclude_ng_from_ok", checked)}
-          />
-          <Label htmlFor="exclude_ng_from_ok">從 OK 資料夾中排除 NG 影像</Label>
-        </div>
 
         {/* Advanced Configuration */}
         <Collapsible open={showAdvancedConfig} onOpenChange={setShowAdvancedConfig}>

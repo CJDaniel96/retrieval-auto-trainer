@@ -7,7 +7,6 @@ export interface TrainingFormData {
   line_id: string;
   input_dir: string;
   output_dir: string;
-  exclude_ng_from_ok: boolean;
 }
 
 export interface CreateModuleData {
