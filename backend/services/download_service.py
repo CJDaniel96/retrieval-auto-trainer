@@ -105,28 +105,34 @@ class DownloadService(BaseService):
 
     async def list_downloaded_parts(self) -> List[Dict[str, Any]]:
         """列出已下載的料號"""
-        # TODO: 實現從實際存儲中獲取已下載料號的邏輯
-        # 目前返回示例數據
-        return [
-            {
-                "part_number": "P001",
-                "name": "示例料號 1",
-                "site": "HPH",
-                "line_id": "V31",
-                "download_date": "2025-09-18T10:00:00Z",
-                "image_count": 150,
-                "status": "completed"
-            },
-            {
-                "part_number": "P002",
-                "name": "示例料號 2",
-                "site": "HPH",
-                "line_id": "V32",
-                "download_date": "2025-09-18T11:00:00Z",
-                "image_count": 200,
-                "status": "completed"
-            }
-        ]
+        try:
+            # 使用 ImageDownloadService 獲取實際的料號列表
+            part_numbers = self.image_downloader.list_downloaded_parts()
+
+            results = []
+            for part_number in part_numbers:
+                # 獲取每個料號的詳細資訊
+                part_info = self.image_downloader.get_part_info(part_number)
+                if part_info:
+                    results.append({
+                        "part_number": part_info["part_number"],
+                        "name": f"料號 {part_info['part_number']}",
+                        "site": "HPH",  # 默認值，可以根據需要擴展
+                        "line_id": "V31",  # 默認值，可以根據需要擴展
+                        "download_date": part_info["download_time"],
+                        "image_count": part_info["image_count"],
+                        "status": "completed",
+                        "is_classified": part_info.get("is_classified", False),
+                        "classified_count": part_info.get("classified_count", 0)
+                    })
+
+            self.logger.info(f"找到 {len(results)} 個已下載的料號")
+            return results
+
+        except Exception as e:
+            self.logger.error(f"獲取已下載料號列表失敗: {e}")
+            # 如果出錯，返回空列表而不是示例數據
+            return []
 
 
 _download_service_instance: Optional[DownloadService] = None

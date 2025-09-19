@@ -204,7 +204,7 @@ export class ApiClient {
   static async listDownloadedParts(): Promise<ApiResponse<PartInfo[]>> {
     try {
       const response = await api.get('/download/parts');
-      return { data: response.data };
+      return { data: response.data.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };
     }
