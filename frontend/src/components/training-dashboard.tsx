@@ -68,15 +68,12 @@ function SettingsPanel() {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [configs, setConfigs] = useState<any>({});
-  const [databaseSites, setDatabaseSites] = useState<any>({});
-  const [activeSettingsTab, setActiveSettingsTab] = useState("system");
   const [isClient, setIsClient] = useState(false);
 
   // 載入配置
   useEffect(() => {
     setIsClient(true);
     loadConfigs();
-    loadDatabaseSites();
   }, []);
 
   const loadConfigs = async () => {
@@ -93,21 +90,6 @@ function SettingsPanel() {
     }
   };
 
-  const loadDatabaseSites = async () => {
-    try {
-      const result = await ApiClient.getDatabaseSites();
-      if (result.data) {
-        setDatabaseSites(result.data);
-      } else if (result.error) {
-        console.error("載入資料庫站點失敗:", result.error);
-        setDatabaseSites({});
-      }
-    } catch (error) {
-      console.error("載入資料庫站點失敗:", error);
-      setDatabaseSites({});
-    }
-  };
-
   const handleSystemConfigUpdate = async (updates: any) => {
     try {
       setLoading(true);
@@ -118,21 +100,6 @@ function SettingsPanel() {
       }
     } catch (error) {
       toast.error("系統配置更新失敗");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTrainingConfigUpdate = async (updates: any) => {
-    try {
-      setLoading(true);
-      const result = await ApiClient.updateTrainingConfig({ updates });
-      if (result.data) {
-        setConfigs({ ...configs, training: result.data });
-        toast.success("訓練配置更新成功");
-      }
-    } catch (error) {
-      toast.error("訓練配置更新失敗");
     } finally {
       setLoading(false);
     }
@@ -157,39 +124,17 @@ function SettingsPanel() {
             <Settings className="w-6 h-6 text-blue-600" />
             <CardTitle className="text-2xl">系統設定</CardTitle>
           </div>
-          <CardDescription>管理系統配置、訓練參數和資料庫連線</CardDescription>
+          <CardDescription>管理系統相關配置和偏好設定</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeSettingsTab} onValueChange={setActiveSettingsTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="system">系統配置</TabsTrigger>
-              <TabsTrigger value="training">訓練參數</TabsTrigger>
-              <TabsTrigger value="database">資料庫資訊</TabsTrigger>
-            </TabsList>
-
-            {/* 系統配置分頁 */}
-            <TabsContent value="system" className="space-y-4 mt-6">
-              <SystemConfigTab
-                config={configs.system || {}}
-                onUpdate={handleSystemConfigUpdate}
-                loading={loading}
-              />
-            </TabsContent>
-
-            {/* 訓練參數分頁 */}
-            <TabsContent value="training" className="space-y-4 mt-6">
-              <TrainingConfigTab
-                config={configs.training || {}}
-                onUpdate={handleTrainingConfigUpdate}
-                loading={loading}
-              />
-            </TabsContent>
-
-            {/* 資料庫資訊分頁 */}
-            <TabsContent value="database" className="space-y-4 mt-6">
-              <DatabaseInfoTab sites={databaseSites} />
-            </TabsContent>
-          </Tabs>
+          {/* 直接顯示系統配置，不需要分頁 */}
+          <div className="space-y-4 mt-6">
+            <SystemConfigTab
+              config={configs.system || {}}
+              onUpdate={handleSystemConfigUpdate}
+              loading={loading}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -404,319 +349,6 @@ function SystemConfigTab({ config, onUpdate, loading }: { config: any; onUpdate:
   );
 }
 
-// 訓練配置分頁組件
-function TrainingConfigTab({ config, onUpdate, loading }: { config: any; onUpdate: (updates: any) => void; loading: boolean }) {
-  const [formData, setFormData] = useState(config);
-
-  useEffect(() => {
-    setFormData(config);
-  }, [config]);
-
-  const handleSave = () => {
-    onUpdate(formData);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 訓練參數 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">訓練參數</h3>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="max_epochs">最大訓練輪數</Label>
-              <Input
-                id="max_epochs"
-                type="number"
-                value={formData.training?.max_epochs || 50}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  training: { ...formData.training, max_epochs: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="batch_size_training">訓練批次大小</Label>
-              <Input
-                id="batch_size_training"
-                type="number"
-                value={formData.training?.batch_size || 8}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  training: { ...formData.training, batch_size: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="lr">學習率</Label>
-              <Input
-                id="lr"
-                type="number"
-                step="0.0001"
-                value={formData.training?.lr || 0.0003}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  training: { ...formData.training, lr: parseFloat(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="patience">早停耐心值</Label>
-              <Input
-                id="patience"
-                type="number"
-                value={formData.training?.patience || 10}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  training: { ...formData.training, patience: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="enable_early_stopping"
-                checked={formData.training?.enable_early_stopping || false}
-                onCheckedChange={(checked) => setFormData({
-                  ...formData,
-                  training: { ...formData.training, enable_early_stopping: checked }
-                })}
-              />
-              <Label htmlFor="enable_early_stopping">啟用早停</Label>
-            </div>
-          </div>
-        </div>
-
-        {/* 模型配置 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">模型配置</h3>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="backbone">骨幹網路</Label>
-              <Select
-                value={formData.model?.backbone || "efficientnetv2_rw_s"}
-                onValueChange={(value) => setFormData({
-                  ...formData,
-                  model: { ...formData.model, backbone: value }
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="efficientnetv2_rw_s">EfficientNetV2-S</SelectItem>
-                  <SelectItem value="efficientnetv2_rw_m">EfficientNetV2-M</SelectItem>
-                  <SelectItem value="efficientnetv2_rw_l">EfficientNetV2-L</SelectItem>
-                  <SelectItem value="resnet50">ResNet50</SelectItem>
-                  <SelectItem value="resnet101">ResNet101</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="embedding_size">嵌入向量維度</Label>
-              <Input
-                id="embedding_size"
-                type="number"
-                value={formData.model?.embedding_size || 512}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  model: { ...formData.model, embedding_size: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="structure">模型結構</Label>
-              <Select
-                value={formData.model?.structure || "HOAMV2"}
-                onValueChange={(value) => setFormData({
-                  ...formData,
-                  model: { ...formData.model, structure: value }
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="HOAM">HOAM</SelectItem>
-                  <SelectItem value="HOAMV2">HOAMV2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="pretrained"
-                checked={formData.model?.pretrained || false}
-                onCheckedChange={(checked) => setFormData({
-                  ...formData,
-                  model: { ...formData.model, pretrained: checked }
-                })}
-              />
-              <Label htmlFor="pretrained">使用預訓練模型</Label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 損失函數配置 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">損失函數配置</h3>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="loss_type">損失函數類型</Label>
-              <Select
-                value={formData.loss?.type || "HybridMarginLoss"}
-                onValueChange={(value) => setFormData({
-                  ...formData,
-                  loss: { ...formData.loss, type: value }
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="HybridMarginLoss">HybridMarginLoss</SelectItem>
-                  <SelectItem value="ArcFaceLoss">ArcFaceLoss</SelectItem>
-                  <SelectItem value="TripletLoss">TripletLoss</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="triplet_margin">三元組邊界</Label>
-              <Input
-                id="triplet_margin"
-                type="number"
-                step="0.1"
-                value={formData.loss?.triplet_margin || 0.3}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  loss: { ...formData.loss, triplet_margin: parseFloat(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="center_loss_weight">中心損失權重</Label>
-              <Input
-                id="center_loss_weight"
-                type="number"
-                step="0.01"
-                value={formData.loss?.center_loss_weight || 0.01}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  loss: { ...formData.loss, center_loss_weight: parseFloat(e.target.value) }
-                })}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 資料配置 */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">資料配置</h3>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="image_size">圖片大小</Label>
-              <Input
-                id="image_size"
-                type="number"
-                value={formData.data?.image_size || 224}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  data: { ...formData.data, image_size: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="num_workers">資料載入程序數</Label>
-              <Input
-                id="num_workers"
-                type="number"
-                value={formData.data?.num_workers || 4}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  data: { ...formData.data, num_workers: parseInt(e.target.value) }
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="test_split">測試集比例</Label>
-              <Input
-                id="test_split"
-                type="number"
-                step="0.1"
-                min="0.1"
-                max="0.5"
-                value={formData.data?.test_split || 0.2}
-                onChange={(e) => setFormData({
-                  ...formData,
-                  data: { ...formData.data, test_split: parseFloat(e.target.value) }
-                })}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          儲存訓練配置
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-// 資料庫資訊分頁組件
-function DatabaseInfoTab({ sites }: { sites: any }) {
-  // 確保 sites 是一個物件
-  const safeSites = sites && typeof sites === 'object' ? sites : {};
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(safeSites).map(([siteId, siteInfo]: [string, any]) => (
-          <Card key={siteId} className="border border-gray-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center space-x-2">
-                <Database className="w-5 h-5 text-blue-600" />
-                <CardTitle className="text-lg">{siteId}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <Label className="text-sm font-medium text-gray-600">資料庫名稱</Label>
-                <p className="text-sm">{siteInfo?.database_name || '未設定'}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-600">可用產線</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {Array.isArray(siteInfo?.lines) && siteInfo.lines.length > 0 ? (
-                    siteInfo.lines.map((line: string) => (
-                      <Badge key={line} variant="secondary" className="text-xs">
-                        {line}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-gray-500">無可用產線</span>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {Object.keys(safeSites).length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            無法載入資料庫站點資訊，請檢查配置檔案。
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
-}
 
 export function TrainingDashboard() {
   const t = useTranslations();
