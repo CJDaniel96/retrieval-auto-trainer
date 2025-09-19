@@ -70,9 +70,11 @@ function SettingsPanel() {
   const [configs, setConfigs] = useState<any>({});
   const [databaseSites, setDatabaseSites] = useState<any>({});
   const [activeSettingsTab, setActiveSettingsTab] = useState("system");
+  const [isClient, setIsClient] = useState(false);
 
   // 載入配置
   useEffect(() => {
+    setIsClient(true);
     loadConfigs();
     loadDatabaseSites();
   }, []);
@@ -96,9 +98,13 @@ function SettingsPanel() {
       const result = await ApiClient.getDatabaseSites();
       if (result.data) {
         setDatabaseSites(result.data);
+      } else if (result.error) {
+        console.error("載入資料庫站點失敗:", result.error);
+        setDatabaseSites({});
       }
     } catch (error) {
       console.error("載入資料庫站點失敗:", error);
+      setDatabaseSites({});
     }
   };
 
@@ -132,7 +138,7 @@ function SettingsPanel() {
     }
   };
 
-  if (loading && Object.keys(configs).length === 0) {
+  if (!isClient || (loading && Object.keys(configs).length === 0)) {
     return (
       <Card className="bg-white/80 backdrop-blur-sm shadow-xl border border-white/20">
         <CardContent className="flex items-center justify-center py-8">
@@ -662,10 +668,13 @@ function TrainingConfigTab({ config, onUpdate, loading }: { config: any; onUpdat
 
 // 資料庫資訊分頁組件
 function DatabaseInfoTab({ sites }: { sites: any }) {
+  // 確保 sites 是一個物件
+  const safeSites = sites && typeof sites === 'object' ? sites : {};
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Object.entries(sites).map(([siteId, siteInfo]: [string, any]) => (
+        {Object.entries(safeSites).map(([siteId, siteInfo]: [string, any]) => (
           <Card key={siteId} className="border border-gray-200">
             <CardHeader className="pb-3">
               <div className="flex items-center space-x-2">
@@ -676,16 +685,20 @@ function DatabaseInfoTab({ sites }: { sites: any }) {
             <CardContent className="space-y-3">
               <div>
                 <Label className="text-sm font-medium text-gray-600">資料庫名稱</Label>
-                <p className="text-sm">{siteInfo.database_name}</p>
+                <p className="text-sm">{siteInfo?.database_name || '未設定'}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">可用產線</Label>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {siteInfo.lines.map((line: string) => (
-                    <Badge key={line} variant="secondary" className="text-xs">
-                      {line}
-                    </Badge>
-                  ))}
+                  {Array.isArray(siteInfo?.lines) && siteInfo.lines.length > 0 ? (
+                    siteInfo.lines.map((line: string) => (
+                      <Badge key={line} variant="secondary" className="text-xs">
+                        {line}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-500">無可用產線</span>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -693,7 +706,7 @@ function DatabaseInfoTab({ sites }: { sites: any }) {
         ))}
       </div>
 
-      {Object.keys(sites).length === 0 && (
+      {Object.keys(safeSites).length === 0 && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
