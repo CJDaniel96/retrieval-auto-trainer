@@ -117,6 +117,14 @@ class ConfigUpdateRequest(BaseModel):
     loss: Optional[dict] = Field(None, description="損失函數配置")
 
 
+class SystemConfigUpdateRequest(BaseModel):
+    """系統配置更新請求模型"""
+    system: Optional[dict] = Field(None, description="系統配置")
+    resources: Optional[dict] = Field(None, description="資源配置")
+    storage: Optional[dict] = Field(None, description="儲存配置")
+    logging: Optional[dict] = Field(None, description="日誌配置")
+
+
 class CreateModuleRequest(BaseModel):
     """創建模組請求模型"""
     module_name: str = Field(..., description="模組名稱", pattern=r"^[A-Za-z0-9_-]+$")

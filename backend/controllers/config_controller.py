@@ -6,7 +6,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, HTTPException
 from ..controllers.base_controller import BaseController
 from ..services import get_config_service
-from ..models.schemas.training import ConfigUpdateRequest
+from ..models.schemas.training import ConfigUpdateRequest, SystemConfigUpdateRequest
 from ..views.response_formatter import ResponseFormatter
 
 
@@ -42,30 +42,67 @@ class ConfigController(BaseController):
                     status_code=500
                 )
 
-        @self.router.post("/update")
+        @self.router.post("/update/training")
         async def update_training_config(request: ConfigUpdateRequest):
             """更新訓練配置"""
             try:
-                # 驗證請求
-                validation_error = self.validate_required_fields({
-                    "updates": request.updates
-                })
-                if validation_error:
-                    raise validation_error
+                # 將請求轉換為字典格式
+                updates = request.model_dump(exclude_none=True)
 
                 updated_config = await self.config_service.update_training_config(
-                    request.updates
+                    updates
                 )
 
                 return ResponseFormatter.success(
                     data=updated_config,
-                    message="配置更新成功"
+                    message="訓練配置更新成功"
                 )
 
             except Exception as e:
                 return ResponseFormatter.error(
                     message=str(e),
-                    error_code="CONFIG_UPDATE_ERROR",
+                    error_code="TRAINING_CONFIG_UPDATE_ERROR",
+                    status_code=500
+                )
+
+        @self.router.post("/update/system")
+        async def update_system_config(request: SystemConfigUpdateRequest):
+            """更新系統配置"""
+            try:
+                # 將請求轉換為字典格式
+                updates = request.model_dump(exclude_none=True)
+
+                updated_config = await self.config_service.update_system_config(
+                    updates
+                )
+
+                return ResponseFormatter.success(
+                    data=updated_config,
+                    message="系統配置更新成功"
+                )
+
+            except Exception as e:
+                return ResponseFormatter.error(
+                    message=str(e),
+                    error_code="SYSTEM_CONFIG_UPDATE_ERROR",
+                    status_code=500
+                )
+
+        @self.router.get("/database/sites")
+        async def get_database_sites():
+            """取得可用的資料庫站點"""
+            try:
+                sites = await self.config_service.get_database_sites()
+
+                return ResponseFormatter.success(
+                    data=sites,
+                    message="資料庫站點獲取成功"
+                )
+
+            except Exception as e:
+                return ResponseFormatter.error(
+                    message=str(e),
+                    error_code="DATABASE_SITES_ERROR",
                     status_code=500
                 )
 

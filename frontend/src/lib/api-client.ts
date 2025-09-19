@@ -123,9 +123,46 @@ export class ApiClient {
     }
   }
 
+  static async updateSystemConfig(configUpdate: ConfigUpdateRequest): Promise<ApiResponse<FullConfig>> {
+    try {
+      const response = await api.post('/config/update/system', configUpdate);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async updateTrainingConfig(configUpdate: ConfigUpdateRequest): Promise<ApiResponse<FullConfig>> {
+    try {
+      const response = await api.post('/config/update/training', configUpdate);
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async getDatabaseSites(): Promise<ApiResponse<Record<string, { id: string; database_name: string; lines: string[] }>>> {
+    try {
+      const response = await api.get('/config/database/sites');
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  static async getDefaultConfig(): Promise<ApiResponse<FullConfig>> {
+    try {
+      const response = await api.get('/config/default');
+      return { data: response.data };
+    } catch (error: any) {
+      return { error: error.response?.data?.detail || error.message };
+    }
+  }
+
+  // 舊的方法保持向後兼容
   static async updateConfig(configUpdate: ConfigUpdateRequest): Promise<ApiResponse<{ message: string; updated: boolean; config: FullConfig }>> {
     try {
-      const response = await api.post('/config/update', configUpdate);
+      const response = await api.post('/config/update/training', configUpdate);
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };
