@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,8 @@ interface DownloadStatus {
 }
 
 export function DownloadPanel(props: DownloadPanelProps) {
+  const t = useTranslations();
+
   // Form state
   const [formData, setFormData] = useState<DownloadRequest>({
     site: "HPH",
@@ -92,14 +95,14 @@ export function DownloadPanel(props: DownloadPanelProps) {
             setIsDownloading(false);
 
             if (response.data.status === 'completed') {
-              toast.success(`下載完成！共下載 ${response.data.downloaded_count} 張圖片`);
+              toast.success(t("success.download_completed", { count: response.data.downloaded_count }));
             } else {
-              toast.error(`下載失敗：${response.data.error_message}`);
+              toast.error(`${t("download_panel.download_failed")}：${response.data.error_message}`);
             }
           }
         }
       } catch (error) {
-        console.error('獲取下載狀態失敗:', error);
+        console.error('Failed to get download status:', error);
       }
     }, 2000);
 
@@ -119,14 +122,14 @@ export function DownloadPanel(props: DownloadPanelProps) {
   };
 
   const validateForm = (): string | null => {
-    if (!formData.site) return "請選擇工廠";
-    if (!formData.line_id) return "請輸入產線ID";
-    if (!formData.start_date) return "請選擇開始日期";
-    if (!formData.end_date) return "請選擇結束日期";
-    if (!formData.part_number) return "請輸入料號";
+    if (!formData.site) return t("errors.please_select_factory");
+    if (!formData.line_id) return t("errors.please_enter_line_id");
+    if (!formData.start_date) return t("errors.please_select_start_date");
+    if (!formData.end_date) return t("errors.please_select_end_date");
+    if (!formData.part_number) return t("errors.please_enter_part_number");
 
     if (new Date(formData.start_date) > new Date(formData.end_date)) {
-      return "開始日期不能晚於結束日期";
+      return t("errors.start_date_after_end");
     }
 
     return null;
@@ -144,12 +147,12 @@ export function DownloadPanel(props: DownloadPanelProps) {
       const response = await ApiClient.estimateDownload(formData);
       if (response.data) {
         setEstimate(response.data);
-        toast.success("預估完成");
+        toast.success(t("success.estimate_completed"));
       } else if (response.error) {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error("預估失敗");
+      toast.error(t("errors.estimate_failed"));
     } finally {
       setIsEstimating(false);
     }
@@ -174,13 +177,13 @@ export function DownloadPanel(props: DownloadPanelProps) {
           downloaded_count: 0,
           total_count: estimate?.estimated_count || 0
         });
-        toast.success("下載任務已開始");
+        toast.success(t("success.download_started"));
       } else if (response.error) {
         toast.error(response.error);
         setIsDownloading(false);
       }
     } catch (error) {
-      toast.error("啟動下載失敗");
+      toast.error(t("errors.download_start_failed"));
       setIsDownloading(false);
     }
   };
@@ -192,18 +195,18 @@ export function DownloadPanel(props: DownloadPanelProps) {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Database className="w-6 h-6 text-blue-600" />
-            <CardTitle className="text-2xl">資料下載</CardTitle>
+            <CardTitle className="text-2xl">{t("download_panel.title")}</CardTitle>
           </div>
-          <CardDescription>從資料庫下載訓練用的原始影像資料</CardDescription>
+          <CardDescription>{t("download_panel.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Site and Line Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="site">工廠</Label>
+              <Label htmlFor="site">{t("download_panel.factory_label")}</Label>
               <Select value={formData.site} onValueChange={(value) => handleInputChange('site', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="選擇工廠" />
+                  <SelectValue placeholder={t("download_panel.factory_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="HPH">HPH</SelectItem>
@@ -216,10 +219,10 @@ export function DownloadPanel(props: DownloadPanelProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="line_id">產線ID</Label>
+              <Label htmlFor="line_id">{t("download_panel.line_id_label")}</Label>
               <Input
                 id="line_id"
-                placeholder="例如: V31"
+                placeholder={t("download_panel.line_id_placeholder")}
                 value={formData.line_id}
                 onChange={(e) => handleInputChange('line_id', e.target.value)}
               />
@@ -229,7 +232,7 @@ export function DownloadPanel(props: DownloadPanelProps) {
           {/* Date Range */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="start_date">開始日期</Label>
+              <Label htmlFor="start_date">{t("download_panel.start_date_label")}</Label>
               <Input
                 id="start_date"
                 type="date"
@@ -239,7 +242,7 @@ export function DownloadPanel(props: DownloadPanelProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="end_date">結束日期</Label>
+              <Label htmlFor="end_date">{t("download_panel.end_date_label")}</Label>
               <Input
                 id="end_date"
                 type="date"
@@ -252,21 +255,21 @@ export function DownloadPanel(props: DownloadPanelProps) {
           {/* Part Number and Limit */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="part_number">料號</Label>
+              <Label htmlFor="part_number">{t("download_panel.part_number_label")}</Label>
               <Input
                 id="part_number"
-                placeholder="輸入料號"
+                placeholder={t("download_panel.part_number_placeholder")}
                 value={formData.part_number}
                 onChange={(e) => handleInputChange('part_number', e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="limit">數量限制 (選填)</Label>
+              <Label htmlFor="limit">{t("download_panel.limit_label")}</Label>
               <Input
                 id="limit"
                 type="number"
-                placeholder="最多下載張數"
+                placeholder={t("download_panel.limit_placeholder")}
                 min="1"
                 max="10000"
                 value={formData.limit || ''}
@@ -288,7 +291,7 @@ export function DownloadPanel(props: DownloadPanelProps) {
               ) : (
                 <Search className="w-4 h-4" />
               )}
-              <span>預估數量</span>
+              <span>{t("download_panel.estimate_button")}</span>
             </Button>
 
             <Button
@@ -301,7 +304,7 @@ export function DownloadPanel(props: DownloadPanelProps) {
               ) : (
                 <Download className="w-4 h-4" />
               )}
-              <span>開始下載</span>
+              <span>{t("download_panel.download_button")}</span>
             </Button>
           </div>
         </CardContent>
@@ -313,37 +316,37 @@ export function DownloadPanel(props: DownloadPanelProps) {
           <CardHeader>
             <div className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-green-600" />
-              <CardTitle className="text-lg">預估結果</CardTitle>
+              <CardTitle className="text-lg">{t("download_panel.estimate_results_title")}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">{estimate.estimated_count.toLocaleString()}</div>
-                <div className="text-sm text-gray-600">預估圖片數</div>
+                <div className="text-sm text-gray-600">{t("download_panel.estimated_images")}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">{estimate.estimated_size_mb.toFixed(1)} MB</div>
-                <div className="text-sm text-gray-600">預估大小</div>
+                <div className="text-sm text-gray-600">{t("download_panel.estimated_size")}</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-medium text-purple-600">{estimate.site}</div>
-                <div className="text-sm text-gray-600">工廠</div>
+                <div className="text-sm text-gray-600">{t("download_panel.factory")}</div>
               </div>
               <div className="text-center">
                 <div className="text-lg font-medium text-orange-600">{estimate.line_id}</div>
-                <div className="text-sm text-gray-600">產線</div>
+                <div className="text-sm text-gray-600">{t("download_panel.production_line")}</div>
               </div>
             </div>
             <Separator className="my-4" />
             <div className="text-sm text-gray-600">
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4" />
-                <span>時間範圍: {estimate.time_range}</span>
+                <span>{t("download_panel.time_range", { range: estimate.time_range })}</span>
               </div>
               <div className="flex items-center space-x-2 mt-1">
                 <Package className="w-4 h-4" />
-                <span>料號: {estimate.part_number}</span>
+                <span>{t("download_panel.part_number_info", { partNumber: estimate.part_number })}</span>
               </div>
             </div>
           </CardContent>
@@ -357,24 +360,24 @@ export function DownloadPanel(props: DownloadPanelProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Clock className="w-5 h-5 text-blue-600" />
-                <CardTitle className="text-lg">下載進度</CardTitle>
+                <CardTitle className="text-lg">{t("download_panel.download_progress_title")}</CardTitle>
               </div>
               <Badge variant={
                 downloadStatus.status === 'completed' ? 'default' :
                 downloadStatus.status === 'failed' ? 'destructive' :
                 downloadStatus.status === 'running' ? 'secondary' : 'outline'
               }>
-                {downloadStatus.status === 'pending' && '等待中'}
-                {downloadStatus.status === 'running' && '下載中'}
-                {downloadStatus.status === 'completed' && '已完成'}
-                {downloadStatus.status === 'failed' && '失敗'}
+                {downloadStatus.status === 'pending' && t("download_panel.status_waiting")}
+                {downloadStatus.status === 'running' && t("download_panel.status_downloading")}
+                {downloadStatus.status === 'completed' && t("download_panel.status_completed")}
+                {downloadStatus.status === 'failed' && t("download_panel.status_failed")}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>下載進度</span>
+                <span>{t("download_panel.progress_label")}</span>
                 <span>{downloadStatus.downloaded_count} / {downloadStatus.total_count}</span>
               </div>
               <Progress value={downloadStatus.progress} className="h-2" />
@@ -383,18 +386,18 @@ export function DownloadPanel(props: DownloadPanelProps) {
             <div className="flex items-center space-x-4 text-sm text-gray-600">
               <div className="flex items-center space-x-1">
                 <FileText className="w-4 h-4" />
-                <span>任務ID: {downloadStatus.download_id}</span>
+                <span>{t("download_panel.task_id", { id: downloadStatus.download_id })}</span>
               </div>
               {downloadStatus.status === 'completed' && (
                 <div className="flex items-center space-x-1 text-green-600">
                   <CheckCircle className="w-4 h-4" />
-                  <span>下載完成</span>
+                  <span>{t("download_panel.download_complete")}</span>
                 </div>
               )}
               {downloadStatus.status === 'failed' && (
                 <div className="flex items-center space-x-1 text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span>下載失敗</span>
+                  <span>{t("download_panel.download_failed")}</span>
                 </div>
               )}
             </div>

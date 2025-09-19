@@ -94,7 +94,7 @@ export function TrainingDashboard() {
         setDownloadedParts([]);
       }
     } catch (error) {
-      console.error("載入已下載零件失敗:", error);
+      console.error("Failed to load downloaded parts:", error);
       setDownloadedParts([]);
     } finally {
       setLoadingParts(false);
@@ -120,7 +120,7 @@ export function TrainingDashboard() {
   // Handle new training submission
   const handleStartTraining = async () => {
     if (!formData.input_dir || !formData.output_dir) {
-      toast.error("請填寫所有必要欄位");
+      toast.error(t("errors.required_fields_missing"));
       return;
     }
 
@@ -153,7 +153,7 @@ export function TrainingDashboard() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error("啟動訓練失敗");
+      toast.error(t("errors.training_start_failed"));
     } finally {
       setStartingTask(false);
     }
@@ -170,7 +170,7 @@ export function TrainingDashboard() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error("刪除任務失敗");
+      toast.error(t("errors.task_delete_failed"));
     }
   };
 
@@ -185,7 +185,7 @@ export function TrainingDashboard() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error("取消任務失敗");
+      toast.error(t("errors.task_cancel_failed"));
     }
   };
 
@@ -197,7 +197,7 @@ export function TrainingDashboard() {
 
   const submitCreateModule = async () => {
     if (!createModuleTaskId || !moduleName || !partNumber) {
-      toast.error("請填寫所有欄位");
+      toast.error(t("errors.please_fill_all_fields"));
       return;
     }
 
@@ -214,7 +214,7 @@ export function TrainingDashboard() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error("建立模組失敗");
+      toast.error(t("errors.module_create_failed"));
     } finally {
       setCreatingModule(false);
     }

@@ -48,7 +48,7 @@ export function TaskList({
       case "pending":
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" /> {t("status.pending")}</Badge>;
       case "pending_orientation":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800"><AlertCircle className="w-3 h-3 mr-1" /> 等待方向確認</Badge>;
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800"><AlertCircle className="w-3 h-3 mr-1" /> {t("task_list.orientation_confirm_badge")}</Badge>;
       case "running":
         return <Badge variant="secondary" className="bg-blue-100 text-blue-800"><Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t("status.running")}</Badge>;
       case "completed":
@@ -72,9 +72,9 @@ export function TaskList({
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success(`${fileType} 下載成功`);
+      toast.success(t("success.file_download_success", { fileType }));
     } catch (error) {
-      toast.error(`下載 ${fileType} 失敗`);
+      toast.error(t("errors.file_download_failed", { fileType }));
     }
   };
 
@@ -83,8 +83,8 @@ export function TaskList({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-2xl">訓練任務</CardTitle>
-            <CardDescription>檢視和管理所有訓練任務</CardDescription>
+            <CardTitle className="text-2xl">{t("task_list.title")}</CardTitle>
+            <CardDescription>{t("task_list.description")}</CardDescription>
           </div>
           <Button
             variant="outline"
@@ -93,7 +93,7 @@ export function TaskList({
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            重新整理
+            {t("task_list.refresh")}
           </Button>
         </div>
       </CardHeader>
@@ -101,11 +101,11 @@ export function TaskList({
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin mr-2" />
-            載入中...
+            {t("task_list.loading")}
           </div>
         ) : !Array.isArray(tasks) || tasks.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            目前沒有訓練任務
+            {t("task_list.no_tasks")}
           </div>
         ) : (
           <div className="space-y-4">
@@ -129,7 +129,7 @@ export function TaskList({
                 {task.progress && (
                   <div className="mb-3">
                     <div className="flex justify-between text-sm mb-1">
-                      <span>進度</span>
+                      <span>{t("task_list.progress")}</span>
                       <span>{Math.round(task.progress)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -143,11 +143,11 @@ export function TaskList({
 
                 <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                   <div>
-                    <span className="font-medium">輸入目錄:</span>
+                    <span className="font-medium">{t("task_list.input_directory")}</span>
                     <p className="text-gray-600">{task.input_dir}</p>
                   </div>
                   <div>
-                    <span className="font-medium">輸出目錄:</span>
+                    <span className="font-medium">{t("task_list.output_directory")}</span>
                     <p className="text-gray-600">{task.output_dir}</p>
                   </div>
                 </div>
@@ -155,7 +155,7 @@ export function TaskList({
                 {task.message && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">訊息:</span> {task.message}
+                      <span className="font-medium">{t("task_list.message")}</span> {task.message}
                     </p>
                   </div>
                 )}
@@ -169,7 +169,7 @@ export function TaskList({
                         onClick={() => router.push(`/orientation/${task.task_id}`)}
                       >
                         <Play className="w-4 h-4 mr-2" />
-                        確認方向
+                        {t("task_list.confirm_orientation")}
                       </Button>
                     )}
 
@@ -181,7 +181,7 @@ export function TaskList({
                           onClick={() => handleDownload(task.task_id, "model")}
                         >
                           <Download className="w-4 h-4 mr-2" />
-                          下載模型
+                          {t("task_list.download_model")}
                         </Button>
                         <Button
                           variant="outline"
@@ -189,7 +189,7 @@ export function TaskList({
                           onClick={() => handleDownload(task.task_id, "results")}
                         >
                           <Download className="w-4 h-4 mr-2" />
-                          下載結果
+                          {t("task_list.download_results")}
                         </Button>
                         <Button
                           variant="outline"
@@ -197,7 +197,7 @@ export function TaskList({
                           onClick={() => onCreateModule(task.task_id)}
                         >
                           <Package className="w-4 h-4 mr-2" />
-                          建立模組
+                          {t("task_list.create_module")}
                         </Button>
                       </>
                     )}
@@ -208,7 +208,7 @@ export function TaskList({
                         size="sm"
                         onClick={() => onCancelTask(task.task_id)}
                       >
-                        取消
+                        {t("task_list.cancel")}
                       </Button>
                     )}
                   </div>
@@ -219,7 +219,7 @@ export function TaskList({
                     onClick={() => onDeleteTask(task.task_id, false)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    刪除
+                    {t("task_list.delete")}
                   </Button>
                 </div>
               </motion.div>

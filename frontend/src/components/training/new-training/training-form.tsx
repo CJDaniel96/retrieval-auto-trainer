@@ -72,7 +72,7 @@ export function TrainingForm({
           <CardTitle className="text-2xl">{t("form.title")}</CardTitle>
         </div>
         <CardDescription>
-          配置訓練參數並開始新的模型訓練
+          {t("training_form.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -84,7 +84,7 @@ export function TrainingForm({
               checked={useExistingData}
               onCheckedChange={setUseExistingData}
             />
-            <Label htmlFor="use-existing-data">使用已下載的原始資料</Label>
+            <Label htmlFor="use-existing-data">{t("training_form.use_existing_data")}</Label>
           </div>
 
           {useExistingData ? (
@@ -181,7 +181,7 @@ export function TrainingForm({
             <Button variant="ghost" className="w-full justify-between">
               <div className="flex items-center space-x-2">
                 <Cog className="w-4 h-4" />
-                <span>進階設定</span>
+                <span>{t("training_form.advanced_settings")}</span>
               </div>
               {showAdvancedConfig ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>
@@ -190,7 +190,7 @@ export function TrainingForm({
             <Alert className="border-orange-200 bg-orange-50/80">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
-                這些設定僅會套用到當前的訓練任務，不會影響其他任務。所有參數都來自training_configs.yaml。
+                {t("training_form.advanced_info")}
               </AlertDescription>
             </Alert>
 
@@ -199,11 +199,11 @@ export function TrainingForm({
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Dumbbell className="w-4 h-4 text-purple-600" />
-                  <h4 className="font-medium">訓練參數</h4>
+                  <h4 className="font-medium">{t("training_form.training_params")}</h4>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="max_epochs">最大訓練輪數</Label>
+                  <Label htmlFor="max_epochs">{t("training_form.max_epochs")}</Label>
                   <Input
                     id="max_epochs"
                     type="number"
@@ -217,7 +217,7 @@ export function TrainingForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="batch_size">批次大小</Label>
+                  <Label htmlFor="batch_size">{t("training_form.batch_size")}</Label>
                   <Input
                     id="batch_size"
                     type="number"
@@ -231,7 +231,7 @@ export function TrainingForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="learning_rate">學習率</Label>
+                  <Label htmlFor="learning_rate">{t("training_form.learning_rate")}</Label>
                   <Input
                     id="learning_rate"
                     type="number"
@@ -250,11 +250,11 @@ export function TrainingForm({
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Target className="w-4 h-4 text-green-600" />
-                  <h4 className="font-medium">模型參數</h4>
+                  <h4 className="font-medium">{t("training_form.model_params")}</h4>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="backbone">骨幹網路</Label>
+                  <Label htmlFor="backbone">{t("training_form.backbone")}</Label>
                   <Select
                     value={trainingConfig.model?.backbone || "efficientnetv2_rw_s"}
                     onValueChange={(value) => setTrainingConfig({
@@ -274,7 +274,7 @@ export function TrainingForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="embedding_size">嵌入向量維度</Label>
+                  <Label htmlFor="embedding_size">{t("training_form.embedding_size")}</Label>
                   <Input
                     id="embedding_size"
                     type="number"
@@ -292,11 +292,11 @@ export function TrainingForm({
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Target className="w-4 h-4 text-blue-600" />
-                  <h4 className="font-medium">資料參數</h4>
+                  <h4 className="font-medium">{t("training_form.data_params")}</h4>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="image_size">圖片大小</Label>
+                  <Label htmlFor="image_size">{t("training_form.image_size")}</Label>
                   <Input
                     id="image_size"
                     type="number"
@@ -310,7 +310,7 @@ export function TrainingForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="test_split">測試集比例</Label>
+                  <Label htmlFor="test_split">{t("training_form.test_split")}</Label>
                   <Input
                     id="test_split"
                     type="number"
@@ -339,7 +339,7 @@ export function TrainingForm({
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
             <Play className="w-4 h-4 mr-2" />
-            {startingTask ? "啟動中..." : t("form.submit")}
+            {startingTask ? t("task_list.starting") : t("form.submit")}
           </Button>
         </div>
       </CardContent>
