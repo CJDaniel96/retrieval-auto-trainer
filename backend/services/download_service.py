@@ -24,8 +24,28 @@ class DownloadService(BaseService):
 
     async def list_downloaded_parts(self) -> List[Dict[str, Any]]:
         """列出已下載的料號"""
-        # TODO: 實現列表邏輯
-        pass
+        # TODO: 實現從實際存儲中獲取已下載料號的邏輯
+        # 目前返回示例數據
+        return [
+            {
+                "part_number": "P001",
+                "name": "示例料號 1",
+                "site": "HPH",
+                "line_id": "V31",
+                "download_date": "2025-09-18T10:00:00Z",
+                "image_count": 150,
+                "status": "completed"
+            },
+            {
+                "part_number": "P002",
+                "name": "示例料號 2",
+                "site": "HPH",
+                "line_id": "V32",
+                "download_date": "2025-09-18T11:00:00Z",
+                "image_count": 200,
+                "status": "completed"
+            }
+        ]
 
 
 _download_service_instance: Optional[DownloadService] = None

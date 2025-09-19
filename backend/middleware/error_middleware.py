@@ -22,13 +22,10 @@ def setup_error_handling(app: FastAPI) -> None:
         """HTTP例外處理"""
         logger.error(f"HTTP error: {exc.status_code} - {exc.detail}")
 
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=ResponseFormatter.error(
-                message=str(exc.detail),
-                error_code="HTTP_ERROR",
-                status_code=exc.status_code
-            )
+        return ResponseFormatter.error(
+            message=str(exc.detail),
+            error_code="HTTP_ERROR",
+            status_code=exc.status_code
         )
 
     @app.exception_handler(RequestValidationError)
@@ -44,14 +41,11 @@ def setup_error_handling(app: FastAPI) -> None:
                 "type": error["type"]
             })
 
-        return JSONResponse(
+        return ResponseFormatter.error(
+            message="請求驗證失敗",
+            error_code="VALIDATION_ERROR",
             status_code=422,
-            content=ResponseFormatter.error(
-                message="請求驗證失敗",
-                error_code="VALIDATION_ERROR",
-                status_code=422,
-                details=error_details
-            )
+            details=error_details
         )
 
     @app.exception_handler(Exception)
@@ -59,11 +53,8 @@ def setup_error_handling(app: FastAPI) -> None:
         """一般例外處理"""
         logger.error(f"Unexpected error: {type(exc).__name__} - {str(exc)}", exc_info=True)
 
-        return JSONResponse(
-            status_code=500,
-            content=ResponseFormatter.error(
-                message="內部伺服器錯誤",
-                error_code="INTERNAL_SERVER_ERROR",
-                status_code=500
-            )
+        return ResponseFormatter.error(
+            message="內部伺服器錯誤",
+            error_code="INTERNAL_SERVER_ERROR",
+            status_code=500
         )

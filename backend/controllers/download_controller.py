@@ -52,6 +52,24 @@ class DownloadController(BaseController):
                     status_code=500
                 )
 
+        @self.router.get("/parts")
+        async def get_parts():
+            """列出可用的料號 (別名)"""
+            try:
+                parts = await self.download_service.list_downloaded_parts()
+
+                return ResponseFormatter.success(
+                    data=parts,
+                    message="料號列表獲取成功"
+                )
+
+            except Exception as e:
+                return ResponseFormatter.error(
+                    message=str(e),
+                    error_code="PARTS_LIST_ERROR",
+                    status_code=500
+                )
+
         @self.router.get("/parts/list")
         async def list_downloaded_parts():
             """列出已下載的料號"""

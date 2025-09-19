@@ -99,6 +99,10 @@ export function TrainingDashboard() {
   const [useExistingData, setUseExistingData] = useState(false);
   const [selectedRawdataPart, setSelectedRawdataPart] = useState<string>("");
 
+  // Time display state to prevent hydration mismatch
+  const [currentTime, setCurrentTime] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
+
   const [formData, setFormData] = useState<TrainingRequest>({
     input_dir: "",
     site: "HPH",
@@ -173,14 +177,39 @@ export function TrainingDashboard() {
       const loadDownloadedParts = async () => {
         setLoadingParts(true);
         const result = await ApiClient.listDownloadedParts();
-        if (result.data) {
+        if (result.data && Array.isArray(result.data)) {
           setDownloadedParts(result.data);
+        } else {
+          setDownloadedParts([]);
         }
         setLoadingParts(false);
       };
       loadDownloadedParts();
     }
   }, [activeTab]);
+
+  // Handle time display to prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }));
+    };
+
+    updateTime(); // Initial update
+    const interval = setInterval(updateTime, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchTasks = async () => {
     console.log("開始獲取任務...");
@@ -584,7 +613,7 @@ export function TrainingDashboard() {
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {downloadedParts.map((part) => (
+                            {Array.isArray(downloadedParts) && downloadedParts.map((part) => (
                               <SelectItem
                                 key={part.part_number}
                                 value={part.part_number}
@@ -1851,8 +1880,10 @@ export function TrainingDashboard() {
                                 // Refresh downloaded parts list
                                 const partsResult =
                                   await ApiClient.listDownloadedParts();
-                                if (partsResult.data) {
+                                if (partsResult.data && Array.isArray(partsResult.data)) {
                                   setDownloadedParts(partsResult.data);
+                                } else {
+                                  setDownloadedParts([]);
                                 }
                                 // Reset the form
                                 setShowDownloadSection(false);
@@ -1914,8 +1945,10 @@ export function TrainingDashboard() {
                       onClick={async () => {
                         setLoadingParts(true);
                         const result = await ApiClient.listDownloadedParts();
-                        if (result.data) {
+                        if (result.data && Array.isArray(result.data)) {
                           setDownloadedParts(result.data);
+                        } else {
+                          setDownloadedParts([]);
                         }
                         setLoadingParts(false);
                       }}
@@ -1934,7 +1967,7 @@ export function TrainingDashboard() {
                       <Loader2 className="w-6 h-6 animate-spin mr-2" />
                       載入中...
                     </div>
-                  ) : downloadedParts.length === 0 ? (
+                  ) : !Array.isArray(downloadedParts) || downloadedParts.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       {t("download.downloaded_parts.no_data")}
                     </div>
@@ -2246,17 +2279,7 @@ export function TrainingDashboard() {
                 <div className="flex items-center space-x-2">
                   <Clock className="w-3 h-3 text-slate-500" />
                   <span className="text-xs text-slate-400 font-mono">
-                    {new Date().toLocaleString("en-US", {
-                      timeZone: "Asia/Taipei",
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: false,
-                    })}{" "}
-                    UTC+8
+                    {mounted ? currentTime : "Loading..."} UTC+8
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">

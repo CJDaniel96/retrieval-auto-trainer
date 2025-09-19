@@ -31,6 +31,33 @@ class TrainingService(BaseService):
         """獲取任務狀態"""
         return await self.task_repository.get_by_id(task_id)
 
+    async def list_tasks(self) -> List[TrainingTask]:
+        """列出所有任務"""
+        return await self.task_repository.list_all()
+
+    async def cancel_task(self, task_id: str) -> bool:
+        """取消任務"""
+        # TODO: 實現取消邏輯
+        task = await self.task_repository.get_by_id(task_id)
+        if task and task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+            task.status = TaskStatus.CANCELLED
+            await self.task_repository.update(task)
+            return True
+        return False
+
+    async def get_task_statistics(self) -> Dict[str, Any]:
+        """獲取任務統計"""
+        tasks = await self.list_tasks()
+        stats = {
+            "total": len(tasks),
+            "pending": len([t for t in tasks if t.status == TaskStatus.PENDING]),
+            "running": len([t for t in tasks if t.status == TaskStatus.RUNNING]),
+            "completed": len([t for t in tasks if t.status == TaskStatus.COMPLETED]),
+            "failed": len([t for t in tasks if t.status == TaskStatus.FAILED]),
+            "cancelled": len([t for t in tasks if t.status == TaskStatus.CANCELLED])
+        }
+        return stats
+
 
 _training_service_instance: Optional[TrainingService] = None
 
