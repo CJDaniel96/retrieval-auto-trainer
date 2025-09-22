@@ -163,7 +163,8 @@ export class ApiClient {
 
   static async listDownloadedParts(): Promise<ApiResponse<PartInfo[]>> {
     try {
-      const response = await api.get('/download/parts');
+      // 使用較短的超時時間，因為這個操作應該很快
+      const response = await api.get('/download/parts', { timeout: 10000 }); // 10秒超時
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };
@@ -172,7 +173,8 @@ export class ApiClient {
 
   static async getPartInfo(partNumber: string): Promise<ApiResponse<PartInfo>> {
     try {
-      const response = await api.get(`/download/parts/${partNumber}`);
+      // 使用較短的超時時間，因為這個操作應該很快
+      const response = await api.get(`/download/parts/${partNumber}`, { timeout: 8000 }); // 8秒超時
       return { data: response.data };
     } catch (error: any) {
       return { error: error.response?.data?.detail || error.message };

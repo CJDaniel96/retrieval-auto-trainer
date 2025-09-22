@@ -345,22 +345,96 @@ class ImageDownloadService:
         if not rawdata_dir.exists():
             return None
 
-        # 統計影像數量
+        # 統計影像數量 - 使用快速掃描避免在下載期間阻塞
         image_count = 0
-        for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
-            image_count += len(list(rawdata_dir.rglob(ext)))
+        try:
+            import threading
+            import time
+
+            def count_images_fast(directory):
+                """快速計算圖片數量，避免在下載期間阻塞"""
+                count = 0
+                try:
+                    # 只掃描直接子目錄，避免遞歸掃描可能正在寫入的文件
+                    for item in directory.iterdir():
+                        if item.is_file() and item.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']:
+                            count += 1
+                        elif item.is_dir() and item.name in ['OK', 'NG']:
+                            # 只掃描分類目錄的直接子文件
+                            for subitem in item.iterdir():
+                                if subitem.is_file() and subitem.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']:
+                                    count += 1
+                except (OSError, PermissionError):
+                    # 如果目錄正在被其他進程使用，返回0
+                    return 0
+                return count
+
+            # 使用線程和超時機制（跨平台解決方案）
+            result = [0]  # 使用列表來儲存結果，因為內部函數需要修改外部變量
+            exception_occurred = [False]
+
+            def count_thread():
+                try:
+                    result[0] = count_images_fast(rawdata_dir)
+                except Exception:
+                    exception_occurred[0] = True
+
+            thread = threading.Thread(target=count_thread)
+            thread.daemon = True
+            thread.start()
+            thread.join(timeout=3.0)  # 3 秒超時
+
+            if thread.is_alive() or exception_occurred[0]:
+                # 如果線程仍在運行或發生異常，使用備用方法
+                self.logger.warning(f"Directory scanning timeout for {part_number}, using fallback method")
+                try:
+                    # 只統計根目錄下的文件，不遞歸掃描
+                    files = list(rawdata_dir.glob('*.jpg')) + list(rawdata_dir.glob('*.jpeg')) + \
+                           list(rawdata_dir.glob('*.png')) + list(rawdata_dir.glob('*.bmp'))
+                    image_count = len(files)
+                except:
+                    image_count = 0
+            else:
+                image_count = result[0]
+
+        except Exception:
+            # 如果掃描失敗，使用最簡單的估計方法
+            try:
+                # 只計算根目錄下的圖片文件
+                image_count = len([f for f in rawdata_dir.iterdir()
+                                 if f.is_file() and f.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']])
+            except:
+                image_count = 0
 
         # 檢查是否已分類（是否有OK/NG資料夾）
         ok_folder = rawdata_dir / "OK"
         ng_folder = rawdata_dir / "NG"
         is_classified = ok_folder.exists() and ng_folder.exists()
 
-        # 計算分類後的影像數量
+        # 計算分類後的影像數量 - 使用相同的快速掃描方法
         classified_count = 0
         if is_classified:
-            for folder in [ok_folder, ng_folder]:
-                for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
-                    classified_count += len(list(folder.rglob(ext)))
+            try:
+                def count_classified_thread():
+                    nonlocal classified_count
+                    try:
+                        for folder in [ok_folder, ng_folder]:
+                            if folder.exists():
+                                for item in folder.iterdir():
+                                    if item.is_file() and item.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp']:
+                                        classified_count += 1
+                    except:
+                        pass
+
+                thread = threading.Thread(target=count_classified_thread)
+                thread.daemon = True
+                thread.start()
+                thread.join(timeout=2.0)  # 較短的超時時間
+
+                if thread.is_alive():
+                    classified_count = 0  # 超時則設為0
+            except:
+                classified_count = 0
 
         return {
             "part_number": part_number,
