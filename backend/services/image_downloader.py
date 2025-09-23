@@ -264,10 +264,18 @@ class ImageDownloadService:
             # 建立下載 URL
             download_url = self._get_download_url(ssh_tunnel, image_pools[line_id])
 
+            # 強制限制最大下載數量為1000張（安全措施）
+            max_download_limit = 1000
+            if limit is None or limit > max_download_limit:
+                actual_limit = max_download_limit
+                self.logger.info(f"限制下載數量從 {limit} 調整為 {actual_limit}")
+            else:
+                actual_limit = limit
+
             # 取得影像清單
             image_list = self._get_image_list(
                 ssh_tunnel, database, site, line_id,
-                start_date, end_date, part_number, limit
+                start_date, end_date, part_number, actual_limit
             )
 
             if not image_list:
@@ -305,9 +313,16 @@ class ImageDownloadService:
                     "path": None
                 }
 
+            # 生成適當的成功訊息
+            success_message = f"成功下載 {len(image_list)} 張影像"
+            if limit is None and len(image_list) == max_download_limit:
+                success_message += f" (已限制最大下載數量為 {max_download_limit} 張)"
+            elif limit and limit > max_download_limit and len(image_list) == max_download_limit:
+                success_message += f" (原請求 {limit} 張，已限制為 {max_download_limit} 張)"
+
             return {
                 "success": True,
-                "message": f"成功下載 {len(image_list)} 張影像",
+                "message": success_message,
                 "path": str(output_dir),
                 "image_count": len(image_list)
             }

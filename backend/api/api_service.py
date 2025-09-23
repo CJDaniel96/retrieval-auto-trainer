@@ -175,6 +175,8 @@ class PartInfo(BaseModel):
     path: str
     image_count: int
     download_time: str
+    is_classified: Optional[bool] = None
+    classified_count: Optional[int] = None
 
 
 class ClassifyRequest(BaseModel):

@@ -1797,6 +1797,17 @@ export function TrainingDashboard() {
                         </AlertDescription>
                       </Alert>
 
+                      {/* 當資料量大於1000時顯示警告 */}
+                      {estimatedCount > 1000 && (
+                        <Alert className="border-orange-200 bg-orange-50/80">
+                          <AlertCircle className="h-4 w-4 text-orange-600" />
+                          <AlertDescription className="text-orange-800">
+                            資料量過大（{estimatedCount} 張），為確保系統穩定性，將限制最多下載 1000 張影像。
+                            如需下載更多資料，建議縮小日期範圍後分批下載。
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="download_limit">
@@ -1806,17 +1817,19 @@ export function TrainingDashboard() {
                             id="download_limit"
                             type="number"
                             min="1"
-                            max={estimatedCount}
+                            max={Math.min(estimatedCount, 1000)}
                             value={downloadFormData.limit || ""}
                             onChange={(e) =>
                               setDownloadFormData((prev) => ({
                                 ...prev,
                                 limit: e.target.value
-                                  ? parseInt(e.target.value)
+                                  ? Math.min(parseInt(e.target.value), 1000)
                                   : undefined,
                               }))
                             }
-                            placeholder={`不限制 (最多 ${estimatedCount} 張)`}
+                            placeholder={estimatedCount > 1000 ?
+                              `不限制 (最多 1000 張)` :
+                              `不限制 (最多 ${estimatedCount} 張)`}
                           />
                         </div>
                       </div>
@@ -1839,8 +1852,17 @@ export function TrainingDashboard() {
                         <Button
                           onClick={async () => {
                             setLoadingDownload(true);
+
+                            // 確保下載數量不超過1000張
+                            const actualDownloadData = {
+                              ...downloadFormData,
+                              limit: downloadFormData.limit ?
+                                Math.min(downloadFormData.limit, 1000) :
+                                (estimatedCount > 1000 ? 1000 : undefined)
+                            };
+
                             const result = await ApiClient.downloadRawdata(
-                              downloadFormData
+                              actualDownloadData
                             );
 
                             if (result.error) {
@@ -1882,13 +1904,24 @@ export function TrainingDashboard() {
                           ) : (
                             <>
                               <Download className="w-4 h-4 mr-2" />
-                              {downloadFormData.limit
-                                ? t("download.form.download_limited", {
-                                    limit: downloadFormData.limit,
-                                  })
-                                : t("download.form.download_all", {
+                              {(() => {
+                                // 計算實際下載數量
+                                const actualLimit = downloadFormData.limit ?
+                                  Math.min(downloadFormData.limit, 1000) :
+                                  (estimatedCount > 1000 ? 1000 : estimatedCount);
+
+                                if (downloadFormData.limit) {
+                                  return t("download.form.download_limited", {
+                                    limit: actualLimit,
+                                  });
+                                } else if (estimatedCount > 1000) {
+                                  return `下載 ${actualLimit} 張 (限制最大值)`;
+                                } else {
+                                  return t("download.form.download_all", {
                                     count: estimatedCount,
-                                  })}
+                                  });
+                                }
+                              })()}
                             </>
                           )}
                         </Button>
