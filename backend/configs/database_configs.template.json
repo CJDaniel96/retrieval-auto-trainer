@@ -1,0 +1,46 @@
+{
+    "HPH": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "YOUR_SSH_HOST",
+            "ssh_username": "YOUR_SSH_USERNAME",
+            "ssh_password": "YOUR_SSH_PASSWORD"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "amr",
+            "USER": "postgres",
+            "PASSWORD": "YOUR_DB_PASSWORD",
+            "HOST": "YOUR_DB_HOST",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "V31": {
+                "ip": "YOUR_IMAGE_SERVER_IP",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    },
+    "YOUR_SITE": {
+        "SSHTUNNEL": {
+            "ssh_address_or_host": "YOUR_SSH_HOST",
+            "ssh_username": "YOUR_SSH_USERNAME",
+            "ssh_password": "YOUR_SSH_PASSWORD"
+        },
+        "database": {
+            "ENGINE": "postgresql",
+            "NAME": "YOUR_DB_NAME",
+            "USER": "YOUR_DB_USER",
+            "PASSWORD": "YOUR_DB_PASSWORD",
+            "HOST": "YOUR_DB_HOST",
+            "PORT": 5432
+        },
+        "image_pool": {
+            "YOUR_LINE_ID": {
+                "ip": "YOUR_IMAGE_SERVER_IP",
+                "port": 8888,
+                "donwload_url_prefix": "imagesinzip"
+            }
+        }
+    }
+}

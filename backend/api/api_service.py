@@ -20,8 +20,9 @@ from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Request
 from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -249,19 +250,102 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/", response_class=RedirectResponse, tags=["UI"])
-async def web_ui():
-    """重新導向到Next.js前端"""
-    return RedirectResponse(url="http://localhost:3002", status_code=307)
+# 檢查前端構建文件是否存在（靜態導出模式）
+frontend_dist_path = Path("frontend/out")
+frontend_static_path = Path("frontend/out/_next/static")
 
+# 檢查是否有構建的前端文件
+if frontend_dist_path.exists():
+    logger.info("找到前端構建文件，啟用靜態文件服務")
 
-@app.get("/favicon.ico", response_class=FileResponse, tags=["UI"])
-async def favicon():
-    # Try to serve favicon from frontend/public directory, fallback to 404
-    frontend_favicon = Path("frontend/public/favicon.ico")
-    if frontend_favicon.exists():
-        return FileResponse(str(frontend_favicon), status_code=200)
-    return JSONResponse({"status": "no favicon"}, status_code=404)
+    # 提供靜態文件服務
+    app.mount("/static", StaticFiles(directory=str(frontend_dist_path)), name="frontend-static")
+
+    @app.get("/favicon.ico", response_class=FileResponse, tags=["UI"])
+    async def favicon():
+        favicon_path = frontend_dist_path / "favicon.ico"
+        if favicon_path.exists():
+            return FileResponse(str(favicon_path))
+        return JSONResponse({"status": "no favicon"}, status_code=404)
+
+    @app.get("/", response_class=HTMLResponse, tags=["UI"])
+    async def web_ui():
+        """提供前端主頁"""
+        index_path = frontend_dist_path / "index.html"
+        if index_path.exists():
+            with open(index_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return HTMLResponse(content=content)
+        else:
+            return HTMLResponse("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>自動化影像檢索模型訓練系統</title>
+                <meta charset="utf-8">
+            </head>
+            <body>
+                <h1>系統啟動中</h1>
+                <p>前端文件尚未構建，請先運行：</p>
+                <pre>cd frontend && npm run build</pre>
+                <p>API 文檔: <a href="/docs">/docs</a></p>
+            </body>
+            </html>
+            """)
+
+    @app.get("/{path:path}", tags=["UI"])
+    async def serve_frontend(request: Request, path: str = ""):
+        """提供前端頁面和靜態資源"""
+        # API 路由應該返回 404，不被前端處理
+        if (path.startswith("api/") or path.startswith("docs") or
+            path.startswith("redoc") or path.startswith("openapi.json") or
+            path.startswith("health") or path.startswith("training") or
+            path.startswith("orientation") or path.startswith("download") or
+            path.startswith("config") or path.startswith("database") or
+            path.startswith("rawdata") or path.startswith("temp")):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+
+        # 嘗試提供靜態文件
+        file_path = frontend_dist_path / path
+
+        # 如果是目錄，嘗試 index.html
+        if file_path.is_dir():
+            index_file = file_path / "index.html"
+            if index_file.exists():
+                with open(index_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return HTMLResponse(content=content)
+
+        # 如果是文件，直接提供
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+
+        # 對於 SPA 路由，返回主 index.html
+        main_index = frontend_dist_path / "index.html"
+        if main_index.exists():
+            with open(main_index, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return HTMLResponse(content=content)
+
+        # 如果都沒有，返回 404
+        raise HTTPException(status_code=404, detail="Page not found")
+
+else:
+    # 開發模式：重定向到 Next.js 開發服務器
+    logger.info("未找到前端構建文件，使用開發模式重定向")
+
+    @app.get("/", response_class=RedirectResponse, tags=["UI"])
+    async def web_ui():
+        """重新導向到Next.js前端開發服務器"""
+        return RedirectResponse(url="http://localhost:3002", status_code=307)
+
+    @app.get("/favicon.ico", response_class=FileResponse, tags=["UI"])
+    async def favicon():
+        # Try to serve favicon from frontend/public directory, fallback to 404
+        frontend_favicon = Path("frontend/public/favicon.ico")
+        if frontend_favicon.exists():
+            return FileResponse(str(frontend_favicon), status_code=200)
+        return JSONResponse({"status": "no favicon"}, status_code=404)
 
 
 @app.get("/health", tags=["Health"])
