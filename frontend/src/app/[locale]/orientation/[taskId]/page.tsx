@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,7 @@ export default function OrientationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrientationSamples();
-  }, [taskId]);
-
-  const fetchOrientationSamples = async () => {
+  const fetchOrientationSamples = useCallback(async () => {
     try {
       const response = await ApiClient.getOrientationSamples(taskId);
       if (response.data) {
@@ -46,12 +42,16 @@ export default function OrientationPage() {
       } else if (response.error) {
         setError(response.error);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
+
+  useEffect(() => {
+    fetchOrientationSamples();
+  }, [fetchOrientationSamples]);
 
   const handleOrientationChange = (className: string, orientation: OrientationType) => {
     setOrientations(prev => ({
@@ -81,8 +81,8 @@ export default function OrientationPage() {
       } else if (response.error) {
         setError(response.error);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setSubmitting(false);
     }

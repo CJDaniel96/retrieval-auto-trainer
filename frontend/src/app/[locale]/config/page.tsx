@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
+import {
   Settings,
-  Save, 
+  Save,
   RefreshCw,
   Loader2,
-  CheckCircle,
   AlertCircle,
   Brain,
   Database,
@@ -29,7 +27,6 @@ import { Navigation } from '@/components/navigation';
 import { toast } from 'sonner';
 
 export default function ConfigPage() {
-  const t = useTranslations();
   const [config, setConfig] = useState<FullConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,7 +66,7 @@ export default function ConfigPage() {
     setSaving(false);
   };
 
-  const updateTrainingField = (field: keyof NonNullable<ConfigUpdateRequest['training']>, value: any) => {
+  const updateTrainingField = (field: keyof NonNullable<ConfigUpdateRequest['training']>, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       training: {
@@ -79,7 +76,7 @@ export default function ConfigPage() {
     }));
   };
 
-  const updateModelField = (field: keyof NonNullable<ConfigUpdateRequest['model']>, value: any) => {
+  const updateModelField = (field: keyof NonNullable<ConfigUpdateRequest['model']>, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       model: {
@@ -89,7 +86,7 @@ export default function ConfigPage() {
     }));
   };
 
-  const updateDataField = (field: keyof NonNullable<ConfigUpdateRequest['data']>, value: any) => {
+  const updateDataField = (field: keyof NonNullable<ConfigUpdateRequest['data']>, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       data: {
@@ -99,7 +96,7 @@ export default function ConfigPage() {
     }));
   };
 
-  const updateLossField = (field: keyof NonNullable<ConfigUpdateRequest['loss']>, value: any) => {
+  const updateLossField = (field: keyof NonNullable<ConfigUpdateRequest['loss']>, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       loss: {

@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // 生產部署時使用靜態導出
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // 生產部署時使用靜態導出 - 暫時禁用以解決動態路由問題
+  // output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   trailingSlash: true,
   // 配置 assetPrefix 以便正確處理靜態資源
   assetPrefix: process.env.NODE_ENV === 'production' ? '/static' : undefined,

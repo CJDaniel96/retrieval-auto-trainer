@@ -23,7 +23,6 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import {
@@ -38,7 +37,6 @@ import {
   AlertCircle,
   Loader2,
   Settings,
-  Save,
   Brain,
   Database,
   Dumbbell,
@@ -61,7 +59,7 @@ import {
 } from "@/lib/types";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { toast } from "sonner";
-import { useRouter } from "@/i18n/routing";
+import { useRouter } from "next/navigation";
 
 export function TrainingDashboard() {
   const t = useTranslations();
@@ -200,21 +198,21 @@ export function TrainingDashboard() {
         setTasks([]);
         setError(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to fetch tasks:", error);
 
       // 根據錯誤類型設置不同的錯誤訊息
       let errorMessage = "無法連接到後端服務";
-      if (error.message === "請求超時") {
-        errorMessage = "後端服務響應超時，請檢查服務狀態";
-      } else if (
-        error.code === "ECONNREFUSED" ||
-        error.message.includes("Network Error")
-      ) {
-        errorMessage =
-          "無法連接到後端服務 (http://localhost:8000)，請確認後端服務已啟動";
-      } else if (error.response?.status === 404) {
-        errorMessage = "API 端點不存在，請檢查後端服務版本";
+      if (error instanceof Error) {
+        if (error.message === "請求超時") {
+          errorMessage = "後端服務響應超時，請檢查服務狀態";
+        } else if (
+          error.message.includes("ECONNREFUSED") ||
+          error.message.includes("Network Error")
+        ) {
+          errorMessage =
+            "無法連接到後端服務 (http://localhost:8000)，請確認後端服務已啟動";
+        }
       }
 
       setError(errorMessage);
@@ -288,8 +286,8 @@ export function TrainingDashboard() {
       } else if (response.error) {
         toast.error(`${t("messages.error_occurred")}: ${response.error}`);
       }
-    } catch (error: any) {
-      toast.error(`${t("messages.error_occurred")}: ${error.message}`);
+    } catch (error: unknown) {
+      toast.error(`${t("messages.error_occurred")}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setCreatingModule(false);
     }
@@ -304,7 +302,7 @@ export function TrainingDashboard() {
 
   const updateTrainingField = (
     field: keyof NonNullable<TrainingRequest["training_config"]>,
-    value: any
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -317,7 +315,7 @@ export function TrainingDashboard() {
 
   const updateModelField = (
     field: keyof NonNullable<TrainingRequest["model_config"]>,
-    value: any
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -330,7 +328,7 @@ export function TrainingDashboard() {
 
   const updateDataField = (
     field: keyof NonNullable<TrainingRequest["data_config"]>,
-    value: any
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -343,7 +341,7 @@ export function TrainingDashboard() {
 
   const updateLossField = (
     field: keyof NonNullable<TrainingRequest["loss_config"]>,
-    value: any
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -356,7 +354,7 @@ export function TrainingDashboard() {
 
   const updateExperimentField = (
     field: keyof NonNullable<TrainingRequest["experiment_config"]>,
-    value: any
+    value: string
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -369,7 +367,7 @@ export function TrainingDashboard() {
 
   const updateKnnField = (
     field: keyof NonNullable<TrainingRequest["knn_config"]>,
-    value: any
+    value: string | number | boolean
   ) => {
     setFormData((prev) => ({
       ...prev,

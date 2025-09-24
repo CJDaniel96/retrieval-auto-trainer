@@ -14,14 +14,27 @@ import {
   PartImageList
 } from './types';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      detail?: string;
+    };
+  };
+  message?: string;
+}
+
 export class ApiClient {
   // Training endpoints
   static async startTraining(request: TrainingRequest): Promise<ApiResponse<{ task_id: string; message: string }>> {
     try {
       const response = await api.post('/training/start', request);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.message || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.message;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -29,8 +42,11 @@ export class ApiClient {
     try {
       const response = await api.get(`/training/status/${taskId}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -38,8 +54,11 @@ export class ApiClient {
     try {
       const response = await api.get('/training/list');
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.message || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.message;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -47,8 +66,11 @@ export class ApiClient {
     try {
       const response = await api.get(`/training/result/${taskId}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -59,8 +81,10 @@ export class ApiClient {
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       return url;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.detail || error.message);
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(apiError?.response?.data?.detail || errorMessage);
     }
   }
 
@@ -68,8 +92,11 @@ export class ApiClient {
     try {
       const response = await api.post(`/training/cancel/${taskId}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -77,8 +104,11 @@ export class ApiClient {
     try {
       const response = await api.delete(`/training/delete/${taskId}?delete_files=${deleteFiles}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -89,8 +119,11 @@ export class ApiClient {
         part_number: partNumber
       });
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -99,8 +132,11 @@ export class ApiClient {
     try {
       const response = await api.get(`/orientation/samples/${taskId}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -108,8 +144,11 @@ export class ApiClient {
     try {
       const response = await api.post(`/orientation/confirm/${confirmation.task_id}`, confirmation);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -118,8 +157,11 @@ export class ApiClient {
     try {
       const response = await api.get('/config/current');
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -127,8 +169,11 @@ export class ApiClient {
     try {
       const response = await api.post('/config/update', configUpdate);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -137,8 +182,11 @@ export class ApiClient {
     try {
       const response = await api.get('/health');
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.message || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.message;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -147,8 +195,11 @@ export class ApiClient {
     try {
       const response = await api.post('/download/estimate', request);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -156,8 +207,11 @@ export class ApiClient {
     try {
       const response = await api.post('/download/rawdata', request);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -166,8 +220,11 @@ export class ApiClient {
       // 使用較短的超時時間，因為這個操作應該很快
       const response = await api.get('/download/parts', { timeout: 10000 }); // 10秒超時
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -176,8 +233,11 @@ export class ApiClient {
       // 使用較短的超時時間，因為這個操作應該很快
       const response = await api.get(`/download/parts/${partNumber}`, { timeout: 8000 }); // 8秒超時
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -185,8 +245,11 @@ export class ApiClient {
     try {
       const response = await api.post(`/download/classify/${partNumber}`, request);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -199,8 +262,11 @@ export class ApiClient {
         }
       });
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 
@@ -208,8 +274,11 @@ export class ApiClient {
     try {
       const response = await api.delete(`/download/images/${partNumber}/${filename}`);
       return { data: response.data };
-    } catch (error: any) {
-      return { error: error.response?.data?.detail || error.message };
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const apiError = error as ApiError;
+      const responseError = apiError?.response?.data?.detail;
+      return { error: responseError || errorMessage };
     }
   }
 }

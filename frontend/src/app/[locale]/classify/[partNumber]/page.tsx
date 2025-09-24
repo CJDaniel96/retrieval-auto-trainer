@@ -3,14 +3,13 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Target,
   ArrowLeft,
-  CheckCircle,
   AlertCircle,
   Loader2,
   ChevronLeft,
@@ -19,7 +18,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { ApiClient } from '@/lib/api-client';
-import { PartImageList, ImageInfo } from '@/lib/types';
+import { PartImageList } from '@/lib/types';
 import { toast } from 'sonner';
 
 const ITEMS_PER_PAGE = 50;
@@ -85,7 +84,7 @@ export default function ClassifyPage() {
     if (partNumber) {
       loadImages();
     }
-  }, [partNumber]);
+  }, [partNumber, t]);
 
 
   const handleClassifyImage = (filename: string, classification: 'OK' | 'NG') => {
@@ -307,9 +306,11 @@ export default function ClassifyPage() {
                 {/* 影像預覽 */}
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   {image.base64_data ? (
-                    <img
+                    <Image
                       src={image.base64_data}
                       alt={image.filename}
+                      width={256}
+                      height={256}
                       className="w-full h-full object-cover"
                     />
                   ) : (
