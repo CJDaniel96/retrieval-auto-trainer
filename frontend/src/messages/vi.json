@@ -84,8 +84,8 @@
     "total_classes": "Tổng số Lớp",
     "total_images": "Tổng số Hình ảnh",
     "model_path": "Đường dẫn Mô hình",
-    "download_model": "Tải xuống Mô hình",
-    "download_results": "Tải xuống Kết quả",
+    "download_model": "Tải vào Mô hình",
+    "download_results": "Tải vào Kết quả",
     "confusion_matrix": "Ma trận Nhầm lẫn",
     "evaluation_report": "Báo cáo Đánh giá"
   },
@@ -157,9 +157,9 @@
     "module_created_successfully": "Tạo module thành công"
   },
   "download": {
-    "title": "Tải xuống Dữ liệu Thô",
-    "description": "Tải xuống dữ liệu hình ảnh từ cơ sở dữ liệu phù hợp với tiêu chí đã chỉ định",
-    "tab_name": "Tải xuống Dữ liệu",
+    "title": "Tải vào Dữ liệu Thô",
+    "description": "Tải vào dữ liệu hình ảnh từ cơ sở dữ liệu phù hợp với tiêu chí đã chỉ định",
+    "tab_name": "Tải vào Dữ liệu",
     "form": {
       "site": "Địa điểm",
       "line_id": "ID Dây chuyền",
@@ -168,20 +168,20 @@
       "end_date": "Ngày Kết thúc",
       "limit": "Giới hạn Số lượng (Tùy chọn)",
       "estimate_count": "Ước tính Số lượng",
-      "start_download": "Bắt đầu Tải xuống",
-      "downloading": "Đang tải xuống...",
-      "download_all": "Bắt đầu Tải xuống (Tất cả {count} hình ảnh)",
-      "download_limited": "Bắt đầu Tải xuống ({limit} hình ảnh)",
+      "start_download": "Bắt đầu Tải vào",
+      "downloading": "Đang tải vào...",
+      "download_all": "Bắt đầu Tải vào (Tất cả {count} hình ảnh)",
+      "download_limited": "Bắt đầu Tải vào ({limit} hình ảnh)",
       "cancel": "Hủy",
       "back": "Quay lại",
       "estimate_button": "Ước tính Số lượng",
       "re_estimate": "Ước tính lại"
     },
     "downloaded_parts": {
-      "title": "Phần đã Tải xuống",
-      "description": "Danh sách các phần đã tải xuống có sẵn để phân loại hình ảnh",
-      "no_data": "Chưa tải xuống dữ liệu nào",
-      "download_time": "Thời gian Tải xuống",
+      "title": "Phần đã Tải vào",
+      "description": "Danh sách các phần đã tải vào có sẵn để phân loại hình ảnh",
+      "no_data": "Chưa tải vào dữ liệu nào",
+      "download_time": "Thời gian Tải vào",
       "image_count": "Số lượng Hình ảnh",
       "actions": "Hành động",
       "use_for_training": "Sử dụng để Huấn luyện",
@@ -192,8 +192,8 @@
       "missing_fields": "Vui lòng điền tất cả các trường bắt buộc",
       "estimate_success": "Tải số lượng ước tính thành công",
       "estimate_failed": "Ước tính thất bại",
-      "download_success": "Tải xuống thành công",
-      "download_failed": "Tải xuống thất bại",
+      "download_success": "Tải vào thành công",
+      "download_failed": "Tải vào thất bại",
       "estimating": "Đang ước tính số lượng...",
       "loading_parts": "Đang tải danh sách phần...",
       "switch_training": "Đã chuyển sang trang huấn luyện, sẽ sử dụng dữ liệu từ số phần {partNumber}",
@@ -201,9 +201,9 @@
       "image_count_suffix": "hình ảnh"
     },
     "info": {
-      "rawdata_usage": "Sử dụng dữ liệu đã tải xuống và phân loại để huấn luyện",
-      "rawdata_description": "Sử dụng dữ liệu đã tải xuống đã được phân loại là OK/NG để huấn luyện. Vui lòng vào trang 'Tải xuống Dữ liệu' trước để tải xuống và phân loại dữ liệu.",
-      "select_part": "Chọn phần đã tải xuống"
+      "rawdata_usage": "Sử dụng dữ liệu đã tải vào và phân loại để huấn luyện",
+      "rawdata_description": "Sử dụng dữ liệu đã tải vào đã được phân loại là OK/NG để huấn luyện. Vui lòng vào trang 'Tải vào Dữ liệu' trước để tải vào và phân loại dữ liệu.",
+      "select_part": "Chọn phần đã tải vào"
     }
   },
   "classify": {

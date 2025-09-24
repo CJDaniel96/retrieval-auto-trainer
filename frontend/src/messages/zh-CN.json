@@ -78,8 +78,8 @@
     "total_classes": "总类别数",
     "total_images": "总图像数",
     "model_path": "模型路径",
-    "download_model": "下载模型",
-    "download_results": "下载结果",
+    "download_model": "载入模型",
+    "download_results": "载入结果",
     "confusion_matrix": "混淆矩阵",
     "evaluation_report": "评估报告"
   }

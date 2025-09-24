@@ -449,6 +449,13 @@ export function TrainingDashboard() {
           <div className="flex justify-center mb-8">
             <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-white/90 to-gray-50/90 p-1.5 shadow-xl border border-white/40 backdrop-blur-lg">
               <TabsTrigger
+                value="download"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
+              >
+                <Database className="w-4 h-4 mr-2" />
+                {t("download.tab_name")}
+              </TabsTrigger>
+              <TabsTrigger
                 value="new-training"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
               >
@@ -466,13 +473,6 @@ export function TrainingDashboard() {
                     {tasks.length}
                   </span>
                 )}
-              </TabsTrigger>
-              <TabsTrigger
-                value="download"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-3 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-lg hover:bg-white/60 data-[state=active]:hover:from-blue-700 data-[state=active]:hover:to-indigo-700"
-              >
-                <Database className="w-4 h-4 mr-2" />
-                {t("download.tab_name")}
               </TabsTrigger>
               <TabsTrigger
                 value="settings"
@@ -1800,8 +1800,8 @@ export function TrainingDashboard() {
                         <Alert className="border-orange-200 bg-orange-50/80">
                           <AlertCircle className="h-4 w-4 text-orange-600" />
                           <AlertDescription className="text-orange-800">
-                            資料量過大（{estimatedCount} 張），為確保系統穩定性，將限制最多下載 1000 張影像。
-                            如需下載更多資料，建議縮小日期範圍後分批下載。
+                            資料量過大（{estimatedCount} 張），為確保系統穩定性，將限制最多載入 1000 張影像。
+                            如需載入更多資料，建議縮小日期範圍後分批載入。
                           </AlertDescription>
                         </Alert>
                       )}
@@ -1851,7 +1851,7 @@ export function TrainingDashboard() {
                           onClick={async () => {
                             setLoadingDownload(true);
 
-                            // 確保下載數量不超過1000張
+                            // 確保載入數量不超過1000張
                             const actualDownloadData = {
                               ...downloadFormData,
                               limit: downloadFormData.limit ?
@@ -1864,7 +1864,7 @@ export function TrainingDashboard() {
                             );
 
                             if (result.error) {
-                              toast.error(`下載失敗: ${result.error}`);
+                              toast.error(`載入失敗: ${result.error}`);
                             } else if (result.data) {
                               if (result.data.success) {
                                 toast.success(result.data.message);
@@ -1903,7 +1903,7 @@ export function TrainingDashboard() {
                             <>
                               <Download className="w-4 h-4 mr-2" />
                               {(() => {
-                                // 計算實際下載數量
+                                // 計算實際載入數量
                                 const actualLimit = downloadFormData.limit ?
                                   Math.min(downloadFormData.limit, 1000) :
                                   (estimatedCount > 1000 ? 1000 : estimatedCount);
@@ -1913,7 +1913,7 @@ export function TrainingDashboard() {
                                     limit: actualLimit,
                                   });
                                 } else if (estimatedCount > 1000) {
-                                  return `下載 ${actualLimit} 張 (限制最大值)`;
+                                  return `載入 ${actualLimit} 張 (限制最大值)`;
                                 } else {
                                   return t("download.form.download_all", {
                                     count: estimatedCount,
